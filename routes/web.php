@@ -11,10 +11,17 @@ Route::get('/cadastro-aluno', function () {
     return view('auth.cadastro-aluno');
 });
 
-Route::get('/cadastro-professor', function () {
-    return view('auth.cadastro-professor');
-});
-
+// CADASTRO DE ALUNO
 Route::post('/salvar-aluno', [UserController::class, 'salvarAluno']);
 
-Route::post('/salvar-professor', [UserController::class, 'salvarProfessor']);
+// LOGIN
+Route::post('/login', [UserController::class, 'login']);
+
+// DASHBOARDS
+Route::get('/dashboard-aluno', function () {
+    return "Bem-vindo Aluno!";
+});
+
+Route::get('/dashboard-professor', function () {
+    return "Bem-vindo Professor!";
+});
