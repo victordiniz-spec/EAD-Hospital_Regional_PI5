@@ -11,10 +11,10 @@
         <h1 class="text-xl font-bold mb-8">ResidentEAD</h1>
 
         <nav class="space-y-4">
-            <a href="#" class="block bg-blue-600 p-2 rounded">Dashboard</a>
-            <a href="#" class="block hover:text-blue-400">Videoaulas</a>
-            <a href="#" class="block hover:text-blue-400">Pós-testes</a>
-            <a href="#" class="block hover:text-blue-400">Alunos</a>
+            <a href="{{ route('dashboard.professor') }}" class="block bg-blue-600 p-2 rounded">Dashboard</a>
+            <a href="{{ route('videoaulas') }}" class="block hover:text-blue-400">Videoaulas</a>
+            <a href="{{ route('postestes') }}" class="block hover:text-blue-400">Pós-testes</a>
+            <a href="{{ route('alunos') }}" class="block hover:text-blue-400">Alunos</a>
         </nav>
     </aside>
 
@@ -28,45 +28,39 @@
 
             <div class="bg-[#1E293B] p-6 rounded-xl">
                 <p>Total de Aulas</p>
-                <h3 class="text-3xl font-bold">12</h3>
+                <h3 class="text-3xl font-bold">{{ $totalAulas }}</h3>
             </div>
 
             <div class="bg-[#1E293B] p-6 rounded-xl">
                 <p>Alunos Ativos</p>
-                <h3 class="text-3xl font-bold">48</h3>
+                <h3 class="text-3xl font-bold">{{ $totalAlunos }}</h3>
             </div>
 
             <div class="bg-[#1E293B] p-6 rounded-xl">
                 <p>Pós-testes</p>
-                <h3 class="text-3xl font-bold">134</h3>
+                <h3 class="text-3xl font-bold">{{ $totalProvas }}</h3>
             </div>
 
             <div class="bg-[#1E293B] p-6 rounded-xl">
                 <p>Média Geral</p>
-                <h3 class="text-3xl font-bold">7.8</h3>
+                <h3 class="text-3xl font-bold">{{ number_format($mediaGeral, 2) }}</h3>
             </div>
 
         </div>
 
-        <!-- LISTA -->
+        <!-- LISTA DE AULAS RECENTES -->
         <div class="bg-[#1E293B] p-6 rounded-xl">
             <h3 class="mb-4">Videoaulas Recentes</h3>
 
             <ul class="space-y-3">
-                <li class="flex justify-between">
-                    <span>Introdução à Semiologia</span>
-                    <span class="text-green-400">Publicada</span>
-                </li>
-
-                <li class="flex justify-between">
-                    <span>Ausculta Cardíaca</span>
-                    <span class="text-green-400">Publicada</span>
-                </li>
-
-                <li class="flex justify-between">
-                    <span>Neurologia Básica</span>
-                    <span class="text-yellow-400">Rascunho</span>
-                </li>
+                @forelse($aulasRecentes as $aula)
+                    <li class="flex justify-between">
+                        <span>{{ $aula->titulo }}</span>
+                        <span class="text-green-400">Publicada</span>
+                    </li>
+                @empty
+                    <li>Nenhuma aula recente encontrada.</li>
+                @endforelse
             </ul>
         </div>
 
