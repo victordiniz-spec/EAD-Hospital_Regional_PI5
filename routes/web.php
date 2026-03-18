@@ -2,26 +2,34 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\DashboardController;
 
+// LOGIN
 Route::get('/', function () {
     return view('auth.login');
 });
 
+// CADASTRO DE ALUNO
 Route::get('/cadastro-aluno', function () {
     return view('auth.cadastro-aluno');
 });
 
-// CADASTRO DE ALUNO
 Route::post('/salvar-aluno', [UserController::class, 'salvarAluno']);
 
-// LOGIN
+// LOGIN POST
 Route::post('/login', [UserController::class, 'login']);
 
-// DASHBOARDS
-Route::get('/dashboard-aluno', function () {
-    return "Bem-vindo Aluno!";
+// LOGOUT
+Route::post('/logout', function () {
+    \Illuminate\Support\Facades\Auth::logout();
+    return redirect('/');
 });
 
-Route::get('/dashboard-professor', function () {
-    return "Bem-vindo Professor!";
-});
+// DASHBOARD ALUNO
+Route::get('/dashboard-aluno', function () {
+    return view('dashboard.aluno');
+})->middleware('auth');
+
+// DASHBOARD PROFESSOR (AGORA COM DADOS DO BANCO)
+Route::get('/dashboard-professor', [DashboardController::class, 'professor'])
+    ->middleware('auth');
