@@ -1,0 +1,96 @@
+===============================
+🚀 GUIA RÁPIDO - MEU PROJETO
+===============================
+
+📌 INICIAR O PROJETO
+
+1. Iniciar o servidor Laravel:
+php artisan serve
+
+2. Iniciar o Vite (frontend):
+npm run dev
+
+⚠️ Sempre rodar os dois ao mesmo tempo!
+
+---------------------------------
+
+📌 BANCO DE DADOS (se precisar)
+Verificar se o XAMPP está ligado:
+- Apache ✅
+- MySQL ✅
+
+---------------------------------
+
+📌 ENVIAR CÓDIGO PARA O GITHUB
+
+1. Adicionar arquivos:
+git add .
+
+2. Criar commit:
+git commit -m "descrição da alteração"
+
+3. Enviar para o GitHub:
+git push origin main
+
+---------------------------------
+
+📌 BAIXAR ATUALIZAÇÕES DO GITHUB
+
+git pull origin main
+
+---------------------------------
+
+📌 CLONAR PROJETO (OUTRO PC)
+
+git clone https://github.com/victornascimentodiniz/VaxNet.git
+
+Depois:
+cd VaxNet
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+
+---------------------------------
+
+📌 RODAR MIGRAÇÕES (se necessário)
+
+php artisan migrate
+
+---------------------------------
+
+📌 LIMPAR CACHE (se der erro estranho)
+
+php artisan config:clear
+php artisan cache:clear
+php artisan view:clear
+
+---------------------------------
+
+📌 CASO O VITE NÃO FUNCIONE
+
+npm install
+npm run dev
+
+---------------------------------
+
+📌 OBSERVAÇÕES IMPORTANTES
+
+- Sempre iniciar:
+  ✔ php artisan serve
+  ✔ npm run dev
+
+- Verificar se o banco está ligado (XAMPP)
+
+- Não esquecer de dar commit antes de sair do projeto
+
+---------------------------------
+
+🔥 DICA
+
+Sempre que terminar algo:
+git add .
+git commit -m "feat: o que você fez"
+git push
+
+===============================
