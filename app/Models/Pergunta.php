@@ -12,4 +12,16 @@ class Pergunta extends Model
         'pergunta',
         'avaliacao_id'
     ];
+
+    // 🔥 RELAÇÃO COM RESPOSTAS
+    public function respostas()
+    {
+        return $this->hasMany(Resposta::class, 'pergunta_id');
+    }
+
+    // (opcional)
+    public function avaliacao()
+    {
+        return $this->belongsTo(Avaliacao::class, 'avaliacao_id');
+    }
 }

@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Avaliacao;
 use App\Models\Pergunta;
 use App\Models\Resposta;
 use App\Models\Nota;
-use App\Models\Aula; // 🔥 IMPORTANTE
+use App\Models\Aula;
 
 class AvaliacaoController extends Controller
 {
@@ -16,9 +17,7 @@ class AvaliacaoController extends Controller
     // ------------------------
     public function create($aula)
     {
-        // 🔥 CORREÇÃO AQUI (buscar aula no banco)
         $aula = Aula::findOrFail($aula);
-
         return view('dashboard.criar-avaliacao', compact('aula'));
     }
 
@@ -29,27 +28,24 @@ class AvaliacaoController extends Controller
     {
         $request->validate([
             'titulo' => 'required',
-            'pergunta' => 'required'
+            'pergunta' => 'required',
         ]);
 
-        // Criar avaliação
         $avaliacao = Avaliacao::create([
             'titulo' => $request->titulo,
-            'aula_id' => $request->aula_id
+            'aula_id' => $request->aula_id,
         ]);
 
-        // Criar pergunta
         $pergunta = Pergunta::create([
             'pergunta' => $request->pergunta,
-            'avaliacao_id' => $avaliacao->id
+            'avaliacao_id' => $avaliacao->id,
         ]);
 
-        // Criar respostas
         for ($i = 1; $i <= 4; $i++) {
             Resposta::create([
                 'resposta' => $request->input("resposta$i"),
                 'correta' => $request->correta == $i,
-                'pergunta_id' => $pergunta->id
+                'pergunta_id' => $pergunta->id,
             ]);
         }
 
@@ -62,6 +58,17 @@ class AvaliacaoController extends Controller
     public function show($id)
     {
         $avaliacao = Avaliacao::with('perguntas.respostas')->findOrFail($id);
+        $alunoId = auth()->id();
+
+        // Verificar se o aluno assistiu à aula
+        $assistiu = DB::table('aulas_assistidas')
+            ->where('aluno_id', $alunoId)
+            ->where('aula_id', $avaliacao->aula_id)
+            ->exists();
+
+        if (!$assistiu) {
+            return redirect()->back()->with('error', 'Você precisa assistir a aula antes de fazer o teste!');
+        }
 
         return view('aluno.fazer-avaliacao', compact('avaliacao'));
     }
@@ -69,36 +76,27 @@ class AvaliacaoController extends Controller
     // ------------------------
     // ALUNO - RESPONDER TESTE
     // ------------------------
-    public function responder(Request $request)
+    public function responder(Request $request, $id)
     {
-        $inicio = $request->inicio;
-        $fim = now();
-
-        // calcular tempo em segundos
-        $tempo = strtotime($fim) - strtotime($inicio);
-
+        $avaliacao = Avaliacao::findOrFail($id);
+        $respostasSelecionadas = $request->input('resposta', []);
         $corretas = 0;
 
-        if ($request->respostas) {
-            foreach ($request->respostas as $resposta_id) {
-                $resposta = Resposta::find($resposta_id);
-
-                if ($resposta && $resposta->correta) {
-                    $corretas++;
-                }
+        foreach ($respostasSelecionadas as $pergunta_id => $resposta_id) {
+            $resposta = Resposta::find($resposta_id);
+            if ($resposta && $resposta->correta) {
+                $corretas++;
             }
         }
 
-        // cálculo simples de nota
-        $nota = $corretas * 10;
+        $nota = $corretas * 10; // ou sua lógica de nota
 
-        // salvar nota
         Nota::create([
             'aluno_id' => auth()->id(),
-            'avaliacao_id' => $request->avaliacao_id,
-            'nota' => $nota
+            'avaliacao_id' => $avaliacao->id,
+            'nota' => $nota,
         ]);
 
-        return back()->with('success', "Nota: $nota | Tempo: $tempo segundos");
+        return redirect()->route('dashboard.aluno')->with('success', "Nota: $nota");
     }
 }

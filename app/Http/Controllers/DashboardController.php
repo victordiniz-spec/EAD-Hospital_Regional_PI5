@@ -82,11 +82,19 @@ class DashboardController extends Controller
 
         // LISTA DE TESTES
         $listaTestes = DB::table('avaliacoes')
-            ->whereNotIn('id', function ($query) use ($alunoId) {
-                $query->select('avaliacao_id')
-                      ->from('notas')
-                      ->where('aluno_id', $alunoId);
+            ->leftJoin('aulas_assistidas', function ($join) use ($alunoId) {
+                $join->on('avaliacoes.aula_id', '=', 'aulas_assistidas.aula_id')
+                    ->where('aulas_assistidas.aluno_id', $alunoId);
             })
+            ->whereNotIn('avaliacoes.id', function ($query) use ($alunoId) {
+                $query->select('avaliacao_id')
+                    ->from('notas')
+                    ->where('aluno_id', $alunoId);
+            })
+            ->select(
+                'avaliacoes.*',
+                DB::raw('IF(aulas_assistidas.assistido = 1, true, false) as assistido')
+            )
             ->limit(3)
             ->get();
 

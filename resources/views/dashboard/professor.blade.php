@@ -7,15 +7,29 @@
 <div class="flex min-h-screen bg-[#0B1120] text-white">
 
     <!-- SIDEBAR -->
-    <aside class="w-64 bg-[#0F172A] p-6">
-        <h1 class="text-xl font-bold mb-8">ResidentEAD</h1>
+    <aside class="w-64 bg-[#0F172A] p-6 flex flex-col justify-between h-screen">
+        <!-- LINKS NO TOPO -->
+        <div>
+            <h1 class="text-xl font-bold mb-8">ResidentEAD</h1>
 
-        <nav class="space-y-4">
-            <a href="{{ route('dashboard.professor') }}" class="block bg-blue-600 p-2 rounded">Dashboard</a>
-            <a href="{{ route('videoaulas') }}" class="block hover:text-blue-400">Videoaulas</a>
-            <a href="{{ route('postestes') }}" class="block hover:text-blue-400">Pós-testes</a>
-            <a href="{{ route('alunos') }}" class="block hover:text-blue-400">Alunos</a>
-        </nav>
+            <nav class="space-y-4">
+                <a href="{{ route('dashboard.professor') }}" class="block bg-blue-600 p-2 rounded">Dashboard</a>
+                <a href="{{ route('videoaulas') }}" class="block hover:text-blue-400">Videoaulas</a>
+                <a href="{{ route('postestes') }}" class="block hover:text-blue-400">Pós-testes</a>
+                <a href="{{ route('alunos') }}" class="block hover:text-blue-400">Alunos</a>
+            </nav>
+        </div>
+
+        <!-- PERFIL NA PARTE DE BAIXO -->
+        <div class="text-center mt-6">
+            <img 
+                src="{{ auth()->user()->foto ? asset('storage/' . auth()->user()->foto) : asset('images/usuario-padrao.png') }}" 
+                alt="Foto do Usuário"
+                class="w-20 h-20 mx-auto rounded-full object-cover mb-2"
+            >
+            <h2 class="font-bold">{{ auth()->user()->name }}</h2>
+            <span class="text-sm text-gray-400">{{ ucfirst(auth()->user()->tipo) }}</span>
+        </div>
     </aside>
 
     <!-- CONTEÚDO -->

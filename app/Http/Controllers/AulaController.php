@@ -28,7 +28,6 @@ class AulaController extends Controller
 
         try {
 
-            // ✅ VALIDAÇÃO CORRIGIDA
             $request->validate([
                 'titulo' => 'required',
                 'descricao' => 'required',
@@ -37,7 +36,7 @@ class AulaController extends Controller
                 'perguntas' => 'required|array'
             ]);
 
-            // 🔥 CONVERTER YOUTUBE
+            // 🔥 Converter YouTube
             $video = $request->video_url;
 
             if (str_contains($video, 'watch?v=')) {
@@ -48,15 +47,15 @@ class AulaController extends Controller
                 $video = str_replace('youtu.be/', 'www.youtube.com/embed/', $video);
             }
 
-            // ✅ CRIAR AULA
+            // ✅ Criar aula
             $aula = Aula::create([
                 'titulo' => $request->titulo,
                 'descricao' => $request->descricao,
                 'video_url' => $video,
-                'curso_id' => 1 // depois podemos melhorar isso
+                'curso_id' => 1
             ]);
 
-            // ✅ CRIAR AVALIAÇÃO
+            // ✅ Criar avaliação
             $avaliacao = Avaliacao::create([
                 'titulo' => $request->avaliacao['titulo'],
                 'aula_id' => $aula->id,
@@ -64,7 +63,7 @@ class AulaController extends Controller
                 'qtd_perguntas' => count($request->perguntas)
             ]);
 
-            // ✅ PERGUNTAS
+            // ✅ Perguntas e respostas
             foreach ($request->perguntas as $perguntaData) {
 
                 $pergunta = Pergunta::create([
@@ -95,6 +94,7 @@ class AulaController extends Controller
         }
     }
 
+    // 🔥 MARCAR COMO ASSISTIDA
     public function assistir($id)
     {
         DB::table('aulas_assistidas')->updateOrInsert(
@@ -109,5 +109,41 @@ class AulaController extends Controller
         );
 
         return response()->json(['success' => true]);
+    }
+
+    // 🔥 EXCLUIR AULA COMPLETA
+    public function destroy($id)
+    {
+        DB::beginTransaction();
+
+        try {
+
+            $avaliacoes = Avaliacao::where('aula_id', $id)->get();
+
+            foreach ($avaliacoes as $avaliacao) {
+
+                $perguntas = Pergunta::where('avaliacao_id', $avaliacao->id)->get();
+
+                foreach ($perguntas as $pergunta) {
+                    Resposta::where('pergunta_id', $pergunta->id)->delete();
+                }
+
+                Pergunta::where('avaliacao_id', $avaliacao->id)->delete();
+            }
+
+            Avaliacao::where('aula_id', $id)->delete();
+
+            Aula::destroy($id);
+
+            DB::commit();
+
+            return back()->with('success', 'Aula excluída com sucesso!');
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return back()->with('error', 'Erro ao excluir aula!');
+        }
     }
 }

@@ -32,7 +32,6 @@ Route::get('/cadastro-aluno', function () {
 Route::post('/salvar-aluno', [UserController::class, 'salvarAluno'])
     ->name('salvar.aluno');
 
-
 /*
 |--------------------------------------------------------------------------
 | ROTAS PROTEGIDAS
@@ -57,9 +56,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/videoaulas', [AulaController::class, 'store'])
         ->name('aulas.store');
 
-    // 🔥 NOVA ROTA (ASSISTIR)
     Route::get('/assistir-aula/{id}', [AulaController::class, 'assistir'])
         ->name('aulas.assistir');
+
+    Route::delete('/aulas/{id}', [AulaController::class, 'destroy'])->name('aulas.destroy');
 
     // AVALIAÇÕES
     Route::get('/avaliacoes/criar/{aula}', [AvaliacaoController::class, 'create'])
@@ -68,11 +68,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/avaliacoes', [AvaliacaoController::class, 'store'])
         ->name('avaliacoes.store');
 
+    // Mostrar avaliação para o aluno
     Route::get('/avaliacoes/{id}', [AvaliacaoController::class, 'show'])
         ->name('avaliacoes.show');
 
-    Route::post('/avaliacoes/responder', [AvaliacaoController::class, 'responder'])
-        ->name('avaliacoes.responder');
+    // Submeter respostas do aluno
+    Route::post('/avaliacoes/{id}/submit', [AvaliacaoController::class, 'responder'])
+        ->name('avaliacoes.submit');
 
     // FUTURO
     Route::get('/postestes', fn() => view('dashboard.postestes'))->name('postestes');

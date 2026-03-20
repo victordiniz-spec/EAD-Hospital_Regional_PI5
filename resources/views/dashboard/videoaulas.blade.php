@@ -21,53 +21,77 @@
     <!-- CONTEÚDO -->
     <main class="flex-1 p-8">
 
-        <!-- TÍTULO + BOTÃO -->
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold">Videoaulas</h2>
 
             <a href="{{ route('aulas.criar') }}"
-               class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition">
+               class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">
                 + Adicionar Aula
             </a>
         </div>
 
-        <!-- MENSAGEM DE SUCESSO -->
+        <!-- ALERTAS MODERNOS -->
         @if(session('success'))
-            <div class="bg-green-600 p-3 rounded mb-4">
-                {{ session('success') }}
-            </div>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: 'Sucesso!',
+                text: '{{ session('success') }}'
+            });
+        </script>
         @endif
 
-        <!-- GRID DE AULAS -->
+        @if(session('error'))
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro!',
+                text: '{{ session('error') }}'
+            });
+        </script>
+        @endif
+
+        <!-- GRID -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
             @forelse($aulas as $aula)
                 <div class="bg-[#1E293B] p-4 rounded-xl shadow">
 
-                    <!-- TÍTULO -->
                     <h3 class="text-lg font-bold mb-2">
                         {{ $aula->titulo }}
                     </h3>
 
-                    <!-- DESCRIÇÃO -->
                     <p class="text-sm text-gray-300 mb-4">
                         {{ $aula->descricao }}
                     </p>
 
-                    <!-- BOTÕES -->
                     <div class="flex flex-wrap gap-2">
 
-                        <!-- ✅ ASSISTIR (AGORA FUNCIONANDO) -->
+                        <!-- Assistir -->
                         <a href="{{ route('aulas.assistir', $aula->id) }}"
                            class="bg-blue-600 px-3 py-1 rounded text-sm hover:bg-blue-700">
                             Assistir
                         </a>
 
-                        <!-- CRIAR PÓS-TESTE -->
+                        <!-- Pós-teste -->
                         <a href="{{ route('avaliacoes.criar', $aula->id) }}"
                            class="bg-purple-600 px-3 py-1 rounded text-sm hover:bg-purple-700">
                             Pós-teste
                         </a>
+
+                        <!-- 🔥 EXCLUIR -->
+                        <form action="{{ route('aulas.destroy', $aula->id) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+
+                            <button type="button"
+                                onclick="confirmarExclusao(this)"
+                                class="bg-red-600 px-3 py-1 rounded text-sm hover:bg-red-700">
+                                Excluir
+                            </button>
+                        </form>
 
                     </div>
 
@@ -81,5 +105,28 @@
     </main>
 
 </div>
+
+<!-- SWEET ALERT -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+function confirmarExclusao(botao) {
+
+    Swal.fire({
+        title: 'Tem certeza?',
+        text: "Essa aula será excluída!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#2563eb',
+        confirmButtonText: 'Sim, excluir',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            botao.closest('form').submit();
+        }
+    });
+}
+</script>
 
 @endsection

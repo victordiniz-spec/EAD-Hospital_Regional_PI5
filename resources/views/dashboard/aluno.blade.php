@@ -7,15 +7,35 @@
 <div class="flex min-h-screen bg-[#0B1120] text-white">
 
     <!-- SIDEBAR -->
-    <aside class="w-64 bg-[#0F172A] p-6">
-        <h1 class="text-xl font-bold mb-8">ResidentEAD</h1>
+    <aside class="w-64 bg-[#0F172A] p-6 flex flex-col justify-between h-screen">
+        <!-- LINKS NO TOPO -->
+        <div>
+            <h1 class="text-xl font-bold mb-8">ResidentEAD</h1>
 
-        <nav class="space-y-4">
-            <a href="{{ route('dashboard.aluno') }}" class="block bg-blue-600 p-2 rounded">Dashboard</a>
-            <a href="#" class="block hover:text-blue-400">Minhas Aulas</a>
-            <a href="#" class="block hover:text-blue-400">Pós-testes</a>
-            <a href="#" class="block hover:text-blue-400">Desempenho</a>
-        </nav>
+            <nav class="space-y-4">
+                <a href="{{ route('dashboard.aluno') }}" class="block bg-blue-600 p-2 rounded">Dashboard</a>
+                <a href="#" class="block hover:text-blue-400">Minhas Aulas</a>
+                <a href="#" class="block hover:text-blue-400">Pós-testes</a>
+                <a href="#" class="block hover:text-blue-400">Desempenho</a>
+            </nav>
+        </div>
+
+        <!-- PERFIL NA PARTE DE BAIXO -->
+        <div class="text-center mt-6">
+            @php
+                // Ajuste do caminho da foto do usuário
+                $fotoUsuario = auth()->user()->foto 
+                    ? asset('storage/' . auth()->user()->foto) 
+                    : asset('images/usuario-padrao.png');
+            @endphp
+            <img 
+                src="{{ $fotoUsuario }}" 
+                alt="Foto do Usuário"
+                class="w-20 h-20 mx-auto rounded-full object-cover mb-2"
+            >
+            <h2 class="font-bold">{{ auth()->user()->name }}</h2>
+            <span class="text-sm text-gray-400">{{ ucfirst(auth()->user()->tipo) }}</span>
+        </div>
     </aside>
 
     <!-- CONTEÚDO -->
@@ -98,7 +118,19 @@
             @forelse($listaTestes as $teste)
                 <div class="mb-4 flex justify-between items-center">
                     <span>{{ $teste->titulo }}</span>
-                    <a href="#" class="bg-blue-500 px-4 py-2 rounded">Fazer Teste</a>
+
+                    @if($teste->assistido)
+                        <a href="{{ route('avaliacoes.show', $teste->id) }}"
+                           class="bg-blue-500 px-4 py-2 rounded">
+                            Fazer Teste
+                        </a>
+                    @else
+                        <button onclick="bloqueado()"
+                            class="bg-gray-500 px-4 py-2 rounded cursor-not-allowed">
+                            🔒 Bloqueado
+                        </button>
+                    @endif
+
                 </div>
             @empty
                 <p>Nenhum teste pendente</p>
@@ -140,17 +172,39 @@
     </div>
 </div>
 
+<!-- SWEETALERT -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- ALERTAS -->
+@if(session('success'))
+<script>
+Swal.fire({
+    icon: 'success',
+    title: 'Sucesso!',
+    text: "{{ session('success') }}",
+    confirmButtonColor: '#2563eb'
+});
+</script>
+@endif
+
+@if(session('error'))
+<script>
+Swal.fire({
+    icon: 'error',
+    title: 'Ops...',
+    text: "{{ session('error') }}",
+    confirmButtonColor: '#dc2626'
+});
+</script>
+@endif
+
 <!-- SCRIPT -->
 <script>
 let aulaIdAtual = null;
 
 function abrirModal(url, aulaId) {
-
     aulaIdAtual = aulaId;
-
-    // 🔥 AGORA USA DIRETO (SEM CONVERSÃO)
     document.getElementById('videoFrame').src = url;
-
     document.getElementById('modalVideo').classList.remove('hidden');
     document.getElementById('modalVideo').classList.add('flex');
 }
@@ -165,6 +219,16 @@ function marcarAssistida() {
         .then(() => {
             location.reload();
         });
+}
+
+// 🔒 ALERTA DE BLOQUEIO
+function bloqueado() {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Acesso Bloqueado',
+        text: 'Você precisa assistir a aula antes de fazer o teste.',
+        confirmButtonColor: '#2563eb'
+    });
 }
 </script>
 

@@ -13,4 +13,10 @@ class Resposta extends Model
         'correta',
         'pergunta_id'
     ];
+
+    // 🔥 RELAÇÃO COM PERGUNTA
+    public function pergunta()
+    {
+        return $this->belongsTo(Pergunta::class, 'pergunta_id');
+    }
 }

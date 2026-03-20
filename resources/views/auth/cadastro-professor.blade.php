@@ -10,8 +10,7 @@
 Cadastro de Professor
 </h2>
 
-<form method="POST" action="/salvar-professor">
-
+<form method="POST" action="/salvar-professor" enctype="multipart/form-data">
 @csrf
 
 <input 
@@ -38,10 +37,17 @@ class="w-full border p-2 mb-4"
 required
 >
 
+<!-- CAMPO FOTO -->
+<label class="mb-2 block">Foto do Professor</label>
+<input 
+type="file" 
+name="foto" 
+accept="image/*" 
+class="w-full border p-2 mb-4"
+>
+
 <button class="w-full bg-blue-600 text-white p-2 rounded">
-
 Cadastrar Professor
-
 </button>
 
 </form>

@@ -10,6 +10,8 @@ php artisan serve
 2. Iniciar o Vite (frontend):
 npm run dev
 
+localhost:8000
+
 ⚠️ Sempre rodar os dois ao mesmo tempo!
 
 ---------------------------------
