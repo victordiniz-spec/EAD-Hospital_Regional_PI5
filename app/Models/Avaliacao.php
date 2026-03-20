@@ -9,12 +9,16 @@ class Avaliacao extends Model
 {
     use HasFactory;
 
-    // Nome da tabela no banco
     protected $table = 'avaliacoes';
 
-    // Colunas preenchíveis
     protected $fillable = [
         'titulo',
+        'tempo_limite',
         'aula_id'
     ];
+
+    public function perguntas()
+    {
+        return $this->hasMany(Pergunta::class, 'avaliacao_id');
+    }
 }

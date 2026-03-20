@@ -57,9 +57,8 @@
                     <!-- BOTÕES -->
                     <div class="flex flex-wrap gap-2">
 
-                        <!-- VER AULA -->
-                        <a href="{{ $aula->video_url }}"
-                           target="_blank"
+                        <!-- ✅ ASSISTIR (AGORA FUNCIONANDO) -->
+                        <a href="{{ route('aulas.assistir', $aula->id) }}"
                            class="bg-blue-600 px-3 py-1 rounded text-sm hover:bg-blue-700">
                             Assistir
                         </a>

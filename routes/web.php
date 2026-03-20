@@ -1,96 +1,80 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AulaController;
 use App\Http\Controllers\AvaliacaoController;
 
-// ------------------------
-// LOGIN
-// ------------------------
+/*
+|--------------------------------------------------------------------------
+| ROTAS PÚBLICAS
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/', function () {
     return view('auth.login');
-});
+})->name('login');
 
-Route::post('/login', [UserController::class, 'login']);
+Route::post('/login', [UserController::class, 'login'])->name('login.post');
 
 Route::post('/logout', function () {
-    \Illuminate\Support\Facades\Auth::logout();
+    Auth::logout();
     return redirect('/');
-});
+})->name('logout');
 
-// ------------------------
-// CADASTRO DE ALUNO
-// ------------------------
 Route::get('/cadastro-aluno', function () {
     return view('auth.cadastro-aluno');
+})->name('cadastro.aluno');
+
+Route::post('/salvar-aluno', [UserController::class, 'salvarAluno'])
+    ->name('salvar.aluno');
+
+
+/*
+|--------------------------------------------------------------------------
+| ROTAS PROTEGIDAS
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->group(function () {
+
+    // DASHBOARDS
+    Route::get('/dashboard-aluno', [DashboardController::class, 'aluno'])
+        ->name('dashboard.aluno');
+
+    Route::get('/dashboard-professor', [DashboardController::class, 'professor'])
+        ->name('dashboard.professor');
+
+    // VIDEOAULAS
+    Route::get('/videoaulas', [AulaController::class, 'index'])
+        ->name('videoaulas');
+
+    Route::get('/videoaulas/criar', [AulaController::class, 'create'])
+        ->name('aulas.criar');
+
+    Route::post('/videoaulas', [AulaController::class, 'store'])
+        ->name('aulas.store');
+
+    // 🔥 NOVA ROTA (ASSISTIR)
+    Route::get('/assistir-aula/{id}', [AulaController::class, 'assistir'])
+        ->name('aulas.assistir');
+
+    // AVALIAÇÕES
+    Route::get('/avaliacoes/criar/{aula}', [AvaliacaoController::class, 'create'])
+        ->name('avaliacoes.criar');
+
+    Route::post('/avaliacoes', [AvaliacaoController::class, 'store'])
+        ->name('avaliacoes.store');
+
+    Route::get('/avaliacoes/{id}', [AvaliacaoController::class, 'show'])
+        ->name('avaliacoes.show');
+
+    Route::post('/avaliacoes/responder', [AvaliacaoController::class, 'responder'])
+        ->name('avaliacoes.responder');
+
+    // FUTURO
+    Route::get('/postestes', fn() => view('dashboard.postestes'))->name('postestes');
+    Route::get('/alunos', fn() => view('dashboard.alunos'))->name('alunos');
 });
-
-Route::post('/salvar-aluno', [UserController::class, 'salvarAluno']);
-
-// ------------------------
-// DASHBOARD ALUNO
-// ------------------------
-Route::get('/dashboard-aluno', function () {
-    return view('dashboard.aluno');
-})->middleware('auth')->name('dashboard.aluno');
-
-// ------------------------
-// DASHBOARD PROFESSOR
-// ------------------------
-Route::get('/dashboard-professor', [DashboardController::class, 'professor'])
-    ->middleware('auth')
-    ->name('dashboard.professor');
-
-// ------------------------
-// VIDEOAULAS
-// ------------------------
-Route::get('/videoaulas', [AulaController::class, 'index'])
-    ->middleware('auth')
-    ->name('videoaulas');
-
-// CRIAR AULA
-Route::get('/videoaulas/criar', [AulaController::class, 'create'])
-    ->middleware('auth')
-    ->name('aulas.criar');
-
-// SALVAR AULA
-Route::post('/videoaulas', [AulaController::class, 'store'])
-    ->middleware('auth')
-    ->name('aulas.store');
-
-// ------------------------
-// AVALIAÇÕES (PÓS-TESTE)
-// ------------------------
-
-// PROFESSOR - CRIAR AVALIAÇÃO
-Route::get('/avaliacoes/criar/{aula}', [AvaliacaoController::class, 'create'])
-    ->middleware('auth')
-    ->name('avaliacoes.criar');
-
-// SALVAR AVALIAÇÃO
-Route::post('/avaliacoes', [AvaliacaoController::class, 'store'])
-    ->middleware('auth')
-    ->name('avaliacoes.store');
-
-// ALUNO - VISUALIZAR TESTE
-Route::get('/avaliacoes/{id}', [AvaliacaoController::class, 'show'])
-    ->middleware('auth')
-    ->name('avaliacoes.show');
-
-// ALUNO - RESPONDER TESTE
-Route::post('/avaliacoes/responder', [AvaliacaoController::class, 'responder'])
-    ->middleware('auth')
-    ->name('avaliacoes.responder');
-
-// ------------------------
-// FUTURAS TELAS
-// ------------------------
-Route::get('/postestes', function () {
-    return view('dashboard.postestes');
-})->middleware('auth')->name('postestes');
-
-Route::get('/alunos', function () {
-    return view('dashboard.alunos');
-})->middleware('auth')->name('alunos');
