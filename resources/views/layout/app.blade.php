@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" class="bg-slate-950">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,11 +9,11 @@
 
 </head>
 
-<body class="bg-gray-100">
+<body class="bg-slate-950 text-white">
 
 @include('components.navbar')
 
-<div class="container mx-auto mt-10">
+<div class="w-full min-h-screen">
 
     @yield('content')
 
