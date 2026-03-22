@@ -79,4 +79,6 @@ Route::middleware('auth')->group(function () {
     // FUTURO
     Route::get('/postestes', fn() => view('dashboard.postestes'))->name('postestes');
     Route::get('/alunos', fn() => view('dashboard.alunos'))->name('alunos');
+
+    Route::get('/alunos', [DashboardController::class, 'alunos'])->name('alunos');
 });

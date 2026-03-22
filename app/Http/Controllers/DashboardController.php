@@ -10,6 +10,7 @@ use App\Models\Nota;
 
 class DashboardController extends Controller
 {
+    // DASHBOARD PROFESSOR
     public function professor()
     {
         $totalAulas = Aula::count();
@@ -27,6 +28,26 @@ class DashboardController extends Controller
         ));
     }
 
+    // 🔥 NOVA TELA DE ALUNOS (CORRIGE SEU ERRO)
+    public function alunos()
+    {
+        $alunos = User::where('tipo', 'aluno')
+            ->leftJoin('notas', 'users.id', '=', 'notas.aluno_id')
+            ->leftJoin('aulas_assistidas', 'users.id', '=', 'aulas_assistidas.aluno_id')
+            ->select(
+                'users.id',
+                'users.name',
+                'users.foto',
+                DB::raw('MAX(notas.nota) as nota'),
+                DB::raw('MAX(aulas_assistidas.assistido) as assistido')
+            )
+            ->groupBy('users.id', 'users.name', 'users.foto')
+            ->get();
+
+        return view('dashboard.alunos', compact('alunos'));
+    }
+
+    // DASHBOARD ALUNO
     public function aluno()
     {
         $alunoId = auth()->id();
@@ -38,7 +59,7 @@ class DashboardController extends Controller
             ->where('matriculas.aluno_id', $alunoId)
             ->count();
 
-        // AULAS ASSISTIDAS (TOTAL)
+        // AULAS ASSISTIDAS
         $aulasAssistidas = DB::table('aulas_assistidas')
             ->where('aluno_id', $alunoId)
             ->count();
@@ -62,7 +83,7 @@ class DashboardController extends Controller
             ->where('aluno_id', $alunoId)
             ->avg('nota') ?? 0;
 
-        // PRÓXIMAS AULAS (NÃO ASSISTIDAS)
+        // PRÓXIMAS AULAS
         $proximasAulas = DB::table('aulas')
             ->whereNotIn('id', function ($query) use ($alunoId) {
                 $query->select('aula_id')
@@ -72,7 +93,7 @@ class DashboardController extends Controller
             ->limit(3)
             ->get();
 
-        // 🔥 AULAS ASSISTIDAS (LISTA NOVA)
+        // AULAS ASSISTIDAS (LISTA)
         $aulasAssistidasLista = DB::table('aulas')
             ->join('aulas_assistidas', 'aulas.id', '=', 'aulas_assistidas.aula_id')
             ->where('aulas_assistidas.aluno_id', $alunoId)
@@ -80,16 +101,16 @@ class DashboardController extends Controller
             ->limit(3)
             ->get();
 
-        // LISTA DE TESTES
+        // TESTES
         $listaTestes = DB::table('avaliacoes')
             ->leftJoin('aulas_assistidas', function ($join) use ($alunoId) {
                 $join->on('avaliacoes.aula_id', '=', 'aulas_assistidas.aula_id')
-                    ->where('aulas_assistidas.aluno_id', $alunoId);
+                     ->where('aulas_assistidas.aluno_id', $alunoId);
             })
             ->whereNotIn('avaliacoes.id', function ($query) use ($alunoId) {
                 $query->select('avaliacao_id')
-                    ->from('notas')
-                    ->where('aluno_id', $alunoId);
+                      ->from('notas')
+                      ->where('aluno_id', $alunoId);
             })
             ->select(
                 'avaliacoes.*',
@@ -105,7 +126,7 @@ class DashboardController extends Controller
             'testesPendentes',
             'media',
             'proximasAulas',
-            'aulasAssistidasLista', // 🔥 IMPORTANTE
+            'aulasAssistidasLista',
             'listaTestes'
         ));
     }

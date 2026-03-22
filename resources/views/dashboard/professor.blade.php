@@ -8,7 +8,6 @@
 
     <!-- SIDEBAR -->
     <aside class="w-64 bg-[#0F172A] p-6 flex flex-col justify-between h-screen">
-        <!-- LINKS NO TOPO -->
         <div>
             <h1 class="text-xl font-bold mb-8">ResidentEAD</h1>
 
@@ -20,11 +19,9 @@
             </nav>
         </div>
 
-        <!-- PERFIL NA PARTE DE BAIXO -->
         <div class="text-center mt-6">
             <img 
                 src="{{ auth()->user()->foto ? asset('storage/' . auth()->user()->foto) : asset('images/usuario-padrao.png') }}" 
-                alt="Foto do Usuário"
                 class="w-20 h-20 mx-auto rounded-full object-cover mb-2"
             >
             <h2 class="font-bold">{{ auth()->user()->name }}</h2>
@@ -39,7 +36,6 @@
 
         <!-- CARDS -->
         <div class="grid grid-cols-4 gap-6 mb-8">
-
             <div class="bg-[#1E293B] p-6 rounded-xl">
                 <p>Total de Aulas</p>
                 <h3 class="text-3xl font-bold">{{ $totalAulas }}</h3>
@@ -59,10 +55,9 @@
                 <p>Média Geral</p>
                 <h3 class="text-3xl font-bold">{{ number_format($mediaGeral, 2) }}</h3>
             </div>
-
         </div>
 
-        <!-- LISTA DE AULAS RECENTES -->
+        <!-- LISTA DE AULAS -->
         <div class="bg-[#1E293B] p-6 rounded-xl">
             <h3 class="mb-4">Videoaulas Recentes</h3>
 

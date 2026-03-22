@@ -4,59 +4,60 @@
 
 @section('content')
 
-<div class="min-h-screen flex items-center justify-center bg-gray-100">
+<div class="w-full max-w-md bg-[#1E293B] p-8 rounded-2xl shadow-xl border border-slate-700">
 
-<div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
-
-<h2 class="text-3xl font-bold mb-6 text-center text-blue-600">
-Sistema EAD
-</h2>
-
-<p class="text-center text-gray-500 mb-6">
-Acesse sua conta
-</p>
-
-{{-- ERRO --}}
-@if(session('erro'))
-    <div class="bg-red-100 text-red-700 p-2 mb-4 rounded text-center">
-        {{ session('erro') }}
+    <div class="flex justify-center mb-4">
+        <div class="bg-blue-600 p-3 rounded-full text-xl">
+            🔐
+        </div>
     </div>
-@endif
 
-{{-- SUCESSO --}}
-@if(session('success'))
-    <div class="bg-green-100 text-green-700 p-2 mb-4 rounded text-center">
-        {{ session('success') }}
-    </div>
-@endif
+    <h2 class="text-3xl font-bold mb-2 text-center">
+        Sistema EAD
+    </h2>
 
-<form method="POST" action="/login">
-    @csrf
+    <p class="text-gray-400 text-center mb-6">
+        Acesse sua conta
+    </p>
 
-    <input
-    type="email"
-    name="email"
-    value="{{ old('email') }}"
-    placeholder="Email"
-    class="w-full border border-gray-300 p-3 mb-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-    required
-    >
+    @if(session('erro'))
+        <div class="bg-red-500/20 text-red-400 p-3 mb-4 rounded text-center border border-red-500">
+            {{ session('erro') }}
+        </div>
+    @endif
 
-    <input
-    type="password"
-    name="password"
-    placeholder="Senha"
-    class="w-full border border-gray-300 p-3 mb-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-    required
-    >
+    @if(session('success'))
+        <div class="bg-green-500/20 text-green-400 p-3 mb-4 rounded text-center border border-green-500">
+            {{ session('success') }}
+        </div>
+    @endif
 
-    <button class="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700 transition">
-        Entrar
-    </button>
+    <form method="POST" action="/login" class="space-y-4">
+        @csrf
 
-</form>
+        <input
+            type="email"
+            name="email"
+            value="{{ old('email') }}"
+            placeholder="Digite seu email"
+            class="w-full bg-slate-900 text-white border border-slate-700 p-3 rounded-lg 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+            required
+        >
 
-</div>
+        <input
+            type="password"
+            name="password"
+            placeholder="Digite sua senha"
+            class="w-full bg-slate-900 text-white border border-slate-700 p-3 rounded-lg 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+            required
+        >
+
+        <button class="w-full bg-blue-600 hover:bg-blue-700 transition p-3 rounded-lg font-semibold">
+            Entrar
+        </button>
+    </form>
 
 </div>
 

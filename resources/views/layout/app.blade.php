@@ -8,14 +8,15 @@
     @vite('resources/css/app.css')
 </head>
 
-<body class="bg-slate-950 text-white min-h-screen flex flex-col">
+<body class="bg-slate-950 text-white">
 
 @include('components.navbar')
 
-<!-- CONTEÚDO -->
-<main class="flex-1 flex items-center justify-center px-4">
+<div class="w-full min-h-screen flex items-center justify-center">
+
     @yield('content')
-</main>
+
+</div>
 
 @include('components.footer')
 
