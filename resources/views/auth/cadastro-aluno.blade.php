@@ -4,23 +4,27 @@
 
 @section('content')
 
-<div class="max-w-md mx-auto bg-white p-8 rounded shadow">
+<div class="w-full max-w-md bg-[#1E293B] p-8 rounded-2xl shadow-xl border border-slate-700">
 
-    <h2 class="text-2xl font-bold mb-6 text-center">
-        Cadastro de Aluno
+    <h2 class="text-3xl font-bold mb-6 text-center">
+        Criar Conta 👨‍🎓
     </h2>
+
+    <p class="text-gray-400 text-center mb-6">
+        Preencha os dados para se cadastrar
+    </p>
 
     <!-- ALERTA DE SUCESSO -->
     @if(session('success'))
-        <div class="bg-green-100 text-green-800 p-2 rounded mb-4 text-center">
+        <div class="bg-green-500/20 text-green-400 p-3 rounded mb-4 text-center border border-green-500">
             {{ session('success') }}
         </div>
     @endif
 
     <!-- ALERTA DE ERRO -->
     @if($errors->any())
-        <div class="bg-red-100 text-red-800 p-2 rounded mb-4">
-            <ul class="list-disc list-inside">
+        <div class="bg-red-500/20 text-red-400 p-3 rounded mb-4 border border-red-500">
+            <ul class="list-disc list-inside text-sm">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -28,46 +32,60 @@
         </div>
     @endif
 
-    <form method="POST" action="/salvar-aluno" enctype="multipart/form-data">
+    <form method="POST" action="/salvar-aluno" enctype="multipart/form-data" class="space-y-4">
         @csrf
 
+        <!-- NOME -->
         <input 
             type="text" 
             name="nome" 
-            placeholder="Nome" 
-            class="w-full border p-2 mb-4"
+            placeholder="Nome completo"
+            class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
         >
 
+        <!-- EMAIL -->
         <input 
             type="email" 
             name="email" 
-            placeholder="Email" 
-            class="w-full border p-2 mb-4"
+            placeholder="Email"
+            class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
         >
 
+        <!-- SENHA -->
         <input 
             type="password" 
             name="senha" 
-            placeholder="Senha" 
-            class="w-full border p-2 mb-4"
+            placeholder="Senha"
+            class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
         >
 
-        <!-- CAMPO FOTO -->
-        <label class="mb-2 block">Foto do Aluno</label>
-        <input 
-            type="file" 
-            name="foto" 
-            accept="image/*" 
-            class="w-full border p-2 mb-4"
-        >
+        <!-- FOTO -->
+        <div>
+            <label class="block text-sm text-gray-400 mb-2">
+                Foto de Perfil
+            </label>
 
-        <button class="w-full bg-green-600 text-white p-2 rounded">
-            Cadastrar Aluno
+            <input 
+                type="file" 
+                name="foto" 
+                accept="image/*"
+                class="w-full text-sm text-gray-400
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-lg file:border-0
+                file:bg-blue-600 file:text-white
+                hover:file:bg-blue-700"
+            >
+        </div>
+
+        <!-- BOTÃO -->
+        <button class="w-full bg-blue-600 hover:bg-blue-700 transition p-3 rounded-lg font-semibold">
+            Criar Conta
         </button>
     </form>
+
 </div>
 
 @endsection

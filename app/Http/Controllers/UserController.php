@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -20,14 +19,15 @@ class UserController extends Controller
         ]);
 
         $fotoPath = null;
+
         if ($request->hasFile('foto')) {
-            $fotoPath = $request->file('foto')->store('fotos', 'public');
+            $fotoPath = $request->file('foto')->store('foto', 'public'); // ✅ corrigido
         }
 
         User::create([
-            'name' => $request->nome,                  // nome do input -> coluna 'name'
+            'name' => $request->nome,
             'email' => $request->email,
-            'password' => bcrypt($request->senha),     // senha do input -> coluna 'password'
+            'password' => bcrypt($request->senha),
             'tipo' => 'aluno',
             'foto' => $fotoPath
         ]);
@@ -46,8 +46,9 @@ class UserController extends Controller
         ]);
 
         $fotoPath = null;
+
         if ($request->hasFile('foto')) {
-            $fotoPath = $request->file('foto')->store('fotos', 'public');
+            $fotoPath = $request->file('foto')->store('foto', 'public'); // ✅ corrigido
         }
 
         User::create([
