@@ -14,23 +14,27 @@ use App\Http\Controllers\AvaliacaoController;
 |--------------------------------------------------------------------------
 */
 
+// LOGIN
 Route::get('/', function () {
     return view('auth.login');
 })->name('login');
 
 Route::post('/login', [UserController::class, 'login'])->name('login.post');
 
+// LOGOUT
 Route::post('/logout', function () {
     Auth::logout();
     return redirect('/');
 })->name('logout');
 
+// CADASTRO
 Route::get('/cadastro-aluno', function () {
     return view('auth.cadastro-aluno');
 })->name('cadastro.aluno');
 
 Route::post('/salvar-aluno', [UserController::class, 'salvarAluno'])
     ->name('salvar.aluno');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -39,14 +43,27 @@ Route::post('/salvar-aluno', [UserController::class, 'salvarAluno'])
 */
 Route::middleware('auth')->group(function () {
 
+    // =========================
     // DASHBOARDS
+    // =========================
     Route::get('/dashboard-aluno', [DashboardController::class, 'aluno'])
         ->name('dashboard.aluno');
 
     Route::get('/dashboard-professor', [DashboardController::class, 'professor'])
         ->name('dashboard.professor');
 
+    // =========================
+    // APROVAÇÃO DE USUÁRIOS 🔥
+    // =========================
+    Route::post('/aprovar-usuario/{id}', [UserController::class, 'aprovar'])
+        ->name('aprovar.usuario');
+
+    Route::post('/rejeitar-usuario/{id}', [UserController::class, 'rejeitar'])
+        ->name('rejeitar.usuario');
+
+    // =========================
     // VIDEOAULAS
+    // =========================
     Route::get('/videoaulas', [AulaController::class, 'index'])
         ->name('videoaulas');
 
@@ -59,26 +76,33 @@ Route::middleware('auth')->group(function () {
     Route::get('/assistir-aula/{id}', [AulaController::class, 'assistir'])
         ->name('aulas.assistir');
 
-    Route::delete('/aulas/{id}', [AulaController::class, 'destroy'])->name('aulas.destroy');
+    Route::delete('/aulas/{id}', [AulaController::class, 'destroy'])
+        ->name('aulas.destroy');
 
+    // =========================
     // AVALIAÇÕES
+    // =========================
     Route::get('/avaliacoes/criar/{aula}', [AvaliacaoController::class, 'create'])
         ->name('avaliacoes.criar');
 
     Route::post('/avaliacoes', [AvaliacaoController::class, 'store'])
         ->name('avaliacoes.store');
 
-    // Mostrar avaliação para o aluno
     Route::get('/avaliacoes/{id}', [AvaliacaoController::class, 'show'])
         ->name('avaliacoes.show');
 
-    // Submeter respostas do aluno
     Route::post('/avaliacoes/{id}/submit', [AvaliacaoController::class, 'responder'])
         ->name('avaliacoes.submit');
 
-    // FUTURO
-    Route::get('/postestes', fn() => view('dashboard.postestes'))->name('postestes');
-    Route::get('/alunos', fn() => view('dashboard.alunos'))->name('alunos');
+    // =========================
+    // ALUNOS
+    // =========================
+    Route::get('/alunos', [DashboardController::class, 'alunos'])
+        ->name('alunos');
 
-    Route::get('/alunos', [DashboardController::class, 'alunos'])->name('alunos');
+    // =========================
+    // FUTURO
+    // =========================
+    Route::get('/postestes', fn() => view('dashboard.postestes'))
+        ->name('postestes');
 });

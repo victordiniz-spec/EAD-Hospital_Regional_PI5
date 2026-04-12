@@ -19,11 +19,11 @@
             </nav>
         </div>
 
+        <!-- USUÁRIO -->
         <div class="text-center mt-6">
-            <img 
-                src="{{ auth()->user()->foto ? asset('storage/' . auth()->user()->foto) : asset('images/usuario-padrao.png') }}" 
-                class="w-20 h-20 mx-auto rounded-full object-cover mb-2"
-            >
+            <div class="w-20 h-20 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-3xl mb-2">
+                👤
+            </div>
             <h2 class="font-bold">{{ auth()->user()->name }}</h2>
             <span class="text-sm text-gray-400">{{ ucfirst(auth()->user()->tipo) }}</span>
         </div>
@@ -33,6 +33,61 @@
     <main class="flex-1 p-8">
 
         <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
+
+        <!-- ALERTA DE SUCESSO -->
+        @if(session('success'))
+            <div class="bg-green-500/20 text-green-400 p-3 mb-4 rounded border border-green-500">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        <!-- 🔥 USUÁRIOS PENDENTES -->
+        @if($usuariosPendentes->count() > 0)
+            <div class="bg-yellow-500/10 border border-yellow-500 p-4 rounded-xl mb-6">
+
+                <h3 class="text-yellow-400 font-bold mb-4">
+                    ⚠️ Solicitações de acesso pendentes
+                </h3>
+
+                <div class="space-y-4">
+
+                    @foreach($usuariosPendentes as $user)
+                        <div class="bg-[#1E293B] p-4 rounded-lg flex justify-between items-center">
+
+                            <div>
+                                <p><strong>Nome:</strong> {{ $user->name }}</p>
+                                <p><strong>CPF:</strong> {{ $user->cpf }}</p>
+                                <p><strong>Email:</strong> {{ $user->email }}</p>
+                                <p><strong>Tipo:</strong> {{ ucfirst($user->tipo) }}</p>
+                            </div>
+
+                            <div class="flex gap-2">
+
+                                <!-- APROVAR -->
+                                <form method="POST" action="{{ route('aprovar.usuario', $user->id) }}">
+                                    @csrf
+                                    <button class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">
+                                        Aprovar
+                                    </button>
+                                </form>
+
+                                <!-- REJEITAR -->
+                                <form method="POST" action="{{ route('rejeitar.usuario', $user->id) }}">
+                                    @csrf
+                                    <button class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded">
+                                        Rejeitar
+                                    </button>
+                                </form>
+
+                            </div>
+
+                        </div>
+                    @endforeach
+
+                </div>
+
+            </div>
+        @endif
 
         <!-- CARDS -->
         <div class="grid grid-cols-4 gap-6 mb-8">

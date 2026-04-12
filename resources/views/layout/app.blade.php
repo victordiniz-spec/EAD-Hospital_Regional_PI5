@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br" class="bg-slate-950">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,9 +8,12 @@
     @vite('resources/css/app.css')
 </head>
 
-<body class="bg-slate-950 text-white">
+<body class="text-gray-800">
 
-@include('components.navbar')
+{{-- NAVBAR --}}
+@if(!isset($noLayout))
+    @include('components.navbar')
+@endif
 
 <div class="w-full min-h-screen flex items-center justify-center">
 
@@ -18,7 +21,10 @@
 
 </div>
 
-@include('components.footer')
+{{-- FOOTER --}}
+@if(!isset($noLayout))
+    @include('components.footer')
+@endif
 
 </body>
 </html>

@@ -10,44 +10,59 @@ use App\Models\Nota;
 
 class DashboardController extends Controller
 {
+    // =========================
     // DASHBOARD PROFESSOR
+    // =========================
     public function professor()
     {
         $totalAulas = Aula::count();
-        $totalAlunos = User::where('tipo', 'aluno')->count();
+
+        // 🔥 Agora considera residente como aluno
+        $totalAlunos = User::where('tipo', 'residente')
+            ->where('status', 'aprovado')
+            ->count();
+
         $totalProvas = Avaliacao::count();
         $mediaGeral = Nota::avg('nota') ?? 0;
         $aulasRecentes = Aula::orderBy('id', 'desc')->take(5)->get();
+
+        // 🔥 NOVO: usuários pendentes
+        $usuariosPendentes = User::where('status', 'pendente')->get();
 
         return view('dashboard.professor', compact(
             'totalAulas',
             'totalAlunos',
             'totalProvas',
             'mediaGeral',
-            'aulasRecentes'
+            'aulasRecentes',
+            'usuariosPendentes'
         ));
     }
 
-    // 🔥 NOVA TELA DE ALUNOS (CORRIGE SEU ERRO)
+    // =========================
+    // LISTA DE ALUNOS (RESIDENTES)
+    // =========================
     public function alunos()
     {
-        $alunos = User::where('tipo', 'aluno')
+        $alunos = User::where('tipo', 'residente')
+            ->where('status', 'aprovado')
             ->leftJoin('notas', 'users.id', '=', 'notas.aluno_id')
             ->leftJoin('aulas_assistidas', 'users.id', '=', 'aulas_assistidas.aluno_id')
             ->select(
                 'users.id',
                 'users.name',
-                'users.foto',
                 DB::raw('MAX(notas.nota) as nota'),
                 DB::raw('MAX(aulas_assistidas.assistido) as assistido')
             )
-            ->groupBy('users.id', 'users.name', 'users.foto')
+            ->groupBy('users.id', 'users.name')
             ->get();
 
         return view('dashboard.alunos', compact('alunos'));
     }
 
+    // =========================
     // DASHBOARD ALUNO
+    // =========================
     public function aluno()
     {
         $alunoId = auth()->id();
