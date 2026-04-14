@@ -7,6 +7,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AulaController;
 use App\Http\Controllers\AvaliacaoController;
+use App\Http\Controllers\AvisoController; // 🔥 FALTAVA ISSO
 
 /*
 |--------------------------------------------------------------------------
@@ -56,10 +57,10 @@ Route::middleware('auth')->group(function () {
     // APROVAÇÃO DE USUÁRIOS 🔥
     // =========================
     Route::post('/aprovar-usuario/{id}', [UserController::class, 'aprovar'])
-        ->name('aprovar.usuario');
+        ->name('usuario.aprovar'); // ✅ CORRIGIDO
 
     Route::post('/rejeitar-usuario/{id}', [UserController::class, 'rejeitar'])
-        ->name('rejeitar.usuario');
+        ->name('usuario.rejeitar'); // ✅ CORRIGIDO
 
     // =========================
     // VIDEOAULAS
@@ -101,13 +102,25 @@ Route::middleware('auth')->group(function () {
         ->name('alunos');
 
     // =========================
+    // AVISOS 🔥
+    // =========================
+    Route::get('/avisos', [AvisoController::class, 'index'])
+        ->name('avisos');
+
+    Route::post('/avisos', [AvisoController::class, 'store'])
+        ->name('avisos.store');
+
+    // =========================
     // FUTURO
     // =========================
     Route::get('/postestes', fn() => view('dashboard.postestes'))
         ->name('postestes');
 
-
+    // =========================
+    // DEBUG (opcional)
+    // =========================
     Route::get('/gerar-senha', function () {
-    return bcrypt('123456');
+        return bcrypt('123456');
     });
+
 });

@@ -7,20 +7,19 @@ use App\Models\User;
 use App\Models\Aula;
 use App\Models\Avaliacao;
 use App\Models\Nota;
+use App\Models\Aviso; // 🔥 IMPORTANTE
 
 class DashboardController extends Controller
 {
     // =========================
-    // DASHBOARD PROFESSOR
+    // DASHBOARD PROFESSOR (ADMIN)
     // =========================
     public function professor()
     {
         $totalAulas = Aula::count();
 
-        // 🔥 Residentes aprovados (alunos)
-        $totalAlunos = User::where('tipo', 'residente')
-            ->where('status', 'aprovado')
-            ->count();
+        // 🔥 TOTAL DE USUÁRIOS (pode ajustar se quiser)
+        $totalAlunos = User::where('status', 'aprovado')->count();
 
         $totalProvas = Avaliacao::count();
         $mediaGeral = Nota::avg('nota') ?? 0;
@@ -29,9 +28,14 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        // 🔥 USUÁRIOS PENDENTES (RESIDENTE + PRECEPTOR)
+        // 🔥 USUÁRIOS PENDENTES
         $usuariosPendentes = User::where('status', 'pendente')
             ->orderBy('created_at', 'desc')
+            ->get();
+
+        // 🔥 NOVO: AVISOS RECENTES
+        $avisosRecentes = Aviso::orderBy('created_at', 'desc')
+            ->take(5)
             ->get();
 
         return view('dashboard.professor', compact(
@@ -40,12 +44,13 @@ class DashboardController extends Controller
             'totalProvas',
             'mediaGeral',
             'aulasRecentes',
-            'usuariosPendentes'
+            'usuariosPendentes',
+            'avisosRecentes' // 🔥 ESSENCIAL
         ));
     }
 
     // =========================
-    // LISTA DE ALUNOS (RESIDENTES)
+    // LISTA DE ALUNOS
     // =========================
     public function alunos()
     {
@@ -66,7 +71,7 @@ class DashboardController extends Controller
     }
 
     // =========================
-    // DASHBOARD ALUNO (RESIDENTE)
+    // DASHBOARD ALUNO
     // =========================
     public function aluno()
     {
@@ -113,7 +118,7 @@ class DashboardController extends Controller
             ->limit(3)
             ->get();
 
-        // AULAS ASSISTIDAS (LISTA)
+        // AULAS ASSISTIDAS
         $aulasAssistidasLista = DB::table('aulas')
             ->join('aulas_assistidas', 'aulas.id', '=', 'aulas_assistidas.aula_id')
             ->where('aulas_assistidas.aluno_id', $alunoId)
