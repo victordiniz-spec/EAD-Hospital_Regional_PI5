@@ -17,17 +17,22 @@ class DashboardController extends Controller
     {
         $totalAulas = Aula::count();
 
-        // 🔥 Agora considera residente como aluno
+        // 🔥 Residentes aprovados (alunos)
         $totalAlunos = User::where('tipo', 'residente')
             ->where('status', 'aprovado')
             ->count();
 
         $totalProvas = Avaliacao::count();
         $mediaGeral = Nota::avg('nota') ?? 0;
-        $aulasRecentes = Aula::orderBy('id', 'desc')->take(5)->get();
 
-        // 🔥 NOVO: usuários pendentes
-        $usuariosPendentes = User::where('status', 'pendente')->get();
+        $aulasRecentes = Aula::orderBy('id', 'desc')
+            ->take(5)
+            ->get();
+
+        // 🔥 USUÁRIOS PENDENTES (RESIDENTE + PRECEPTOR)
+        $usuariosPendentes = User::where('status', 'pendente')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return view('dashboard.professor', compact(
             'totalAulas',
@@ -61,7 +66,7 @@ class DashboardController extends Controller
     }
 
     // =========================
-    // DASHBOARD ALUNO
+    // DASHBOARD ALUNO (RESIDENTE)
     // =========================
     public function aluno()
     {

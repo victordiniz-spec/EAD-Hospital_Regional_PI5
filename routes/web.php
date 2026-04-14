@@ -105,4 +105,9 @@ Route::middleware('auth')->group(function () {
     // =========================
     Route::get('/postestes', fn() => view('dashboard.postestes'))
         ->name('postestes');
+
+
+    Route::get('/gerar-senha', function () {
+    return bcrypt('123456');
+    });
 });

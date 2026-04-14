@@ -34,7 +34,7 @@
 
         <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
 
-        <!-- ALERTA DE SUCESSO -->
+        <!-- ALERTA -->
         @if(session('success'))
             <div class="bg-green-500/20 text-green-400 p-3 mb-4 rounded border border-green-500">
                 {{ session('success') }}
@@ -43,39 +43,50 @@
 
         <!-- 🔥 USUÁRIOS PENDENTES -->
         @if($usuariosPendentes->count() > 0)
-            <div class="bg-yellow-500/10 border border-yellow-500 p-4 rounded-xl mb-6">
+            <div class="bg-yellow-500/10 border border-yellow-500 p-6 rounded-xl mb-8 shadow-lg">
 
-                <h3 class="text-yellow-400 font-bold mb-4">
+                <h3 class="text-yellow-400 font-bold text-lg mb-4 flex items-center gap-2">
                     ⚠️ Solicitações de acesso pendentes
                 </h3>
 
                 <div class="space-y-4">
 
                     @foreach($usuariosPendentes as $user)
-                        <div class="bg-[#1E293B] p-4 rounded-lg flex justify-between items-center">
+                        <div class="bg-[#1E293B] p-5 rounded-xl flex justify-between items-center hover:bg-[#273449] transition">
 
-                            <div>
-                                <p><strong>Nome:</strong> {{ $user->name }}</p>
-                                <p><strong>CPF:</strong> {{ $user->cpf }}</p>
-                                <p><strong>Email:</strong> {{ $user->email }}</p>
-                                <p><strong>Tipo:</strong> {{ ucfirst($user->tipo) }}</p>
+                            <!-- INFO -->
+                            <div class="space-y-1">
+                                <p class="text-sm"><span class="text-gray-400">Nome:</span> {{ $user->name }}</p>
+                                <p class="text-sm"><span class="text-gray-400">CPF:</span> {{ $user->cpf }}</p>
+                                <p class="text-sm"><span class="text-gray-400">Email:</span> {{ $user->email }}</p>
+                                <p class="text-sm">
+                                    <span class="text-gray-400">Tipo:</span> 
+                                    <span class="text-blue-400 font-semibold">
+                                        {{ ucfirst($user->tipo) }}
+                                    </span>
+                                </p>
                             </div>
 
-                            <div class="flex gap-2">
+                            <!-- BOTÕES -->
+                            <div class="flex gap-3">
 
                                 <!-- APROVAR -->
                                 <form method="POST" action="{{ route('aprovar.usuario', $user->id) }}">
                                     @csrf
-                                    <button class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">
-                                        Aprovar
+                                    <button 
+                                        class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg flex items-center gap-2 transition shadow-md"
+                                    >
+                                        ✅ Aprovar
                                     </button>
                                 </form>
 
                                 <!-- REJEITAR -->
                                 <form method="POST" action="{{ route('rejeitar.usuario', $user->id) }}">
                                     @csrf
-                                    <button class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded">
-                                        Rejeitar
+                                    <button 
+                                        class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg flex items-center gap-2 transition shadow-md"
+                                    >
+                                        ❌ Rejeitar
                                     </button>
                                 </form>
 
@@ -114,16 +125,16 @@
 
         <!-- LISTA DE AULAS -->
         <div class="bg-[#1E293B] p-6 rounded-xl">
-            <h3 class="mb-4">Videoaulas Recentes</h3>
+            <h3 class="mb-4 font-semibold">Videoaulas Recentes</h3>
 
             <ul class="space-y-3">
                 @forelse($aulasRecentes as $aula)
-                    <li class="flex justify-between">
+                    <li class="flex justify-between items-center">
                         <span>{{ $aula->titulo }}</span>
-                        <span class="text-green-400">Publicada</span>
+                        <span class="text-green-400 text-sm">✔ Publicada</span>
                     </li>
                 @empty
-                    <li>Nenhuma aula recente encontrada.</li>
+                    <li class="text-gray-400">Nenhuma aula recente encontrada.</li>
                 @endforelse
             </ul>
         </div>

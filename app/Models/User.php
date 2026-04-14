@@ -15,10 +15,11 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'cpf',
         'email',
         'password',
         'tipo',
-        'foto' // ✅ ADICIONADO (ESSENCIAL)
+        'status'    
     ];
 
     /**

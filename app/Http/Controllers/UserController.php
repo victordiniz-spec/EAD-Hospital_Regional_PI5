@@ -22,9 +22,12 @@ class UserController extends Controller
             'tipo' => 'required|in:residente,preceptor'
         ]);
 
+        // 🔥 REMOVE MÁSCARA DO CPF
+        $cpf = preg_replace('/\D/', '', $request->cpf);
+
         User::create([
             'name' => $request->nome,
-            'cpf' => $request->cpf,
+            'cpf' => $cpf,
             'email' => $request->email,
             'password' => bcrypt($request->senha),
             'tipo' => $request->tipo,
@@ -44,15 +47,18 @@ class UserController extends Controller
             'password' => 'required'
         ]);
 
-        // 🔍 Buscar usuário pelo CPF
-        $user = User::where('cpf', $request->cpf)->first();
+        // 🔥 REMOVE MÁSCARA DO CPF
+        $cpf = preg_replace('/\D/', '', $request->cpf);
 
-        // ❌ CPF ou senha inválidos
+        // 🔍 Buscar usuário
+        $user = User::where('cpf', $cpf)->first();
+
+        // ❌ Erro login
         if (!$user || !Hash::check($request->password, $user->password)) {
             return back()->with('erro', 'CPF ou senha inválidos');
         }
 
-        // 🚫 Usuário não aprovado
+        // 🚫 Não aprovado
         if ($user->status !== 'aprovado') {
             return back()->with('erro', 'Aguarde aprovação do administrador.');
         }
@@ -61,12 +67,13 @@ class UserController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        // 🔀 Redirecionamento
-        if ($user->tipo === 'preceptor') {
+        // 🔥 REDIRECIONAMENTO FINAL CORRETO
+        if ($user->tipo === 'admin') {
             return redirect('/dashboard-professor');
-        } else {
-            return redirect('/dashboard-aluno');
         }
+
+        // residente e preceptor
+        return redirect('/dashboard-aluno');
     }
 
     // =========================
@@ -75,6 +82,7 @@ class UserController extends Controller
     public function aprovar($id)
     {
         $user = User::findOrFail($id);
+
         $user->status = 'aprovado';
         $user->save();
 
@@ -87,6 +95,7 @@ class UserController extends Controller
     public function rejeitar($id)
     {
         $user = User::findOrFail($id);
+
         $user->delete();
 
         return back()->with('success', 'Usuário rejeitado.');
@@ -98,6 +107,7 @@ class UserController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
