@@ -7,7 +7,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AulaController;
 use App\Http\Controllers\AvaliacaoController;
-use App\Http\Controllers\AvisoController; // 🔥 FALTAVA ISSO
+use App\Http\Controllers\AvisoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -54,13 +54,13 @@ Route::middleware('auth')->group(function () {
         ->name('dashboard.professor');
 
     // =========================
-    // APROVAÇÃO DE USUÁRIOS 🔥
+    // APROVAÇÃO DE USUÁRIOS
     // =========================
     Route::post('/aprovar-usuario/{id}', [UserController::class, 'aprovar'])
-        ->name('usuario.aprovar'); // ✅ CORRIGIDO
+        ->name('usuario.aprovar');
 
     Route::post('/rejeitar-usuario/{id}', [UserController::class, 'rejeitar'])
-        ->name('usuario.rejeitar'); // ✅ CORRIGIDO
+        ->name('usuario.rejeitar');
 
     // =========================
     // VIDEOAULAS
@@ -102,13 +102,28 @@ Route::middleware('auth')->group(function () {
         ->name('alunos');
 
     // =========================
-    // AVISOS 🔥
+    // AVISOS (CRUD COMPLETO 🔥)
     // =========================
+
+    // LISTAR
     Route::get('/avisos', [AvisoController::class, 'index'])
         ->name('avisos');
 
+    // CRIAR
     Route::post('/avisos', [AvisoController::class, 'store'])
         ->name('avisos.store');
+
+    // EDITAR (carregar dados)
+    Route::get('/avisos/{id}/edit', [AvisoController::class, 'edit'])
+        ->name('avisos.edit');
+
+    // ATUALIZAR
+    Route::put('/avisos/{id}', [AvisoController::class, 'update'])
+        ->name('avisos.update');
+
+    // EXCLUIR
+    Route::delete('/avisos/{id}', [AvisoController::class, 'destroy'])
+        ->name('avisos.destroy');
 
     // =========================
     // FUTURO
