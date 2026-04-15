@@ -13,10 +13,13 @@
 
             <!-- LOGO -->
             <div class="flex items-center gap-3 mb-8">
-                <div class="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold">
-                    +
-                </div>
-                <h1 class="text-lg font-bold">ResidentEAD</h1>
+    
+                <img src="{{ asset('images/logo.png') }}" 
+                    alt="Logo"
+                    class="w-10 h-10 object-contain">
+
+                <h1 class="text-lg font-bold">Integrar ReSaúde</h1>
+
             </div>
 
             <!-- MENU -->
@@ -84,16 +87,6 @@
         </div>
 
 </aside>
-
-        <!-- USUÁRIO -->
-        <div class="text-center mt-6">
-            <div class="w-20 h-20 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-3xl mb-2">
-                👤
-            </div>
-            <h2 class="font-bold">{{ auth()->user()->name }}</h2>
-            <span class="text-sm text-gray-400">{{ ucfirst(auth()->user()->tipo) }}</span>
-        </div>
-    </aside>
 
     <!-- CONTEÚDO -->
     <main class="flex-1 p-8">

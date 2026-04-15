@@ -18,7 +18,7 @@ class DashboardController extends Controller
     {
         $totalAulas = Aula::count();
 
-        // 🔥 TOTAL DE USUÁRIOS (pode ajustar se quiser)
+        // 🔥 TOTAL DE USUÁRIOS
         $totalAlunos = User::where('status', 'aprovado')->count();
 
         $totalProvas = Avaliacao::count();
@@ -33,7 +33,7 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // 🔥 NOVO: AVISOS RECENTES
+        // 🔥 AVISOS RECENTES
         $avisosRecentes = Aviso::orderBy('created_at', 'desc')
             ->take(5)
             ->get();
@@ -45,7 +45,7 @@ class DashboardController extends Controller
             'mediaGeral',
             'aulasRecentes',
             'usuariosPendentes',
-            'avisosRecentes' // 🔥 ESSENCIAL
+            'avisosRecentes'
         ));
     }
 
@@ -118,7 +118,7 @@ class DashboardController extends Controller
             ->limit(3)
             ->get();
 
-        // AULAS ASSISTIDAS
+        // AULAS ASSISTIDAS (lista)
         $aulasAssistidasLista = DB::table('aulas')
             ->join('aulas_assistidas', 'aulas.id', '=', 'aulas_assistidas.aula_id')
             ->where('aulas_assistidas.aluno_id', $alunoId)
@@ -144,6 +144,11 @@ class DashboardController extends Controller
             ->limit(3)
             ->get();
 
+        // 🔥 NOVO: AVISOS PARA ALUNO / PRECEPTOR
+        $avisosRecentes = Aviso::orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
         return view('dashboard.aluno', compact(
             'totalAulas',
             'aulasAssistidas',
@@ -152,7 +157,8 @@ class DashboardController extends Controller
             'media',
             'proximasAulas',
             'aulasAssistidasLista',
-            'listaTestes'
+            'listaTestes',
+            'avisosRecentes' // 🔥 ESSENCIAL
         ));
     }
 }

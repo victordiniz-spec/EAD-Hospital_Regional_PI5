@@ -4,34 +4,40 @@
 
 @section('content')
 
-<div class="flex h-screen bg-slate-950 text-white">
+<div class="flex h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
 
     <!-- SIDEBAR -->
-    <aside class="w-60 bg-slate-900 border-r border-slate-800 flex flex-col justify-between py-6 px-4">
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between py-6 px-5 shadow-xl">
 
         <div>
-            <h1 class="text-lg font-bold mb-8">ResidentEAD</h1>
+            <!-- LOGO -->
+            <h1 class="text-xl font-bold mb-10 tracking-wide text-emerald-400">
+                ResidentEAD
+            </h1>
 
-            <nav class="space-y-2">
+            <!-- MENU -->
+            <nav class="space-y-2 text-sm">
+
                 <a href="{{ route('dashboard.aluno') }}"
-                   class="block px-4 py-2 rounded-lg text-sm bg-blue-900 text-emerald-400">
-                    Dashboard
+                   class="flex items-center gap-3 px-4 py-2 rounded-lg bg-emerald-600 text-white shadow hover:bg-emerald-700 transition">
+                    🏠 Dashboard
                 </a>
 
                 <a href="#"
-                   class="block px-4 py-2 rounded-lg text-sm text-slate-400 hover:bg-slate-800">
-                    Minhas Aulas
+                   class="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                    🎥 Minhas Aulas
                 </a>
 
                 <a href="#"
-                   class="block px-4 py-2 rounded-lg text-sm text-slate-400 hover:bg-slate-800">
-                    Pós-testes
+                   class="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                    📝 Pós-testes
                 </a>
 
                 <a href="#"
-                   class="block px-4 py-2 rounded-lg text-sm text-slate-400 hover:bg-slate-800">
-                    Desempenho
+                   class="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                    📊 Desempenho
                 </a>
+
             </nav>
         </div>
 
@@ -45,7 +51,7 @@
 
             <div class="flex items-center gap-3">
                 <img src="{{ $fotoUsuario }}"
-                     class="w-10 h-10 rounded-full object-cover">
+                     class="w-10 h-10 rounded-full object-cover border border-slate-700">
 
                 <div>
                     <div class="text-sm font-semibold">{{ auth()->user()->name }}</div>
@@ -60,39 +66,75 @@
     <div class="flex-1 flex flex-col">
 
         <!-- TOPBAR -->
-        <header class="bg-slate-900 border-b border-slate-800 px-8 h-16 flex items-center justify-between">
+        <header class="bg-slate-900 border-b border-slate-800 px-8 h-16 flex items-center justify-between shadow">
+
             <div>
                 <h1 class="text-lg font-bold">Dashboard</h1>
                 <p class="text-xs text-slate-500">Continue seu aprendizado</p>
             </div>
+
         </header>
 
         <!-- CONTEÚDO -->
         <main class="flex-1 overflow-auto p-8">
 
-            <!-- CARDS -->
-            <div class="grid grid-cols-4 gap-4 mb-8">
+            <!-- 🔥 AVISOS -->
+            @if(isset($avisosRecentes) && $avisosRecentes->count() > 0)
+            <div class="mb-8">
+                <h2 class="mb-4 font-bold text-lg flex items-center gap-2">
+                    📢 Avisos
+                </h2>
 
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <div class="grid gap-4">
+                    @foreach($avisosRecentes as $aviso)
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow hover:shadow-lg transition border-l-4 
+                            @if($aviso->categoria == 'urgente') border-red-500
+                            @elseif($aviso->categoria == 'informativo') border-blue-500
+                            @else border-emerald-500
+                            @endif">
+
+                            <p class="font-semibold text-base mb-1">
+                                {{ $aviso->titulo }}
+                            </p>
+
+                            <p class="text-sm text-slate-400">
+                                {{ $aviso->mensagem }}
+                            </p>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            <!-- CARDS -->
+            <div class="grid grid-cols-4 gap-5 mb-8">
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow hover:scale-[1.02] transition">
                     <p class="text-slate-400 text-sm mb-2">Progresso</p>
-                    <h3 class="text-3xl font-bold">{{ number_format($progresso, 0) }}%</h3>
+                    <h3 class="text-3xl font-bold text-emerald-400">
+                        {{ number_format($progresso, 0) }}%
+                    </h3>
                 </div>
 
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow hover:scale-[1.02] transition">
                     <p class="text-slate-400 text-sm mb-2">Aulas</p>
                     <h3 class="text-3xl font-bold">
                         {{ $aulasAssistidas }} / {{ $totalAulas }}
                     </h3>
                 </div>
 
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow hover:scale-[1.02] transition">
                     <p class="text-slate-400 text-sm mb-2">Testes</p>
-                    <h3 class="text-3xl font-bold">{{ $testesPendentes }}</h3>
+                    <h3 class="text-3xl font-bold text-blue-400">
+                        {{ $testesPendentes }}
+                    </h3>
                 </div>
 
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow hover:scale-[1.02] transition">
                     <p class="text-slate-400 text-sm mb-2">Média</p>
-                    <h3 class="text-3xl font-bold">{{ number_format($media, 1) }}</h3>
+                    <h3 class="text-3xl font-bold text-yellow-400">
+                        {{ number_format($media, 1) }}
+                    </h3>
                 </div>
 
             </div>
@@ -107,13 +149,13 @@
                     <div class="space-y-3">
                         @forelse($proximasAulas as $aula)
 
-                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center">
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center shadow hover:shadow-lg transition">
 
-                            <span>{{ $aula->titulo }}</span>
+                            <span class="font-medium">{{ $aula->titulo }}</span>
 
                             <button onclick="abrirModal('{{ $aula->video_url }}', '{{ $aula->id }}')"
-                                class="bg-emerald-600 px-4 py-2 rounded-lg text-sm hover:bg-emerald-700">
-                                Assistir
+                                class="bg-emerald-600 px-4 py-2 rounded-lg text-sm hover:bg-emerald-700 transition">
+                                ▶ Assistir
                             </button>
 
                         </div>
@@ -125,7 +167,7 @@
                 </div>
 
                 <!-- TESTES -->
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
                     <h2 class="mb-4 font-bold">Testes</h2>
 
                     @forelse($listaTestes as $teste)
@@ -136,7 +178,7 @@
 
                         @if($teste->assistido)
                             <a href="{{ route('avaliacoes.show', $teste->id) }}"
-                               class="bg-blue-600 px-3 py-1 rounded hover:bg-blue-700">
+                               class="bg-blue-600 px-3 py-1 rounded hover:bg-blue-700 transition">
                                 Fazer
                             </a>
                         @else
@@ -162,7 +204,7 @@
 
 </div>
 
-<!-- MODAL -->
+<!-- MODAL (NÃO ALTERADO) -->
 <div id="modalVideo" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
 
     <div class="bg-slate-900 w-[800px] rounded-xl p-4 relative">
