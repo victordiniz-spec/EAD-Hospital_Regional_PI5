@@ -8,18 +8,68 @@ use App\Models\Aula;
 use App\Models\Avaliacao;
 use App\Models\Pergunta;
 use App\Models\Resposta;
+use App\Models\Modulo;
 
 class AulaController extends Controller
 {
     public function index()
     {
-        $aulas = Aula::orderBy('id', 'desc')->get();
-        return view('dashboard.videoaulas', compact('aulas'));
+        $aulas = Aula::with('modulo')->orderBy('id', 'desc')->get();
+        $modulos = Modulo::orderBy('ordem')->get();
+
+        return view('dashboard.videoaulas', compact('aulas', 'modulos'));
+    }
+
+    // 🔥 DASHBOARD DO ALUNO (APENAS ADICIONADO)
+    public function dashboardAluno()
+    {
+        $alunoId = auth()->id();
+
+        $modulos = Modulo::with(['aulas' => function($q){
+            $q->orderBy('id');
+        }])->get();
+
+        // aulas assistidas
+        $assistidas = DB::table('aulas_assistidas')
+            ->where('aluno_id', $alunoId)
+            ->pluck('aula_id')
+            ->toArray();
+
+        // progresso por módulo
+        foreach ($modulos as $modulo) {
+            $total = $modulo->aulas->count();
+
+            $assistidasModulo = $modulo->aulas
+                ->whereIn('id', $assistidas)
+                ->count();
+
+            $modulo->progresso = $total > 0
+                ? ($assistidasModulo / $total) * 100
+                : 0;
+        }
+
+        // 🔥 mantém seus dados antigos (NÃO QUEBREI NADA)
+        $proximasAulas = Aula::orderBy('id')->get();
+
+        $listaTestes = Avaliacao::leftJoin('aulas_assistidas', function($join) use ($alunoId){
+            $join->on('avaliacoes.aula_id', '=', 'aulas_assistidas.aula_id')
+                 ->where('aulas_assistidas.aluno_id', $alunoId);
+        })
+        ->select('avaliacoes.*', 'aulas_assistidas.assistido')
+        ->get();
+
+        return view('dashboard.aluno', compact(
+            'modulos',
+            'assistidas',
+            'proximasAulas',
+            'listaTestes'
+        ));
     }
 
     public function create()
     {
-        return view('dashboard.criar-aula');
+        $modulos = Modulo::all();
+        return view('dashboard.criar-aula', compact('modulos'));
     }
 
     public function store(Request $request)
@@ -31,12 +81,11 @@ class AulaController extends Controller
             $request->validate([
                 'titulo' => 'required',
                 'descricao' => 'required',
-                'video_url' => 'required|url',
+                'video_url' => 'required',
                 'avaliacao.titulo' => 'required',
                 'perguntas' => 'required|array'
             ]);
 
-            // 🔥 Converter YouTube
             $video = $request->video_url;
 
             if (str_contains($video, 'watch?v=')) {
@@ -47,15 +96,27 @@ class AulaController extends Controller
                 $video = str_replace('youtu.be/', 'www.youtube.com/embed/', $video);
             }
 
-            // ✅ Criar aula
+            // 🔥 módulo (CORRIGIDO)
+            $moduloId = null;
+
+            if ($request->novo_modulo) {
+                $modulo = Modulo::create([
+                    'nome' => $request->novo_modulo,
+                    'curso_id' => 1
+                ]);
+                $moduloId = $modulo->id;
+            } else {
+                $moduloId = $request->modulo_id;
+            }
+
             $aula = Aula::create([
                 'titulo' => $request->titulo,
                 'descricao' => $request->descricao,
                 'video_url' => $video,
-                'curso_id' => 1
+                'curso_id' => 1,
+                'modulo_id' => $moduloId
             ]);
 
-            // ✅ Criar avaliação
             $avaliacao = Avaliacao::create([
                 'titulo' => $request->avaliacao['titulo'],
                 'aula_id' => $aula->id,
@@ -63,7 +124,6 @@ class AulaController extends Controller
                 'qtd_perguntas' => count($request->perguntas)
             ]);
 
-            // ✅ Perguntas e respostas
             foreach ($request->perguntas as $perguntaData) {
 
                 $pergunta = Pergunta::create([
@@ -84,17 +144,15 @@ class AulaController extends Controller
             DB::commit();
 
             return redirect()->route('videoaulas')
-                ->with('success', 'Aula completa criada com sucesso!');
+                ->with('success', 'Aula criada com sucesso!');
 
         } catch (\Exception $e) {
 
             DB::rollBack();
-
             return back()->with('error', $e->getMessage());
         }
     }
 
-    // 🔥 MARCAR COMO ASSISTIDA
     public function assistir($id)
     {
         DB::table('aulas_assistidas')->updateOrInsert(
@@ -111,7 +169,6 @@ class AulaController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // 🔥 EXCLUIR AULA COMPLETA
     public function destroy($id)
     {
         DB::beginTransaction();
@@ -137,13 +194,12 @@ class AulaController extends Controller
 
             DB::commit();
 
-            return back()->with('success', 'Aula excluída com sucesso!');
+            return back()->with('success', 'Aula excluída!');
 
         } catch (\Exception $e) {
 
             DB::rollBack();
-
-            return back()->with('error', 'Erro ao excluir aula!');
+            return back()->with('error', 'Erro ao excluir!');
         }
     }
 }

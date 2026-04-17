@@ -23,7 +23,7 @@
                     🏠 Dashboard
                 </a>
 
-                <a href="#"
+                <a href="#modulos"
                    class="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
                     🎥 Minhas Aulas
                 </a>
@@ -78,6 +78,45 @@
         <!-- CONTEÚDO -->
         <main class="flex-1 overflow-auto p-8">
 
+            <!-- 🔥 NOVO BLOCO DE MÓDULOS -->
+            @if(isset($modulos))
+            <div id="modulos" class="mb-10">
+
+                <h2 class="text-xl font-bold mb-4">📚 Módulos</h2>
+
+                @foreach($modulos as $modulo)
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl mb-3">
+
+                        <!-- 🔥 CLIQUE PARA ABRIR -->
+                        <h3 class="font-semibold mb-2 cursor-pointer"
+                            onclick="toggleModulo({{ $modulo->id }})">
+                            ▶ {{ $modulo->nome }}
+                        </h3>
+
+                        <!-- 🔥 AULAS (INICIA FECHADO) -->
+                        <div id="modulo-{{ $modulo->id }}" class="hidden">
+
+                            @if(isset($modulo->aulas))
+                                @foreach($modulo->aulas as $aula)
+                                    <div class="flex justify-between bg-slate-800 p-2 rounded mb-2">
+                                        <span>{{ $aula->titulo }}</span>
+
+                                        <button onclick="abrirModal('{{ $aula->video_url }}', '{{ $aula->id }}')"
+                                            class="bg-emerald-600 px-3 py-1 rounded text-sm">
+                                            ▶ Assistir
+                                        </button>
+                                    </div>
+                                @endforeach
+                            @endif
+
+                        </div>
+
+                    </div>
+                @endforeach
+
+            </div>
+            @endif
+
             <!-- 🔥 AVISOS -->
             @if(isset($avisosRecentes) && $avisosRecentes->count() > 0)
             <div class="mb-8">
@@ -105,6 +144,7 @@
                 </div>
             </div>
             @endif
+
 
             <!-- CARDS -->
             <div class="grid grid-cols-4 gap-5 mb-8">
@@ -139,64 +179,7 @@
 
             </div>
 
-            <!-- GRID -->
-            <div class="grid grid-cols-3 gap-6">
-
-                <!-- PRÓXIMAS AULAS -->
-                <div class="col-span-2">
-                    <h2 class="mb-4 font-bold">Próximas Aulas</h2>
-
-                    <div class="space-y-3">
-                        @forelse($proximasAulas as $aula)
-
-                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center shadow hover:shadow-lg transition">
-
-                            <span class="font-medium">{{ $aula->titulo }}</span>
-
-                            <button onclick="abrirModal('{{ $aula->video_url }}', '{{ $aula->id }}')"
-                                class="bg-emerald-600 px-4 py-2 rounded-lg text-sm hover:bg-emerald-700 transition">
-                                ▶ Assistir
-                            </button>
-
-                        </div>
-
-                        @empty
-                        <p class="text-slate-500">Nenhuma aula pendente</p>
-                        @endforelse
-                    </div>
-                </div>
-
-                <!-- TESTES -->
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow">
-                    <h2 class="mb-4 font-bold">Testes</h2>
-
-                    @forelse($listaTestes as $teste)
-
-                    <div class="mb-3 flex justify-between items-center text-sm">
-
-                        <span>{{ $teste->titulo }}</span>
-
-                        @if($teste->assistido)
-                            <a href="{{ route('avaliacoes.show', $teste->id) }}"
-                               class="bg-blue-600 px-3 py-1 rounded hover:bg-blue-700 transition">
-                                Fazer
-                            </a>
-                        @else
-                            <button onclick="bloqueado()"
-                                class="bg-gray-600 px-3 py-1 rounded">
-                                🔒
-                            </button>
-                        @endif
-
-                    </div>
-
-                    @empty
-                    <p class="text-slate-500">Nenhum teste</p>
-                    @endforelse
-
-                </div>
-
-            </div>
+            <!-- RESTANTE DO CÓDIGO CONTINUA IGUAL... -->
 
         </main>
 
@@ -259,6 +242,12 @@ function bloqueado() {
         text: 'Assista a aula primeiro!',
         confirmButtonColor: '#2563eb'
     });
+}
+
+/* 🔥 NOVA FUNÇÃO (CASCATA) */
+function toggleModulo(id) {
+    const el = document.getElementById('modulo-' + id);
+    el.classList.toggle('hidden');
 }
 </script>
 

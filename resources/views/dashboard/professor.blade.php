@@ -26,44 +26,44 @@
             <nav class="space-y-4 text-gray-300">
 
                 <a href="{{ route('dashboard.professor') }}"
-                class="flex items-center gap-3 p-2 rounded bg-green-600 text-white">
-
+                class="flex items-center gap-3 p-2 rounded 
+                {{ request()->routeIs('dashboard.professor') ? 'bg-green-600 text-white' : 'hover:bg-[#1E293B] text-gray-300' }}">
                     🏠 <span>Home</span>
                 </a>
 
                 <a href="{{ route('videoaulas') }}"
-                class="flex items-center gap-3 p-2 rounded hover:bg-[#1E293B]">
-
+                class="flex items-center gap-3 p-2 rounded 
+                {{ request()->routeIs('videoaulas') || request()->routeIs('aulas.*') ? 'bg-green-600 text-white' : 'hover:bg-[#1E293B] text-gray-300' }}">
                     🎥 <span>Video Aulas</span>
                 </a>
 
                 <a href="{{ route('postestes') }}"
-                class="flex items-center gap-3 p-2 rounded hover:bg-[#1E293B]">
-
+                class="flex items-center gap-3 p-2 rounded 
+                {{ request()->routeIs('postestes') ? 'bg-green-600 text-white' : 'hover:bg-[#1E293B] text-gray-300' }}">
                     📝 <span>Provas</span>
                 </a>
 
                 <a href="#"
-                class="flex items-center gap-3 p-2 rounded hover:bg-[#1E293B]">
-
+                class="flex items-center gap-3 p-2 rounded 
+                hover:bg-[#1E293B] text-gray-300">
                     🎓 <span>Certificados</span>
                 </a>
 
                 <a href="{{ route('alunos') }}"
-                class="flex items-center gap-3 p-2 rounded hover:bg-[#1E293B]">
-
+                class="flex items-center gap-3 p-2 rounded 
+                {{ request()->routeIs('alunos') ? 'bg-green-600 text-white' : 'hover:bg-[#1E293B] text-gray-300' }}">
                     👥 <span>Usuários</span>
                 </a>
 
                 <a href="{{ route('avisos') }}"
-                class="flex items-center gap-3 p-2 rounded hover:bg-[#1E293B]">
-
+                class="flex items-center gap-3 p-2 rounded 
+                {{ request()->routeIs('avisos') || request()->routeIs('avisos.*') ? 'bg-green-600 text-white' : 'hover:bg-[#1E293B] text-gray-300' }}">
                     🔔 <span>Avisos</span>
                 </a>
 
                 <a href="#"
-                class="flex items-center gap-3 p-2 rounded hover:bg-[#1E293B]">
-
+                class="flex items-center gap-3 p-2 rounded 
+                hover:bg-[#1E293B] text-gray-300">
                     📊 <span>Relatórios</span>
                 </a>
 

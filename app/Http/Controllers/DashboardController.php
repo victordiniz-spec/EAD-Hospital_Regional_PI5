@@ -7,7 +7,8 @@ use App\Models\User;
 use App\Models\Aula;
 use App\Models\Avaliacao;
 use App\Models\Nota;
-use App\Models\Aviso; // 🔥 IMPORTANTE
+use App\Models\Aviso;
+use App\Models\Modulo; // 🔥 ADICIONADO
 
 class DashboardController extends Controller
 {
@@ -77,6 +78,9 @@ class DashboardController extends Controller
     {
         $alunoId = auth()->id();
 
+        // 🔥 NOVO: CARREGAR MÓDULOS COM AULAS
+        $modulos = Modulo::with('aulas')->get();
+
         // TOTAL DE AULAS
         $totalAulas = DB::table('aulas')
             ->join('cursos', 'aulas.curso_id', '=', 'cursos.id')
@@ -144,12 +148,13 @@ class DashboardController extends Controller
             ->limit(3)
             ->get();
 
-        // 🔥 NOVO: AVISOS PARA ALUNO / PRECEPTOR
+        // 🔥 AVISOS
         $avisosRecentes = Aviso::orderBy('created_at', 'desc')
             ->take(5)
             ->get();
 
         return view('dashboard.aluno', compact(
+            'modulos', // 🔥 ADICIONADO AQUI
             'totalAulas',
             'aulasAssistidas',
             'progresso',
@@ -158,7 +163,7 @@ class DashboardController extends Controller
             'proximasAulas',
             'aulasAssistidasLista',
             'listaTestes',
-            'avisosRecentes' // 🔥 ESSENCIAL
+            'avisosRecentes'
         ));
     }
 }
