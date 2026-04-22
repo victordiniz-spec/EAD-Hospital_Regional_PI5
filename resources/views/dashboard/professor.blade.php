@@ -4,92 +4,12 @@
 
 @section('content')
 
-<div class="flex min-h-screen bg-[#0B1120] text-white">
+<div class="flex min-h-screen">
 
-    <!-- SIDEBAR -->
-    <aside class="w-64 bg-[#0F172A] p-6 flex flex-col justify-between h-screen">
-
-        <div>
-
-            <!-- LOGO -->
-            <div class="flex items-center gap-3 mb-8">
-    
-                <img src="{{ asset('images/logo.png') }}" 
-                    alt="Logo"
-                    class="w-10 h-10 object-contain">
-
-                <h1 class="text-lg font-bold">Integrar ReSaúde</h1>
-
-            </div>
-
-            <!-- MENU -->
-            <nav class="space-y-4 text-gray-300">
-
-                <a href="{{ route('dashboard.professor') }}"
-                class="flex items-center gap-3 p-2 rounded 
-                {{ request()->routeIs('dashboard.professor') ? 'bg-green-600 text-white' : 'hover:bg-[#1E293B] text-gray-300' }}">
-                    🏠 <span>Home</span>
-                </a>
-
-                <a href="{{ route('videoaulas') }}"
-                class="flex items-center gap-3 p-2 rounded 
-                {{ request()->routeIs('videoaulas') || request()->routeIs('aulas.*') ? 'bg-green-600 text-white' : 'hover:bg-[#1E293B] text-gray-300' }}">
-                    🎥 <span>Video Aulas</span>
-                </a>
-
-                <a href="{{ route('postestes') }}"
-                class="flex items-center gap-3 p-2 rounded 
-                {{ request()->routeIs('postestes') ? 'bg-green-600 text-white' : 'hover:bg-[#1E293B] text-gray-300' }}">
-                    📝 <span>Provas</span>
-                </a>
-
-                <a href="#"
-                class="flex items-center gap-3 p-2 rounded 
-                hover:bg-[#1E293B] text-gray-300">
-                    🎓 <span>Certificados</span>
-                </a>
-
-                <a href="{{ route('alunos') }}"
-                class="flex items-center gap-3 p-2 rounded 
-                {{ request()->routeIs('alunos') ? 'bg-green-600 text-white' : 'hover:bg-[#1E293B] text-gray-300' }}">
-                    👥 <span>Usuários</span>
-                </a>
-
-                <a href="{{ route('avisos') }}"
-                class="flex items-center gap-3 p-2 rounded 
-                {{ request()->routeIs('avisos') || request()->routeIs('avisos.*') ? 'bg-green-600 text-white' : 'hover:bg-[#1E293B] text-gray-300' }}">
-                    🔔 <span>Avisos</span>
-                </a>
-
-                <a href="#"
-                class="flex items-center gap-3 p-2 rounded 
-                hover:bg-[#1E293B] text-gray-300">
-                    📊 <span>Relatórios</span>
-                </a>
-
-            </nav>
-
-        </div>
-
-        <!-- USUÁRIO -->
-        <div class="text-center mt-6">
-
-            <!-- INICIAIS -->
-            <div class="w-16 h-16 mx-auto rounded-full bg-green-600 flex items-center justify-center text-xl font-bold mb-2">
-                {{ strtoupper(substr(auth()->user()->name, 0, 1) . substr(strstr(auth()->user()->name, ' '), 1, 1)) }}
-            </div>
-
-            <h2 class="font-bold">{{ auth()->user()->name }}</h2>
-            <span class="text-sm text-gray-400">
-                {{ ucfirst(auth()->user()->tipo) }}
-            </span>
-
-        </div>
-
-</aside>
+    @include('partials.sidebar-professor')
 
     <!-- CONTEÚDO -->
-    <main class="flex-1 p-8">
+    <main class="flex-1 p-8 bg-[#0B1120] text-white">
 
         <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
 
@@ -99,7 +19,7 @@
             </div>
         @endif
 
-        <!-- 🔥 GRID PRINCIPAL (AGORA VEM PRIMEIRO) -->
+        <!-- 🔥 GRID PRINCIPAL -->
         <div class="grid grid-cols-3 gap-6 mb-8">
 
             <div class="col-span-2">
@@ -174,7 +94,7 @@
 
         </div>
 
-        <!-- 🔥 AGORA FICA EMBAIXO (SÓ MOVI, NÃO REMOVI NADA) -->
+        <!-- SOLICITAÇÕES PENDENTES -->
         @if($usuariosPendentes->count() > 0)
             <div class="bg-yellow-500/10 border border-yellow-500 p-6 rounded-xl mb-8 shadow-lg">
 
@@ -220,14 +140,13 @@
 
 </div>
 
-<!-- MODAL (NÃO MEXI) -->
+<!-- MODAL -->
 <div id="modalAviso" class="fixed inset-0 hidden items-center justify-center backdrop-blur-md bg-black/40 z-50">
 
     <div class="bg-white/10 backdrop-blur-xl border border-white/20 w-[900px] rounded-2xl p-6 text-white">
 
         <h2 class="text-xl font-bold mb-4">Gerenciar Avisos</h2>
 
-        <!-- FORM -->
         <form method="POST" id="formAviso">
             @csrf
             <input type="hidden" name="_method" id="methodAviso" value="POST">
@@ -246,16 +165,13 @@
 
             <div class="flex justify-between mb-6">
                 <button type="button" onclick="fecharModalAviso()">Cancelar</button>
-
                 <button type="submit" class="bg-blue-600 px-4 py-2 rounded-lg">
                     Salvar
                 </button>
             </div>
         </form>
 
-        <!-- HISTÓRICO -->
         <div class="space-y-3 border-t pt-4">
-
             @foreach($avisosRecentes as $aviso)
                 <div class="flex justify-between items-center bg-[#0F172A] p-3 rounded-lg">
 
@@ -285,7 +201,6 @@
 
                 </div>
             @endforeach
-
         </div>
 
     </div>

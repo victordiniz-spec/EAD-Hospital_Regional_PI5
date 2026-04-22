@@ -8,7 +8,7 @@ use App\Models\Aula;
 use App\Models\Avaliacao;
 use App\Models\Nota;
 use App\Models\Aviso;
-use App\Models\Modulo; // 🔥 ADICIONADO
+use App\Models\Modulo;
 
 class DashboardController extends Controller
 {
@@ -72,13 +72,25 @@ class DashboardController extends Controller
     }
 
     // =========================
+    // 🔥 NOVO: CONTROLE DE USUÁRIOS
+    // =========================
+    public function controleUsuarios()
+    {
+        $usuarios = User::whereIn('tipo', ['residente', 'preceptor'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('dashboard.controle-usuarios', compact('usuarios'));
+    }
+
+    // =========================
     // DASHBOARD ALUNO
     // =========================
     public function aluno()
     {
         $alunoId = auth()->id();
 
-        // 🔥 NOVO: CARREGAR MÓDULOS COM AULAS
+        // 🔥 MÓDULOS COM AULAS (ESSENCIAL PRA FUNCIONAR NO BLADE)
         $modulos = Modulo::with('aulas')->get();
 
         // TOTAL DE AULAS
@@ -154,7 +166,7 @@ class DashboardController extends Controller
             ->get();
 
         return view('dashboard.aluno', compact(
-            'modulos', // 🔥 ADICIONADO AQUI
+            'modulos',
             'totalAulas',
             'aulasAssistidas',
             'progresso',

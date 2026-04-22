@@ -53,6 +53,27 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard-professor', [DashboardController::class, 'professor'])
         ->name('dashboard.professor');
 
+
+    // =========================
+    // CONTROLE DE USUÁRIOS
+    // =========================
+    Route::get('/controle-usuarios', [DashboardController::class, 'controleUsuarios'])
+        ->name('controle.usuarios');
+
+    Route::put('/usuarios/{id}', function ($id) {
+
+        $user = \App\Models\User::findOrFail($id);
+
+        $user->update([
+            'name' => request('name'),
+            'email' => request('email'),
+            'cpf' => request('cpf'),
+        ]);
+
+        return back()->with('success', 'Usuário atualizado!');
+    })->name('usuarios.update');
+
+
     // =========================
     // APROVAÇÃO DE USUÁRIOS
     // =========================
@@ -61,6 +82,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/rejeitar-usuario/{id}', [UserController::class, 'rejeitar'])
         ->name('usuario.rejeitar');
+
 
     // =========================
     // VIDEOAULAS
@@ -80,8 +102,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/aulas/{id}', [AulaController::class, 'destroy'])
         ->name('aulas.destroy');
 
+
     // =========================
-    // AVALIAÇÕES
+    // AVALIAÇÕES (NORMAIS)
     // =========================
     Route::get('/avaliacoes/criar/{aula}', [AvaliacaoController::class, 'create'])
         ->name('avaliacoes.criar');
@@ -95,35 +118,52 @@ Route::middleware('auth')->group(function () {
     Route::post('/avaliacoes/{id}/submit', [AvaliacaoController::class, 'responder'])
         ->name('avaliacoes.submit');
 
+
+    // =========================
+    // 🔥 PROVA FINAL (ALUNO)
+    // =========================
+    Route::get('/prova-final', [AvaliacaoController::class, 'provaFinal'])
+        ->name('prova.final');
+
+    Route::post('/prova-final/responder', [AvaliacaoController::class, 'responderFinal'])
+        ->name('prova.final.responder');
+
+
+    // =========================
+    // 🔥 PROVA FINAL (ADMIN)
+    // =========================
+    Route::get('/prova-final/criar', [AvaliacaoController::class, 'createFinal'])
+        ->name('prova.final.criar');
+
+    Route::post('/prova-final/salvar', [AvaliacaoController::class, 'storeFinal'])
+        ->name('prova.final.store');
+
+
     // =========================
     // ALUNOS
     // =========================
     Route::get('/alunos', [DashboardController::class, 'alunos'])
         ->name('alunos');
 
-    // =========================
-    // AVISOS (CRUD COMPLETO 🔥)
-    // =========================
 
-    // LISTAR
+    // =========================
+    // AVISOS (CRUD)
+    // =========================
     Route::get('/avisos', [AvisoController::class, 'index'])
         ->name('avisos');
 
-    // CRIAR
     Route::post('/avisos', [AvisoController::class, 'store'])
         ->name('avisos.store');
 
-    // EDITAR (carregar dados)
     Route::get('/avisos/{id}/edit', [AvisoController::class, 'edit'])
         ->name('avisos.edit');
 
-    // ATUALIZAR
     Route::put('/avisos/{id}', [AvisoController::class, 'update'])
         ->name('avisos.update');
 
-    // EXCLUIR
     Route::delete('/avisos/{id}', [AvisoController::class, 'destroy'])
         ->name('avisos.destroy');
+
 
     // =========================
     // FUTURO
@@ -131,8 +171,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/postestes', fn() => view('dashboard.postestes'))
         ->name('postestes');
 
+
     // =========================
-    // DEBUG (opcional)
+    // DEBUG
     // =========================
     Route::get('/gerar-senha', function () {
         return bcrypt('123456');

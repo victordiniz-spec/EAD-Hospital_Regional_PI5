@@ -8,13 +8,14 @@ use App\Models\Aviso;
 class AvisoController extends Controller
 {
     // =========================
-    // LISTAR AVISOS (HISTÓRICO)
+    // LISTAR AVISOS (PÁGINA PRINCIPAL)
     // =========================
     public function index()
     {
         $avisos = Aviso::orderBy('created_at', 'desc')->get();
 
-        return view('avisos.index', compact('avisos'));
+        // 🔥 CORRIGIDO AQUI
+        return view('dashboard.avisos', compact('avisos'));
     }
 
     // =========================
@@ -38,12 +39,11 @@ class AvisoController extends Controller
     }
 
     // =========================
-    // EDITAR AVISO (CARREGAR DADOS)
+    // EDITAR AVISO (RETORNA JSON)
     // =========================
     public function edit($id)
     {
         $aviso = Aviso::findOrFail($id);
-
         return response()->json($aviso);
     }
 
@@ -53,9 +53,9 @@ class AvisoController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'titulo' => 'required',
-            'mensagem' => 'required',
-            'categoria' => 'required'
+            'titulo' => 'required|string|max:255',
+            'mensagem' => 'required|string',
+            'categoria' => 'required|in:urgente,informativo'
         ]);
 
         $aviso = Aviso::findOrFail($id);
@@ -66,7 +66,7 @@ class AvisoController extends Controller
             'categoria' => $request->categoria,
         ]);
 
-        return back()->with('success', 'Aviso atualizado!');
+        return back()->with('success', 'Aviso atualizado com sucesso!');
     }
 
     // =========================
