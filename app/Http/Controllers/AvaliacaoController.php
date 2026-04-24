@@ -48,7 +48,7 @@ class AvaliacaoController extends Controller
     }
 
     // =========================
-    // 🔥 CRIAR PROVA FINAL (ADMIN)
+    // CRIAR PROVA FINAL (ADMIN)
     // =========================
     public function createFinal()
     {
@@ -56,7 +56,7 @@ class AvaliacaoController extends Controller
     }
 
     // =========================
-    // 🔥 SALVAR PROVA FINAL (ADMIN)
+    // SALVAR PROVA FINAL (ADMIN)
     // =========================
     public function storeFinal(Request $request)
     {
@@ -125,22 +125,44 @@ class AvaliacaoController extends Controller
                 ->where('correta', 1)
                 ->first();
 
-            if ($request->respostas[$pergunta->id] == $respostaCerta->id) {
+            if (
+                isset($request->respostas[$pergunta->id]) &&
+                $respostaCerta &&
+                $request->respostas[$pergunta->id] == $respostaCerta->id
+            ) {
                 $acertos++;
             }
         }
 
-        $nota = ($acertos / count($perguntas)) * 10;
+        $nota = count($perguntas) > 0
+            ? ($acertos / count($perguntas)) * 10
+            : 0;
 
         return back()->with('success', "Você tirou nota {$nota}");
     }
 
     // =========================
-    // 🔥 MOSTRAR PROVA FINAL (ALUNO)
+    // MOSTRAR PROVA FINAL (ALUNO)
     // =========================
-    public function provaFinal()
+    public function provaFinal(Request $request)
     {
         $alunoId = auth()->id();
+
+        // 🔥 PROTEÇÃO: evita erro quando não logado
+        if (!$alunoId) {
+            return redirect()->route('login');
+        }
+
+        $modoTeste = $request->query('teste', false);
+
+        $avaliacao = DB::table('avaliacoes')
+            ->where('tipo', 'final')
+            ->first();
+
+        if (!$avaliacao) {
+            return redirect()->route('dashboard.aluno')
+                ->with('error', 'Prova final ainda não foi criada.');
+        }
 
         $totalAulas = DB::table('aulas')->count();
 
@@ -148,33 +170,27 @@ class AvaliacaoController extends Controller
             ->where('aluno_id', $alunoId)
             ->count();
 
-        if ($assistidas < $totalAulas) {
-            return back()->with('error', 'Você precisa concluir todas as aulas.');
+        // 🔥 BLOQUEIO CONTROLADO (NÃO REDIRECIONA ERRADO)
+        if (!$modoTeste && $totalAulas > 0 && $assistidas < $totalAulas) {
+            return redirect()->route('dashboard.aluno')
+                ->with('error', 'Você precisa concluir todas as aulas.');
         }
 
-        $prova = DB::table('avaliacoes')
-            ->where('tipo', 'final')
-            ->first();
-
-        if (!$prova) {
-            return back()->with('error', 'Prova final ainda não foi criada.');
-        }
-
-        $perguntas = DB::table('perguntas')
-            ->where('avaliacao_id', $prova->id)
+        $avaliacao->perguntas = DB::table('perguntas')
+            ->where('avaliacao_id', $avaliacao->id)
             ->get();
 
-        foreach ($perguntas as $pergunta) {
+        foreach ($avaliacao->perguntas as $pergunta) {
             $pergunta->respostas = DB::table('respostas')
                 ->where('pergunta_id', $pergunta->id)
                 ->get();
         }
 
-        return view('dashboard.prova-final', compact('prova', 'perguntas'));
+        return view('dashboard.prova-final', compact('avaliacao'));
     }
 
     // =========================
-    // 🔥 RESPONDER PROVA FINAL
+    // RESPONDER PROVA FINAL
     // =========================
     public function responderFinal(Request $request)
     {
@@ -193,13 +209,18 @@ class AvaliacaoController extends Controller
                 ->where('correta', 1)
                 ->first();
 
-            if (isset($request->respostas[$pergunta->id]) &&
-                $request->respostas[$pergunta->id] == $respostaCerta->id) {
+            if (
+                isset($request->respostas[$pergunta->id]) &&
+                $respostaCerta &&
+                $request->respostas[$pergunta->id] == $respostaCerta->id
+            ) {
                 $acertos++;
             }
         }
 
-        $nota = ($acertos / count($perguntas)) * 10;
+        $nota = count($perguntas) > 0
+            ? ($acertos / count($perguntas)) * 10
+            : 0;
 
         DB::table('resultados')->insert([
             'aluno_id' => auth()->id(),
@@ -211,8 +232,9 @@ class AvaliacaoController extends Controller
         if ($nota >= 7) {
             return redirect()->route('dashboard.aluno')
                 ->with('success', "🎉 Aprovado com nota {$nota}");
-        } else {
-            return back()->with('error', "Reprovado. Nota: {$nota}");
         }
+
+        return redirect()->route('dashboard.aluno')
+            ->with('error', "Reprovado. Nota: {$nota}");
     }
 }

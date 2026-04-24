@@ -6,15 +6,13 @@
 
 <div class="flex min-h-screen">
 
-    <!-- SIDEBAR PADRÃO -->
     @include('partials.sidebar-professor')
 
-    <!-- CONTEÚDO -->
     <main class="flex-1 p-8 bg-[#0B1120] text-white">
 
         <!-- HEADER -->
         <div class="flex justify-between mb-6">
-            <h2 class="text-2xl font-bold">Videoaulas</h2>
+            <h2 class="text-2xl font-bold">Módulos & Videoaulas</h2>
 
             <button onclick="abrirModalAula()" 
                 class="bg-green-600 px-5 py-2 rounded hover:bg-green-700 transition">
@@ -22,45 +20,70 @@
             </button>
         </div>
 
-        <!-- LISTA -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- 🔥 MÓDULOS -->
+        <div class="space-y-4">
 
-            @forelse($aulas as $aula)
-                <div class="bg-[#1E293B] p-4 rounded-xl shadow">
+            @foreach($modulos as $modulo)
 
-                    <h3 class="font-bold">{{ $aula->titulo }}</h3>
+                <div class="bg-[#1E293B] rounded-xl shadow">
 
-                    <p class="text-gray-400 text-sm">
-                        {{ $aula->descricao }}
-                    </p>
+                    <div onclick="toggleModulo({{ $modulo->id }})"
+                        class="cursor-pointer p-5 flex justify-between items-center hover:bg-[#0F172A] transition">
 
-                    <p class="text-xs text-green-400 mt-2">
-                        📚 {{ $aula->modulo->nome ?? 'Sem módulo' }}
-                    </p>
+                        <div>
+                            <h3 class="font-bold text-lg">📚 {{ $modulo->nome }}</h3>
+                            <p class="text-sm text-gray-400">Clique para ver as aulas</p>
+                        </div>
 
-                    <div class="flex gap-2 mt-4">
+                        <span id="icon-{{ $modulo->id }}">▼</span>
+                    </div>
 
-                        <a href="{{ route('aulas.assistir', $aula->id) }}"
-                           class="bg-blue-600 px-3 py-1 rounded text-sm hover:bg-blue-700">
-                           Assistir
-                        </a>
+                    <div id="modulo-{{ $modulo->id }}" class="hidden p-4 space-y-4">
 
-                        <form action="{{ route('aulas.destroy', $aula->id) }}" method="POST">
-                            @csrf 
-                            @method('DELETE')
+                        @php
+                            $aulasDoModulo = $aulas->where('modulo_id', $modulo->id);
+                        @endphp
 
-                            <button type="button" onclick="confirmarExclusao(this)"
-                                class="bg-red-600 px-3 py-1 rounded text-sm hover:bg-red-700">
-                                Excluir
-                            </button>
-                        </form>
+                        @forelse($aulasDoModulo as $aula)
+
+                            <div class="bg-[#0F172A] p-4 rounded-lg">
+
+                                <h4 class="font-semibold">{{ $aula->titulo }}</h4>
+
+                                <p class="text-gray-400 text-sm">
+                                    {{ $aula->descricao }}
+                                </p>
+
+                                <div class="flex gap-2 mt-4">
+
+                                    <a href="{{ route('aulas.assistir', $aula->id) }}"
+                                       class="bg-blue-600 px-3 py-1 rounded text-sm hover:bg-blue-700">
+                                       Assistir
+                                    </a>
+
+                                    <form action="{{ route('aulas.destroy', $aula->id) }}" method="POST">
+                                        @csrf 
+                                        @method('DELETE')
+
+                                        <button type="button" onclick="confirmarExclusao(this)"
+                                            class="bg-red-600 px-3 py-1 rounded text-sm hover:bg-red-700">
+                                            Excluir
+                                        </button>
+                                    </form>
+
+                                </div>
+
+                            </div>
+
+                        @empty
+                            <p class="text-gray-400">Nenhuma aula neste módulo.</p>
+                        @endforelse
 
                     </div>
 
                 </div>
-            @empty
-                <p class="text-gray-400">Nenhuma aula cadastrada.</p>
-            @endforelse
+
+            @endforeach
 
         </div>
 
@@ -83,8 +106,7 @@
             <form action="{{ route('aulas.store') }}" method="POST">
                 @csrf
 
-                <!-- MODULO -->
-                <select id="selectModulo" name="modulo_id"
+                <select name="modulo_id"
                     class="w-full p-3 mb-3 bg-[#1E293B] text-white rounded">
                     <option value="">Selecionar módulo</option>
                     @foreach($modulos as $modulo)
@@ -92,11 +114,9 @@
                     @endforeach
                 </select>
 
-                <!-- NOVO MODULO -->
-                <input type="text" id="novoModulo" name="novo_modulo" placeholder="Ou criar novo módulo"
+                <input type="text" name="novo_modulo" placeholder="Ou criar novo módulo"
                     class="w-full p-3 mb-4 bg-[#1E293B] text-white rounded border border-dashed border-green-500">
 
-                <!-- DADOS -->
                 <input type="text" name="titulo" placeholder="Título"
                     class="w-full p-3 mb-3 bg-[#1E293B] text-white rounded">
 
@@ -106,7 +126,6 @@
                 <input type="text" name="video_url" placeholder="Link do vídeo"
                     class="w-full p-3 mb-4 bg-[#1E293B] text-white rounded">
 
-                <!-- TESTE -->
                 <h3 class="mb-3 font-semibold">🧠 Pós-Teste</h3>
 
                 <input type="text" name="avaliacao[titulo]" placeholder="Título do teste"
@@ -115,10 +134,8 @@
                 <input type="number" name="avaliacao[tempo_limite]" placeholder="Tempo (min)"
                     class="w-full p-3 mb-4 bg-[#1E293B] text-white rounded">
 
-                <!-- PERGUNTAS -->
                 <div id="perguntas-container"></div>
 
-                <!-- BOTÕES -->
                 <div class="flex justify-between mt-4">
 
                     <button type="button" onclick="addPergunta()" 
@@ -138,31 +155,100 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
+let perguntaIndex = 0;
+
+// MODAL
 function abrirModalAula(){
     document.getElementById('modalAula').classList.remove('hidden')
 }
-
 function fecharModalAula(){
     document.getElementById('modalAula').classList.add('hidden')
 }
 
-function confirmarExclusao(botao){
-    Swal.fire({
-        title:'Tem certeza?',
-        text:'Essa aula será excluída!',
-        icon:'warning',
-        showCancelButton:true,
-        confirmButtonColor:'#dc2626',
-        cancelButtonColor:'#2563eb',
-        confirmButtonText:'Sim, excluir'
-    }).then((r)=>{
-        if(r.isConfirmed){
-            botao.closest('form').submit()
-        }
-    })
+// MÓDULO
+function toggleModulo(id) {
+    const modulo = document.getElementById('modulo-' + id);
+    const icon = document.getElementById('icon-' + id);
+
+    modulo.classList.toggle('hidden');
+    icon.innerText = modulo.classList.contains('hidden') ? '▼' : '▲';
+}
+
+// =========================
+// 🔥 PERGUNTAS
+// =========================
+function addPergunta() {
+
+    const container = document.getElementById('perguntas-container');
+
+    let html = `
+        <div class="bg-[#1E293B] p-4 rounded-lg mb-4" id="pergunta-${perguntaIndex}">
+
+            <div class="flex justify-between mb-2">
+                <strong>Pergunta</strong>
+                <button type="button" onclick="removerPergunta(${perguntaIndex})" class="text-red-400">🗑️</button>
+            </div>
+
+            <input type="text" name="perguntas[${perguntaIndex}][pergunta]" 
+                placeholder="Digite a pergunta"
+                class="w-full p-2 mb-3 rounded bg-[#0F172A] text-white">
+
+            <div id="respostas-${perguntaIndex}" class="space-y-2"></div>
+
+            <button type="button" onclick="addResposta(${perguntaIndex})"
+                class="text-sm bg-blue-600 px-3 py-1 rounded">
+                + Resposta
+            </button>
+
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', html);
+
+    addResposta(perguntaIndex);
+    addResposta(perguntaIndex);
+
+    perguntaIndex++;
+}
+
+// REMOVER PERGUNTA
+function removerPergunta(index) {
+    document.getElementById(`pergunta-${index}`).remove();
+}
+
+// =========================
+// 🔥 RESPOSTAS
+// =========================
+function addResposta(index) {
+
+    const container = document.getElementById(`respostas-${index}`);
+    const total = container.children.length;
+
+    let html = `
+        <div class="flex items-center gap-2" id="resposta-${index}-${total}">
+
+            <input type="radio" 
+                name="perguntas[${index}][correta]" 
+                value="${total}">
+
+            <input type="text" 
+                name="perguntas[${index}][respostas][]" 
+                placeholder="Resposta ${total + 1}"
+                class="w-full p-2 rounded bg-[#0F172A] text-white">
+
+            <button type="button" onclick="removerResposta(${index}, ${total})" 
+                class="text-red-400">❌</button>
+
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', html);
+}
+
+// REMOVER RESPOSTA
+function removerResposta(perguntaIndex, respostaIndex) {
+    document.getElementById(`resposta-${perguntaIndex}-${respostaIndex}`).remove();
 }
 </script>
 

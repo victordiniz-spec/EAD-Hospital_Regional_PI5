@@ -46,7 +46,6 @@
             </a>
 
             <!-- PROVAS -->
-            <!-- PROVAS -->
             <a href="{{ route('prova.final.criar') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
             {{ request()->routeIs('prova.final.criar') ? 'bg-green-600 text-white shadow' : 'hover:bg-gray-200' }}">
@@ -58,6 +57,21 @@
                 </svg>
 
                 <span>Prova Final</span>
+            </a>
+
+            <!-- CERTIFICADOS -->
+            <a href="{{ route('certificados.criar') }}"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition
+            {{ request()->routeIs('certificados.*') ? 'bg-green-600 text-white shadow' : 'hover:bg-gray-200' }}">
+
+                <!-- ICON CERTIFICADO -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M9 12l2 2 4-4m5-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+
+                <span>Certificados</span>
             </a>
 
             <!-- USUÁRIOS -->
@@ -119,5 +133,7 @@
         </span>
 
     </div>
+
+    
 
 </aside>

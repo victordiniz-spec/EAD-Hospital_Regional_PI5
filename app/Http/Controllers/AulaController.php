@@ -12,6 +12,9 @@ use App\Models\Modulo;
 
 class AulaController extends Controller
 {
+    // =========================
+    // 📺 LISTA DE AULAS (PROFESSOR)
+    // =========================
     public function index()
     {
         $aulas = Aula::with('modulo')->orderBy('id', 'desc')->get();
@@ -20,14 +23,16 @@ class AulaController extends Controller
         return view('dashboard.videoaulas', compact('aulas', 'modulos'));
     }
 
-    // 🔥 DASHBOARD DO ALUNO (APENAS ADICIONADO)
-    public function dashboardAluno()
+    // =========================
+    // 🎬 TELA DE AULAS DO ALUNO (NOVO)
+    // =========================
+    public function aluno()
     {
         $alunoId = auth()->id();
 
-        $modulos = Modulo::with(['aulas' => function($q){
+        $modulos = Modulo::with(['aulas' => function ($q) {
             $q->orderBy('id');
-        }])->get();
+        }])->orderBy('ordem')->get();
 
         // aulas assistidas
         $assistidas = DB::table('aulas_assistidas')
@@ -48,15 +53,45 @@ class AulaController extends Controller
                 : 0;
         }
 
-        // 🔥 mantém seus dados antigos (NÃO QUEBREI NADA)
+        return view('aluno.fazer-avaliacao', compact('modulos', 'assistidas'));
+    }
+
+    // =========================
+    // 🏠 DASHBOARD DO ALUNO
+    // =========================
+    public function dashboardAluno()
+    {
+        $alunoId = auth()->id();
+
+        $modulos = Modulo::with(['aulas' => function ($q) {
+            $q->orderBy('id');
+        }])->get();
+
+        $assistidas = DB::table('aulas_assistidas')
+            ->where('aluno_id', $alunoId)
+            ->pluck('aula_id')
+            ->toArray();
+
+        foreach ($modulos as $modulo) {
+            $total = $modulo->aulas->count();
+
+            $assistidasModulo = $modulo->aulas
+                ->whereIn('id', $assistidas)
+                ->count();
+
+            $modulo->progresso = $total > 0
+                ? ($assistidasModulo / $total) * 100
+                : 0;
+        }
+
         $proximasAulas = Aula::orderBy('id')->get();
 
-        $listaTestes = Avaliacao::leftJoin('aulas_assistidas', function($join) use ($alunoId){
+        $listaTestes = Avaliacao::leftJoin('aulas_assistidas', function ($join) use ($alunoId) {
             $join->on('avaliacoes.aula_id', '=', 'aulas_assistidas.aula_id')
-                 ->where('aulas_assistidas.aluno_id', $alunoId);
+                ->where('aulas_assistidas.aluno_id', $alunoId);
         })
-        ->select('avaliacoes.*', 'aulas_assistidas.assistido')
-        ->get();
+            ->select('avaliacoes.*', 'aulas_assistidas.assistido')
+            ->get();
 
         return view('dashboard.aluno', compact(
             'modulos',
@@ -66,12 +101,18 @@ class AulaController extends Controller
         ));
     }
 
+    // =========================
+    // ➕ CRIAR AULA
+    // =========================
     public function create()
     {
         $modulos = Modulo::all();
         return view('dashboard.criar-aula', compact('modulos'));
     }
 
+    // =========================
+    // 💾 SALVAR AULA
+    // =========================
     public function store(Request $request)
     {
         DB::beginTransaction();
@@ -88,6 +129,7 @@ class AulaController extends Controller
 
             $video = $request->video_url;
 
+            // converter links do YouTube
             if (str_contains($video, 'watch?v=')) {
                 $video = str_replace('watch?v=', 'embed/', $video);
             }
@@ -96,7 +138,7 @@ class AulaController extends Controller
                 $video = str_replace('youtu.be/', 'www.youtube.com/embed/', $video);
             }
 
-            // 🔥 módulo (CORRIGIDO)
+            // módulo
             $moduloId = null;
 
             if ($request->novo_modulo) {
@@ -153,6 +195,9 @@ class AulaController extends Controller
         }
     }
 
+    // =========================
+    // ▶ MARCAR AULA COMO ASSISTIDA
+    // =========================
     public function assistir($id)
     {
         DB::table('aulas_assistidas')->updateOrInsert(
@@ -169,6 +214,9 @@ class AulaController extends Controller
         return response()->json(['success' => true]);
     }
 
+    // =========================
+    // ❌ EXCLUIR AULA
+    // =========================
     public function destroy($id)
     {
         DB::beginTransaction();

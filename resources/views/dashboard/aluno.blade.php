@@ -6,61 +6,8 @@
 
 <div class="flex h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
 
-    <!-- SIDEBAR -->
-    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between py-6 px-5 shadow-xl">
-
-        <div>
-            <!-- LOGO -->
-            <h1 class="text-xl font-bold mb-10 tracking-wide text-emerald-400">
-                ResidentEAD
-            </h1>
-
-            <!-- MENU -->
-            <nav class="space-y-2 text-sm">
-
-                <a href="{{ route('dashboard.aluno') }}"
-                   class="flex items-center gap-3 px-4 py-2 rounded-lg bg-emerald-600 text-white shadow hover:bg-emerald-700 transition">
-                    🏠 Dashboard
-                </a>
-
-                <a href="#modulos"
-                   class="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
-                    🎥 Minhas Aulas
-                </a>
-
-                <a href="#"
-                   class="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
-                    📝 Pós-testes
-                </a>
-
-                <a href="#"
-                   class="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
-                    📊 Desempenho
-                </a>
-
-            </nav>
-        </div>
-
-        <!-- PERFIL -->
-        <div class="border-t border-slate-800 pt-4">
-            @php
-                $fotoUsuario = auth()->user()->foto 
-                    ? asset('storage/' . auth()->user()->foto) 
-                    : asset('images/usuario-padrao.png');
-            @endphp
-
-            <div class="flex items-center gap-3">
-                <img src="{{ $fotoUsuario }}"
-                     class="w-10 h-10 rounded-full object-cover border border-slate-700">
-
-                <div>
-                    <div class="text-sm font-semibold">{{ auth()->user()->name }}</div>
-                    <div class="text-xs text-slate-500">{{ ucfirst(auth()->user()->tipo) }}</div>
-                </div>
-            </div>
-        </div>
-
-    </aside>
+    <!-- 🔥 SIDEBAR (ADICIONADA) -->
+    @include('partials.sidebar-aluno')
 
     <!-- MAIN -->
     <div class="flex-1 flex flex-col">
@@ -179,7 +126,13 @@
 
             </div>
 
-            <!-- RESTANTE DO CÓDIGO CONTINUA IGUAL... -->
+            <!-- 🎓 BOTÃO CERTIFICADO -->
+            <div class="mb-8">
+                <a href="{{ route('certificado.gerar', 1) }}"
+                   class="bg-green-600 px-6 py-3 rounded-lg shadow hover:bg-green-700 transition">
+                    🎓 Baixar Certificado
+                </a>
+            </div>
 
         </main>
 
@@ -187,7 +140,7 @@
 
 </div>
 
-<!-- MODAL (NÃO ALTERADO) -->
+<!-- MODAL -->
 <div id="modalVideo" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
 
     <div class="bg-slate-900 w-[800px] rounded-xl p-4 relative">
@@ -244,7 +197,6 @@ function bloqueado() {
     });
 }
 
-/* 🔥 NOVA FUNÇÃO (CASCATA) */
 function toggleModulo(id) {
     const el = document.getElementById('modulo-' + id);
     el.classList.toggle('hidden');

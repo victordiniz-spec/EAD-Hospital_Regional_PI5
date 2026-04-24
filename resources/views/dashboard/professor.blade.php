@@ -96,44 +96,57 @@
 
         <!-- SOLICITAÇÕES PENDENTES -->
         @if($usuariosPendentes->count() > 0)
-            <div class="bg-yellow-500/10 border border-yellow-500 p-6 rounded-xl mb-8 shadow-lg">
+        <div class="bg-yellow-500/10 border border-yellow-500 p-6 rounded-xl mb-8 shadow-lg">
 
-                <h3 class="text-yellow-400 font-bold text-lg mb-4">
-                    ⚠️ Solicitações de acesso pendentes
-                </h3>
+            <h3 class="text-yellow-400 font-bold text-lg mb-4">
+                ⚠️ Solicitações de acesso pendentes
+            </h3>
 
-                <div class="space-y-4">
-                    @foreach($usuariosPendentes as $user)
-                        <div class="bg-[#1E293B] p-5 rounded-xl flex justify-between items-center">
+            <div class="space-y-4">
 
-                            <div>
-                                <p><strong>Nome:</strong> {{ $user->name }}</p>
-                                <p><strong>CPF:</strong> {{ $user->cpf }}</p>
-                                <p><strong>Email:</strong> {{ $user->email }}</p>
-                                <p><strong>Tipo:</strong> {{ ucfirst($user->tipo) }}</p>
-                            </div>
+                @foreach($usuariosPendentes as $index => $user)
+                    <div class="bg-[#1E293B] p-5 rounded-xl flex justify-between items-center 
+                        {{ $index >= 3 ? 'hidden extra-user' : '' }}">
 
-                            <div class="flex gap-3">
-                                <form method="POST" action="{{ route('usuario.aprovar', $user->id) }}">
-                                    @csrf
-                                    <button class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition">
-                                        ✅ Aprovar
-                                    </button>
-                                </form>
-
-                                <form method="POST" action="{{ route('usuario.rejeitar', $user->id) }}">
-                                    @csrf
-                                    <button class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">
-                                        ❌ Rejeitar
-                                    </button>
-                                </form>
-                            </div>
-
+                        <div>
+                            <p><strong>Nome:</strong> {{ $user->name }}</p>
+                            <p><strong>CPF:</strong> {{ $user->cpf }}</p>
+                            <p><strong>Email:</strong> {{ $user->email }}</p>
+                            <p><strong>Tipo:</strong> {{ ucfirst($user->tipo) }}</p>
                         </div>
-                    @endforeach
-                </div>
+
+                        <div class="flex gap-3">
+                            <form method="POST" action="{{ route('usuario.aprovar', $user->id) }}">
+                                @csrf
+                                <button class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition">
+                                    ✅ Aprovar
+                                </button>
+                            </form>
+
+                            <form method="POST" action="{{ route('usuario.rejeitar', $user->id) }}">
+                                @csrf
+                                <button class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">
+                                    ❌ Rejeitar
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+                @endforeach
 
             </div>
+
+            <!-- BOTÃO VER MAIS -->
+            @if($usuariosPendentes->count() > 3)
+            <div class="mt-4 text-center">
+                <button onclick="toggleUsuarios()" id="btnVerMais"
+                    class="border border-yellow-500 text-yellow-400 px-4 py-2 rounded hover:bg-yellow-500/20 transition">
+                    Ver mais
+                </button>
+            </div>
+            @endif
+
+        </div>
         @endif
 
     </main>
@@ -208,9 +221,35 @@
 </div>
 
 <script>
+
+// =========================
+// 🔥 VER MAIS USUÁRIOS
+// =========================
+function toggleUsuarios() {
+    let extras = document.querySelectorAll('.extra-user');
+    let btn = document.getElementById('btnVerMais');
+
+    if (!extras.length || !btn) return;
+
+    let ocultos = Array.from(extras).some(el => el.classList.contains('hidden'));
+
+    extras.forEach(el => {
+        el.classList.toggle('hidden');
+    });
+
+    btn.innerText = ocultos ? 'Ver menos' : 'Ver mais';
+}
+
+
+// =========================
+// 🔥 MODAL AVISO
+// =========================
 function abrirModalAviso() {
-    document.getElementById('modalAviso').classList.remove('hidden');
-    document.getElementById('modalAviso').classList.add('flex');
+    const modal = document.getElementById('modalAviso');
+    if (!modal) return;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 
     document.getElementById('formAviso').reset();
     document.getElementById('formAviso').action = "{{ route('avisos.store') }}";
@@ -218,7 +257,10 @@ function abrirModalAviso() {
 }
 
 function fecharModalAviso() {
-    document.getElementById('modalAviso').classList.add('hidden');
+    const modal = document.getElementById('modalAviso');
+    if (!modal) return;
+
+    modal.classList.add('hidden');
 }
 
 function editarAviso(id, titulo, mensagem, categoria) {
@@ -232,6 +274,7 @@ function editarAviso(id, titulo, mensagem, categoria) {
     document.getElementById('formAviso').action = "/avisos/" + id;
     document.getElementById('methodAviso').value = "PUT";
 }
+
 </script>
 
 @endsection

@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AulaController;
 use App\Http\Controllers\AvaliacaoController;
 use App\Http\Controllers\AvisoController;
+use App\Http\Controllers\CertificadoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,7 +56,7 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================
-    // CONTROLE DE USUÁRIOS
+    // 👤 USUÁRIOS
     // =========================
     Route::get('/controle-usuarios', [DashboardController::class, 'controleUsuarios'])
         ->name('controle.usuarios');
@@ -75,7 +76,7 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================
-    // APROVAÇÃO DE USUÁRIOS
+    // ✔ APROVAÇÃO
     // =========================
     Route::post('/aprovar-usuario/{id}', [UserController::class, 'aprovar'])
         ->name('usuario.aprovar');
@@ -85,7 +86,7 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================
-    // VIDEOAULAS
+    // 🎥 VIDEOAULAS (PROFESSOR)
     // =========================
     Route::get('/videoaulas', [AulaController::class, 'index'])
         ->name('videoaulas');
@@ -96,15 +97,22 @@ Route::middleware('auth')->group(function () {
     Route::post('/videoaulas', [AulaController::class, 'store'])
         ->name('aulas.store');
 
-    Route::get('/assistir-aula/{id}', [AulaController::class, 'assistir'])
-        ->name('aulas.assistir');
-
     Route::delete('/aulas/{id}', [AulaController::class, 'destroy'])
         ->name('aulas.destroy');
 
 
     // =========================
-    // AVALIAÇÕES (NORMAIS)
+    // 🎬 VIDEOAULAS (ALUNO)
+    // =========================
+    Route::get('/minhas-aulas', [AulaController::class, 'aluno'])
+        ->name('aluno.aulas');
+
+    Route::get('/assistir-aula/{id}', [AulaController::class, 'assistir'])
+        ->name('aulas.assistir');
+
+
+    // =========================
+    // 📝 AVALIAÇÕES
     // =========================
     Route::get('/avaliacoes/criar/{aula}', [AvaliacaoController::class, 'create'])
         ->name('avaliacoes.criar');
@@ -120,7 +128,7 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================
-    // 🔥 PROVA FINAL (ALUNO)
+    // 📝 PROVA FINAL (ALUNO)
     // =========================
     Route::get('/prova-final', [AvaliacaoController::class, 'provaFinal'])
         ->name('prova.final');
@@ -130,7 +138,7 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================
-    // 🔥 PROVA FINAL (ADMIN)
+    // 🛠️ PROVA FINAL (ADMIN)
     // =========================
     Route::get('/prova-final/criar', [AvaliacaoController::class, 'createFinal'])
         ->name('prova.final.criar');
@@ -140,14 +148,48 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================
-    // ALUNOS
+    // 🎓 CERTIFICADOS
+    // =========================
+
+    // CRIAR MODELO
+    Route::get('/certificados/criar', function () {
+        return view('dashboard.certificados.criar');
+    })->name('certificados.criar');
+
+    // SALVAR MODELO
+    Route::post('/certificados', function () {
+
+        $caminho = request()->hasFile('assinatura')
+            ? request()->file('assinatura')->store('assinaturas', 'public')
+            : null;
+
+        \Illuminate\Support\Facades\DB::table('certificados')->insert([
+            'curso' => request('curso'),
+            'carga_horaria' => request('carga_horaria'),
+            'responsavel' => request('responsavel'),
+            'cargo' => request('cargo'),
+            'assinatura' => $caminho,
+            'created_at' => now(),
+        ]);
+
+        return back()->with('success', 'Certificado salvo com sucesso!');
+    })->name('certificados.store');
+
+
+    // 🔥 GERAR PDF
+    Route::get('/certificado/gerar/{id}', [CertificadoController::class, 'gerar'])
+        ->name('certificado.gerar');
+
+
+    // =========================
+    // 👨‍🎓 ALUNOS
     // =========================
     Route::get('/alunos', [DashboardController::class, 'alunos'])
         ->name('alunos');
 
 
     // =========================
-    // AVISOS (CRUD)
+    // 📢 AVISOS
     // =========================
     Route::get('/avisos', [AvisoController::class, 'index'])
         ->name('avisos');
