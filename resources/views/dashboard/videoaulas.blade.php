@@ -8,65 +8,86 @@
 
     @include('partials.sidebar-professor')
 
-    <main class="flex-1 p-8 bg-[#0B1120] text-white">
+    <main class="flex-1 p-4 sm:p-8 bg-[#0B1120] text-white">
 
         <!-- HEADER -->
-        <div class="flex justify-between mb-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
             <h2 class="text-2xl font-bold">Módulos & Videoaulas</h2>
 
-            <button onclick="abrirModalAula()" 
-                class="bg-green-600 px-5 py-2 rounded hover:bg-green-700 transition">
+            <button
+                onclick="abrirModalAula()"
+                class="w-full sm:w-auto bg-green-600 px-5 py-2 rounded-lg hover:bg-green-700 transition text-sm font-semibold"
+            >
                 + Nova Aula
             </button>
         </div>
 
-        <!-- 🔥 MÓDULOS -->
+        <!-- MÓDULOS -->
         <div class="space-y-4">
 
-            @foreach($modulos as $modulo)
+            @foreach ($modulos as $modulo)
 
-                <div class="bg-[#1E293B] rounded-xl shadow">
+                <div class="bg-[#1E293B] rounded-xl shadow overflow-hidden">
 
-                    <div onclick="toggleModulo({{ $modulo->id }})"
-                        class="cursor-pointer p-5 flex justify-between items-center hover:bg-[#0F172A] transition">
-
+                    <!-- Cabeçalho do Módulo -->
+                    <div
+                        onclick="toggleModulo({{ $modulo->id }})"
+                        class="cursor-pointer p-4 sm:p-5 flex justify-between items-center hover:bg-[#0F172A] transition"
+                    >
                         <div>
-                            <h3 class="font-bold text-lg">📚 {{ $modulo->nome }}</h3>
-                            <p class="text-sm text-gray-400">Clique para ver as aulas</p>
+                            <h3 class="font-bold text-base sm:text-lg"> {{ $modulo->nome }}</h3>
+                            <p class="text-xs sm:text-sm text-gray-400">Clique para ver as aulas</p>
                         </div>
 
-                        <span id="icon-{{ $modulo->id }}">▼</span>
+                        <span
+                            id="icon-{{ $modulo->id }}"
+                            class="text-gray-400 text-sm transition-transform duration-300"
+                        >
+                            ▼
+                        </span>
                     </div>
 
-                    <div id="modulo-{{ $modulo->id }}" class="hidden p-4 space-y-4">
+                    <!-- Aulas do Módulo -->
+                    <div id="modulo-{{ $modulo->id }}" class="hidden px-4 pb-4 pt-1 space-y-3">
 
                         @php
                             $aulasDoModulo = $aulas->where('modulo_id', $modulo->id);
                         @endphp
 
-                        @forelse($aulasDoModulo as $aula)
+                        @forelse ($aulasDoModulo as $aula)
 
                             <div class="bg-[#0F172A] p-4 rounded-lg">
 
-                                <h4 class="font-semibold">{{ $aula->titulo }}</h4>
+                                <h4 class="font-semibold text-sm sm:text-base">
+                                    {{ $aula->titulo }}
+                                </h4>
 
-                                <p class="text-gray-400 text-sm">
+                                <p class="text-gray-400 text-xs sm:text-sm mt-1">
                                     {{ $aula->descricao }}
                                 </p>
 
-                                <div class="flex gap-2 mt-4">
+                                <div class="flex flex-wrap gap-2 mt-4">
 
-                                    <a href="{{ route('aulas.assistir', $aula->id) }}"
-                                       class="bg-blue-600 px-3 py-1 rounded text-sm hover:bg-blue-700">
-                                       Assistir
+                                    <a
+                                        href="{{ route('aulas.assistir', $aula->id) }}"
+                                        class="bg-blue-600 px-3 py-1.5 rounded text-xs sm:text-sm font-medium hover:bg-blue-700 transition"
+                                    >
+                                        Assistir
                                     </a>
 
-                                    <form action="{{ route('aulas.destroy', $aula->id) }}" method="POST">
-                                        @csrf 
+                                    <form
+                                        action="{{ route('aulas.destroy', $aula->id) }}"
+                                        method="POST"
+                                        class="inline"
+                                    >
+                                        @csrf
                                         @method('DELETE')
 
-                                        <button type="button" onclick="confirmarExclusao(this)"
-                                            class="bg-red-600 px-3 py-1 rounded text-sm hover:bg-red-700">
+                                        <button
+                                            type="button"
+                                            onclick="confirmarExclusao(this)"
+                                            class="bg-red-600 px-3 py-1.5 rounded text-xs sm:text-sm font-medium hover:bg-red-700 transition"
+                                        >
                                             Excluir
                                         </button>
                                     </form>
@@ -76,7 +97,9 @@
                             </div>
 
                         @empty
-                            <p class="text-gray-400">Nenhuma aula neste módulo.</p>
+
+                            <p class="text-gray-400 text-sm py-2">Nenhuma aula neste módulo.</p>
+
                         @endforelse
 
                     </div>
@@ -91,61 +114,151 @@
 
 </div>
 
-<!-- MODAL -->
-<div id="modalAula" class="fixed inset-0 hidden bg-black/70 z-50">
+<!-- MODAL CRIAR AULA-->
+<div id="modalAula" class="fixed inset-0 hidden items-center justify-center z-50"
+    style="background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);">
 
-    <div class="flex items-center justify-center min-h-screen">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4"
+        style="max-height: 90vh; overflow-y: auto;">
 
-        <div class="bg-[#0F172A] w-[900px] max-h-[90vh] overflow-auto p-6 rounded-2xl shadow-lg">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-8 pt-8 pb-4">
+            <h2 class="text-2xl font-bold text-gray-800">Criar Aula Completa</h2>
 
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Criar Aula Completa</h2>
-                <button onclick="fecharModalAula()" class="text-xl">✖</button>
-            </div>
+            <button
+                type="button"
+                onclick="fecharModalAula()"
+                class="text-gray-400 hover:text-gray-600 transition"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
 
-            <form action="{{ route('aulas.store') }}" method="POST">
+        <div class="px-8 pb-8">
+
+            <form action="{{ route('aulas.store') }}" method="POST" id="formAula">
                 @csrf
 
-                <select name="modulo_id"
-                    class="w-full p-3 mb-3 bg-[#1E293B] text-white rounded">
-                    <option value="">Selecionar módulo</option>
-                    @foreach($modulos as $modulo)
-                        <option value="{{ $modulo->id }}">{{ $modulo->nome }}</option>
-                    @endforeach
-                </select>
+                <!-- Selecionar Módulo -->
+                <div class="mb-3">
+                    <div class="relative">
+                        <select
+                            name="modulo_id"
+                            class="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition cursor-pointer"
+                        >
+                            <option value="">Selecionar módulo</option>
+                            @foreach ($modulos as $modulo)
+                                <option value="{{ $modulo->id }}">{{ $modulo->nome }}</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
 
-                <input type="text" name="novo_modulo" placeholder="Ou criar novo módulo"
-                    class="w-full p-3 mb-4 bg-[#1E293B] text-white rounded border border-dashed border-green-500">
+                <!-- Novo Módulo -->
+                <div class="mb-4">
+                    <input
+                        type="text"
+                        name="novo_modulo"
+                        placeholder="Ou criar novo módulo"
+                        class="w-full px-4 py-2.5 rounded-lg border border-dashed border-teal-400 bg-teal-50 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                    >
+                </div>
 
-                <input type="text" name="titulo" placeholder="Título"
-                    class="w-full p-3 mb-3 bg-[#1E293B] text-white rounded">
+                <!-- Título -->
+                <div class="mb-3">
+                    <input
+                        type="text"
+                        name="titulo"
+                        placeholder="Título"
+                        class="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                    >
+                </div>
 
-                <textarea name="descricao" placeholder="Descrição"
-                    class="w-full p-3 mb-3 bg-[#1E293B] text-white rounded"></textarea>
+                <!-- Descrição -->
+                <div class="mb-3">
+                    <textarea
+                        name="descricao"
+                        placeholder="Descrição"
+                        rows="3"
+                        class="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition resize-none"
+                    ></textarea>
+                </div>
 
-                <input type="text" name="video_url" placeholder="Link do vídeo"
-                    class="w-full p-3 mb-4 bg-[#1E293B] text-white rounded">
+                <!-- Link do Vídeo -->
+                <div class="mb-6">
+                    <input
+                        type="text"
+                        name="video_url"
+                        placeholder="Link do vídeo"
+                        class="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                    >
+                </div>
 
-                <h3 class="mb-3 font-semibold">🧠 Pós-Teste</h3>
+                <!-- Pós-Teste -->
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-800">Teste</h3>
+                </div>
 
-                <input type="text" name="avaliacao[titulo]" placeholder="Título do teste"
-                    class="w-full p-3 mb-3 bg-[#1E293B] text-white rounded">
+                <!-- Título do Teste -->
+                <div class="mb-3">
+                    <input
+                        type="text"
+                        name="avaliacao[titulo]"
+                        placeholder="Título do teste"
+                        class="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                    >
+                </div>
 
-                <input type="number" name="avaliacao[tempo_limite]" placeholder="Tempo (min)"
-                    class="w-full p-3 mb-4 bg-[#1E293B] text-white rounded">
+                <!-- Tempo (min) -->
+                <div class="mb-6">
+                    <input
+                        type="number"
+                        name="avaliacao[tempo_limite]"
+                        placeholder="Tempo (min)"
+                        min="1"
+                        class="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                    >
+                </div>
 
-                <div id="perguntas-container"></div>
+                <!-- Container de Perguntas -->
+                <div id="perguntas-container" class="space-y-4 mb-4"></div>
 
-                <div class="flex justify-between mt-4">
+                <!-- Botões -->
+                <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between sm:items-center pt-2">
 
-                    <button type="button" onclick="addPergunta()" 
-                        class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">
-                        + Pergunta
+                    <button
+                        type="button"
+                        onclick="addPergunta()"
+                        class="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-teal-500 text-teal-700 text-sm font-semibold hover:bg-teal-50 transition"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Pergunta
                     </button>
 
-                    <button class="bg-green-600 px-5 py-2 rounded hover:bg-green-700">
-                        Salvar Aula
-                    </button>
+                    <div class="flex gap-3 justify-end">
+                        <button
+                            type="button"
+                            onclick="fecharModalAula()"
+                            class="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            class="px-6 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-900 text-white text-sm font-semibold transition shadow-sm"
+                        >
+                            Salvar Aula
+                        </button>
+                    </div>
 
                 </div>
 
@@ -156,100 +269,147 @@
 </div>
 
 <script>
-let perguntaIndex = 0;
+    let perguntaIndex = 0;
 
-// MODAL
-function abrirModalAula(){
-    document.getElementById('modalAula').classList.remove('hidden')
-}
-function fecharModalAula(){
-    document.getElementById('modalAula').classList.add('hidden')
-}
+    // ─── Modal ────────────────────────────────────────────────────────────────
 
-// MÓDULO
-function toggleModulo(id) {
-    const modulo = document.getElementById('modulo-' + id);
-    const icon = document.getElementById('icon-' + id);
+    function abrirModalAula() {
+        const modal = document.getElementById('modalAula');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
 
-    modulo.classList.toggle('hidden');
-    icon.innerText = modulo.classList.contains('hidden') ? '▼' : '▲';
-}
+    function fecharModalAula() {
+        const modal = document.getElementById('modalAula');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.getElementById('formAula').reset();
+        document.getElementById('perguntas-container').innerHTML = '';
+        perguntaIndex = 0;
+    }
 
-// =========================
-// 🔥 PERGUNTAS
-// =========================
-function addPergunta() {
+    // Fechar ao clicar fora do modal
+    document.getElementById('modalAula').addEventListener('click', function (e) {
+        if (e.target === this) fecharModalAula();
+    });
 
-    const container = document.getElementById('perguntas-container');
+    // ─── Módulos ──────────────────────────────────────────────────────────────
 
-    let html = `
-        <div class="bg-[#1E293B] p-4 rounded-lg mb-4" id="pergunta-${perguntaIndex}">
+    function toggleModulo(id) {
+        const conteudo = document.getElementById(`modulo-${id}`);
+        const icone = document.getElementById(`icon-${id}`);
+        const aberto = !conteudo.classList.contains('hidden');
 
-            <div class="flex justify-between mb-2">
-                <strong>Pergunta</strong>
-                <button type="button" onclick="removerPergunta(${perguntaIndex})" class="text-red-400">🗑️</button>
+        conteudo.classList.toggle('hidden', aberto);
+        icone.style.transform = aberto ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+
+    // ─── Perguntas ────────────────────────────────────────────────────────────
+
+    function addPergunta() {
+        const container = document.getElementById('perguntas-container');
+
+        const div = document.createElement('div');
+        div.className = 'border border-gray-200 rounded-xl p-4 bg-gray-50';
+        div.id = `pergunta-${perguntaIndex}`;
+
+        div.innerHTML = `
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-widest
+                    bg-white border border-gray-200 px-2.5 py-1 rounded-lg">
+                    Pergunta ${perguntaIndex + 1}
+                </span>
+                <button type="button" onclick="removerPergunta(${perguntaIndex})"
+                    class="text-red-400 hover:text-red-600 transition" title="Remover">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
             </div>
 
-            <input type="text" name="perguntas[${perguntaIndex}][pergunta]" 
-                placeholder="Digite a pergunta"
-                class="w-full p-2 mb-3 rounded bg-[#0F172A] text-white">
+            <input
+                type="text"
+                name="perguntas[${perguntaIndex}][pergunta]"
+                placeholder="Digite o enunciado da questão aqui..."
+                class="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition mb-3"
+            >
 
-            <div id="respostas-${perguntaIndex}" class="space-y-2"></div>
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                Alternativas (marque a correta)
+            </p>
+
+            <div id="respostas-${perguntaIndex}" class="space-y-2 mb-3"></div>
 
             <button type="button" onclick="addResposta(${perguntaIndex})"
-                class="text-sm bg-blue-600 px-3 py-1 rounded">
-                + Resposta
+                class="flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-900 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+                Adicionar alternativa
             </button>
+        `;
 
-        </div>
-    `;
+        container.appendChild(div);
 
-    container.insertAdjacentHTML('beforeend', html);
+        // Adiciona 4 respostas padrão
+        addResposta(perguntaIndex);
+        addResposta(perguntaIndex);
+        addResposta(perguntaIndex);
+        addResposta(perguntaIndex);
 
-    addResposta(perguntaIndex);
-    addResposta(perguntaIndex);
+        perguntaIndex++;
+    }
 
-    perguntaIndex++;
-}
+    function removerPergunta(index) {
+        document.getElementById(`pergunta-${index}`).remove();
+    }
 
-// REMOVER PERGUNTA
-function removerPergunta(index) {
-    document.getElementById(`pergunta-${index}`).remove();
-}
+    // ─── Respostas 
 
-// =========================
-// 🔥 RESPOSTAS
-// =========================
-function addResposta(index) {
+    const letras = ['A', 'B', 'C', 'D', 'E'];
 
-    const container = document.getElementById(`respostas-${index}`);
-    const total = container.children.length;
+    function addResposta(index) {
+        const container = document.getElementById(`respostas-${index}`);
+        const total = container.children.length;
+        const letra = letras[total] ?? String(total + 1);
 
-    let html = `
-        <div class="flex items-center gap-2" id="resposta-${index}-${total}">
+        const div = document.createElement('div');
+        div.id = `resposta-${index}-${total}`;
+        div.className = 'flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2.5';
 
-            <input type="radio" 
-                name="perguntas[${index}][correta]" 
-                value="${total}">
+        div.innerHTML = `
+            <input type="radio" name="perguntas[${index}][correta]" value="${total}"
+                class="w-4 h-4 accent-teal-700 cursor-pointer">
+            <span class="text-xs font-bold text-gray-500 w-4">${letra}</span>
+            <input
+                type="text"
+                name="perguntas[${index}][respostas][]"
+                placeholder="Texto da alternativa ${letra}..."
+                class="flex-1 text-sm text-gray-700 bg-transparent placeholder-gray-400 focus:outline-none"
+            >
+            <button type="button" onclick="removerResposta(${index}, ${total})"
+                class="text-gray-300 hover:text-red-500 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        `;
 
-            <input type="text" 
-                name="perguntas[${index}][respostas][]" 
-                placeholder="Resposta ${total + 1}"
-                class="w-full p-2 rounded bg-[#0F172A] text-white">
+        container.appendChild(div);
+    }
 
-            <button type="button" onclick="removerResposta(${index}, ${total})" 
-                class="text-red-400">❌</button>
+    function removerResposta(perguntaIndex, respostaIndex) {
+        document.getElementById(`resposta-${perguntaIndex}-${respostaIndex}`).remove();
+    }
 
-        </div>
-    `;
+    // ─── Exclusão
 
-    container.insertAdjacentHTML('beforeend', html);
-}
-
-// REMOVER RESPOSTA
-function removerResposta(perguntaIndex, respostaIndex) {
-    document.getElementById(`resposta-${perguntaIndex}-${respostaIndex}`).remove();
-}
+    function confirmarExclusao(btn) {
+        if (confirm('Tem certeza que deseja excluir esta aula?')) {
+            btn.closest('form').submit();
+        }
+    }
 </script>
 
 @endsection
