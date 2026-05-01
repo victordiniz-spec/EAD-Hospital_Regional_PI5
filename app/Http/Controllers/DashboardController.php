@@ -154,8 +154,8 @@ class DashboardController extends Controller
                       ->where('aluno_id', $alunoId);
             })
             ->select(
-                'avaliacoes.*',
-                DB::raw('IF(aulas_assistidas.assistido = 1, true, false) as assistido')
+            'avaliacoes.*',
+            DB::raw('CASE WHEN aulas_assistidas.assistido = true THEN true ELSE false END as assistido')
             )
             ->limit(3)
             ->get();
