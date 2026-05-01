@@ -32,7 +32,9 @@
             <!-- VIDEO AULAS -->
             <a href="{{ route('aluno.aulas') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-            hover:bg-gray-200">
+            {{ request()->routeIs('aluno.aulas') || request()->routeIs('aluno.aulas.*') 
+                ? 'bg-green-600 text-white shadow' 
+                : 'hover:bg-gray-200' }}">
 
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -47,8 +49,8 @@
             <a href="{{ route('prova.final') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
             {{ request()->routeIs('prova.final') || request()->routeIs('prova.final.*') 
-                ? 'bg-emerald-600 text-white shadow' 
-                : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                ? 'bg-green-600 text-white shadow' 
+                : 'hover:bg-gray-200' }}">
 
                 <!-- ICON DOCUMENTO -->
                 <svg xmlns="http://www.w3.org/2000/svg" 
@@ -69,7 +71,9 @@
             <!-- CERTIFICADO -->
             <a href="{{ route('certificado.gerar', 1) }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-            hover:bg-gray-200">
+            {{ request()->routeIs('certificado.gerar') || request()->routeIs('certificado.*') 
+                ? 'bg-green-600 text-white shadow' 
+                : 'hover:bg-gray-200' }}">
 
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -84,21 +88,105 @@
 
     </div>
 
-    <!-- USUÁRIO -->
-    <div class="text-center mt-10">
+    <!-- BOTÃO SAIR -->
+    <div class="mt-10">
+        <button type="button"
+            onclick="abrirModalSair()"
+            class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-red-50 text-red-600 font-semibold hover:bg-red-100 transition">
 
-        <div class="w-12 h-12 mx-auto rounded-full bg-green-600 flex items-center justify-center text-white font-bold text-lg">
-            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-        </div>
+            <!-- ICON SAIR -->
+            <svg xmlns="http://www.w3.org/2000/svg" 
+                class="w-5 h-5" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor">
+                <path stroke-linecap="round" 
+                    stroke-linejoin="round" 
+                    stroke-width="1.7"
+                    d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6A2.25 2.25 0 0 0 5.25 5.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"/>
+            </svg>
 
-        <h2 class="mt-2 font-semibold text-gray-800">
-            {{ auth()->user()->name }}
-        </h2>
-
-        <span class="text-sm text-gray-500">
-            {{ ucfirst(auth()->user()->tipo) }}
-        </span>
-
+            <span>Sair</span>
+        </button>
     </div>
 
 </aside>
+
+<!-- MODAL DE CONFIRMAÇÃO DE SAIR -->
+<div id="modalSair"
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+
+    <div class="bg-white w-full max-w-sm mx-4 rounded-2xl shadow-2xl p-6 text-center">
+
+        <!-- ÍCONE -->
+        <div class="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" 
+                class="w-8 h-8 text-red-600" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor">
+                <path stroke-linecap="round" 
+                    stroke-linejoin="round" 
+                    stroke-width="1.8"
+                    d="M12 9v3.75m0 3.75h.008v.008H12V16.5zm9-4.5a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+            </svg>
+        </div>
+
+        <!-- TEXTO -->
+        <h2 class="text-xl font-bold text-gray-800 mb-2">
+            Deseja sair?
+        </h2>
+
+        <p class="text-sm text-gray-500 mb-6">
+            Você será desconectado da sua conta e voltará para a tela de login.
+        </p>
+
+        <!-- BOTÕES -->
+        <div class="flex gap-3">
+            <button type="button"
+                onclick="fecharModalSair()"
+                class="w-1/2 px-4 py-3 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition">
+                Cancelar
+            </button>
+
+            <form method="POST" action="{{ route('logout') }}" class="w-1/2">
+                @csrf
+
+                <button type="submit"
+                    class="w-full px-4 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition shadow">
+                    Sim, sair
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<!-- SCRIPT DO MODAL -->
+<script>
+    function abrirModalSair() {
+        const modal = document.getElementById('modalSair');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function fecharModalSair() {
+        const modal = document.getElementById('modalSair');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    // Fechar ao clicar fora da caixinha
+    document.getElementById('modalSair').addEventListener('click', function(e) {
+        if (e.target === this) {
+            fecharModalSair();
+        }
+    });
+
+    // Fechar ao apertar ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            fecharModalSair();
+        }
+    });
+</script>
