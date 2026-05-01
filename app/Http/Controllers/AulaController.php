@@ -24,7 +24,7 @@ class AulaController extends Controller
     }
 
     // =========================
-    // 🎬 TELA DE AULAS DO ALUNO (NOVO)
+    // 🎬 TELA DE AULAS DO ALUNO
     // =========================
     public function aluno()
     {
@@ -34,13 +34,11 @@ class AulaController extends Controller
             $q->orderBy('id');
         }])->orderBy('ordem')->get();
 
-        // aulas assistidas
         $assistidas = DB::table('aulas_assistidas')
             ->where('aluno_id', $alunoId)
             ->pluck('aula_id')
             ->toArray();
 
-        // progresso por módulo
         foreach ($modulos as $modulo) {
             $total = $modulo->aulas->count();
 
@@ -90,7 +88,10 @@ class AulaController extends Controller
             $join->on('avaliacoes.aula_id', '=', 'aulas_assistidas.aula_id')
                 ->where('aulas_assistidas.aluno_id', $alunoId);
         })
-            ->select('avaliacoes.*', 'aulas_assistidas.assistido')
+            ->select(
+                'avaliacoes.*',
+                DB::raw('CASE WHEN aulas_assistidas.assistido = true THEN true ELSE false END as assistido')
+            )
             ->get();
 
         return view('dashboard.aluno', compact(
@@ -111,25 +112,80 @@ class AulaController extends Controller
     }
 
     // =========================
-    // 💾 SALVAR AULA
+    // 💾 SALVAR AULA COMPLETA
     // =========================
     public function store(Request $request)
     {
+        $request->validate([
+            'titulo' => 'required|string|max:255',
+            'descricao' => 'nullable|string',
+            'video_url' => 'required|string',
+            'modulo_id' => 'nullable',
+            'novo_modulo' => 'nullable|string|max:255',
+            'avaliacao.titulo' => 'nullable|string|max:255',
+            'avaliacao.tempo_limite' => 'nullable|integer|min:1',
+            'perguntas' => 'nullable|array',
+        ]);
+
         DB::beginTransaction();
 
         try {
+            // =========================
+            // 1. Garantir curso padrão
+            // =========================
+            $curso = DB::table('cursos')->orderBy('id')->first();
 
-            $request->validate([
-                'titulo' => 'required',
-                'descricao' => 'required',
-                'video_url' => 'required',
-                'avaliacao.titulo' => 'required',
-                'perguntas' => 'required|array'
-            ]);
+            if (!$curso) {
+                $professorId = auth()->id();
 
-            $video = $request->video_url;
+                $cursoId = DB::table('cursos')->insertGetId([
+                    'nome' => 'Curso Principal',
+                    'descricao' => 'Curso padrão do sistema',
+                    'professor_id' => $professorId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $cursoId = $curso->id;
+            }
 
-            // converter links do YouTube
+            // =========================
+            // 2. Criar ou pegar módulo
+            // =========================
+            $moduloId = $request->input('modulo_id');
+
+            if ($request->filled('novo_modulo')) {
+                $ultimaOrdem = Modulo::max('ordem') ?? 0;
+
+                $modulo = Modulo::create([
+                    'nome' => $request->input('novo_modulo'),
+                    'curso_id' => $cursoId,
+                    'ordem' => $ultimaOrdem + 1,
+                ]);
+
+                $moduloId = $modulo->id;
+            }
+
+            // Se não escolheu módulo nem criou novo, cria um módulo padrão
+            if (!$moduloId) {
+                $modulo = Modulo::firstOrCreate(
+                    ['nome' => 'Módulo Principal'],
+                    [
+                        'curso_id' => $cursoId,
+                        'ordem' => 1,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]
+                );
+
+                $moduloId = $modulo->id;
+            }
+
+            // =========================
+            // 3. Converter link do YouTube
+            // =========================
+            $video = $request->input('video_url');
+
             if (str_contains($video, 'watch?v=')) {
                 $video = str_replace('watch?v=', 'embed/', $video);
             }
@@ -138,60 +194,82 @@ class AulaController extends Controller
                 $video = str_replace('youtu.be/', 'www.youtube.com/embed/', $video);
             }
 
-            // módulo
-            $moduloId = null;
-
-            if ($request->novo_modulo) {
-                $modulo = Modulo::create([
-                    'nome' => $request->novo_modulo,
-                    'curso_id' => 1
-                ]);
-                $moduloId = $modulo->id;
-            } else {
-                $moduloId = $request->modulo_id;
+            // Remove parâmetros extras simples do YouTube embed
+            if (str_contains($video, '&')) {
+                $video = explode('&', $video)[0];
             }
 
+            // =========================
+            // 4. Criar aula
+            // =========================
             $aula = Aula::create([
-                'titulo' => $request->titulo,
-                'descricao' => $request->descricao,
+                'titulo' => $request->input('titulo'),
+                'descricao' => $request->input('descricao'),
                 'video_url' => $video,
-                'curso_id' => 1,
-                'modulo_id' => $moduloId
+                'curso_id' => $cursoId,
+                'modulo_id' => $moduloId,
             ]);
 
-            $avaliacao = Avaliacao::create([
-                'titulo' => $request->avaliacao['titulo'],
-                'aula_id' => $aula->id,
-                'tempo_limite' => $request->avaliacao['tempo_limite'] ?? null,
-                'qtd_perguntas' => count($request->perguntas)
-            ]);
+            // =========================
+            // 5. Criar avaliação, se houver
+            // =========================
+            $avaliacao = null;
 
-            foreach ($request->perguntas as $perguntaData) {
-
-                $pergunta = Pergunta::create([
-                    'pergunta' => $perguntaData['pergunta'],
-                    'avaliacao_id' => $avaliacao->id
+            if ($request->filled('avaliacao.titulo')) {
+                $avaliacao = Avaliacao::create([
+                    'titulo' => $request->input('avaliacao.titulo'),
+                    'aula_id' => $aula->id,
+                    'tipo' => 'normal',
+                    'tempo_limite' => $request->input('avaliacao.tempo_limite'),
+                    'qtd_perguntas' => count($request->input('perguntas', [])),
                 ]);
+            }
 
-                foreach ($perguntaData['respostas'] as $index => $resposta) {
+            // =========================
+            // 6. Criar perguntas e respostas
+            // =========================
+            if ($avaliacao && $request->has('perguntas')) {
+                foreach ($request->input('perguntas', []) as $perguntaData) {
+                    if (empty($perguntaData['pergunta'])) {
+                        continue;
+                    }
 
-                    Resposta::create([
-                        'resposta' => $resposta,
-                        'correta' => ($perguntaData['correta'] == $index),
-                        'pergunta_id' => $pergunta->id
+                    $pergunta = Pergunta::create([
+                        'pergunta' => $perguntaData['pergunta'],
+                        'avaliacao_id' => $avaliacao->id,
                     ]);
+
+                    $respostas = $perguntaData['respostas'] ?? [];
+                    $correta = isset($perguntaData['correta'])
+                        ? (int) $perguntaData['correta']
+                        : null;
+
+                    foreach ($respostas as $index => $respostaTexto) {
+                        if (empty($respostaTexto)) {
+                            continue;
+                        }
+
+                        Resposta::create([
+                            'resposta' => $respostaTexto,
+                            'correta' => $correta === (int) $index,
+                            'pergunta_id' => $pergunta->id,
+                        ]);
+                    }
                 }
             }
 
             DB::commit();
 
-            return redirect()->route('videoaulas')
+            return redirect()
+                ->route('videoaulas')
                 ->with('success', 'Aula criada com sucesso!');
 
-        } catch (\Exception $e) {
-
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return back()->with('error', $e->getMessage());
+
+            return back()
+                ->withInput()
+                ->with('error', 'Erro ao criar aula: ' . $e->getMessage());
         }
     }
 
@@ -203,11 +281,12 @@ class AulaController extends Controller
         DB::table('aulas_assistidas')->updateOrInsert(
             [
                 'aluno_id' => auth()->id(),
-                'aula_id' => $id
+                'aula_id' => $id,
             ],
             [
                 'assistido' => true,
-                'created_at' => now()
+                'updated_at' => now(),
+                'created_at' => now(),
             ]
         );
 
@@ -222,11 +301,9 @@ class AulaController extends Controller
         DB::beginTransaction();
 
         try {
-
             $avaliacoes = Avaliacao::where('aula_id', $id)->get();
 
             foreach ($avaliacoes as $avaliacao) {
-
                 $perguntas = Pergunta::where('avaliacao_id', $avaliacao->id)->get();
 
                 foreach ($perguntas as $pergunta) {
@@ -244,10 +321,10 @@ class AulaController extends Controller
 
             return back()->with('success', 'Aula excluída!');
 
-        } catch (\Exception $e) {
-
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return back()->with('error', 'Erro ao excluir!');
+
+            return back()->with('error', 'Erro ao excluir aula: ' . $e->getMessage());
         }
     }
 }
