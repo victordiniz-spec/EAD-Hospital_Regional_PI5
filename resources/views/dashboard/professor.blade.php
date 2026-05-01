@@ -4,156 +4,209 @@
 
 @section('content')
 
-    <div class="flex min-h-screen">
+<div class="flex min-h-screen">
 
-        @include('partials.sidebar-professor')
+    @include('partials.sidebar-professor')
 
-        <!-- CONTEÚDO -->
-        <main class="flex-1 p-8 bg-[#0B1120] text-white">
+    <!-- CONTEÚDO -->
+    <main class="flex-1 p-8 bg-[#0B1120] text-white">
 
-            <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
+        <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
 
-            @if(session('success'))
-                <div class="bg-green-500/20 text-green-400 p-3 mb-4 rounded border border-green-500">
-                    {{ session('success') }}
-                </div>
-            @endif
+        <!-- ALERTAS -->
+        @if(session('success'))
+            <div class="bg-green-500/20 text-green-400 p-3 mb-4 rounded border border-green-500">
+                {{ session('success') }}
+            </div>
+        @endif
 
-            <!-- 🔥 GRID PRINCIPAL -->
-            <div class="grid grid-cols-3 gap-6 mb-8">
+        @if(session('error'))
+            <div class="bg-red-500/20 text-red-400 p-3 mb-4 rounded border border-red-500">
+                {{ session('error') }}
+            </div>
+        @endif
 
-                <div class="col-span-2">
+        @if ($errors->any())
+            <div class="bg-red-500/20 text-red-400 p-3 mb-4 rounded border border-red-500">
+                <p class="font-semibold mb-2">Corrija os erros abaixo:</p>
+                <ul class="list-disc pl-5 text-sm">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-                    <!-- CARDS -->
-                    <div class="grid grid-cols-4 gap-4 mb-6">
+        <!-- GRID PRINCIPAL -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
 
-                        <div class="bg-[#1E293B] p-6 rounded-xl shadow-md border-l-4 border-green-500">
-                            <p class="text-sm text-gray-400">Total Usuários</p>
-                            <h3 class="text-2xl font-bold">{{ $totalAlunos }}</h3>
-                        </div>
+            <div class="xl:col-span-2">
 
-                        <div class="bg-[#1E293B] p-6 rounded-xl shadow-md border-l-4 border-green-500">
-                            <p class="text-sm text-gray-400">Aulas Publicadas</p>
-                            <h3 class="text-2xl font-bold">{{ $totalAulas }}</h3>
-                        </div>
+                <!-- CARDS -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
-                        <div class="bg-[#1E293B] p-6 rounded-xl shadow-md border-l-4 border-green-500">
-                            <p class="text-sm text-gray-400">Pós-testes</p>
-                            <h3 class="text-2xl font-bold">{{ $totalProvas }}</h3>
-                        </div>
-
-                        <div class="bg-[#1E293B] p-6 rounded-xl shadow-md border-l-4 border-green-500">
-                            <p class="text-sm text-gray-400">Média Geral</p>
-                            <h3 class="text-2xl font-bold">{{ number_format($mediaGeral, 2) }}</h3>
-                        </div>
-
+                    <div class="bg-[#1E293B] p-6 rounded-xl shadow-md border-l-4 border-green-500">
+                        <p class="text-sm text-gray-400">Total Usuários</p>
+                        <h3 class="text-2xl font-bold">{{ $totalAlunos }}</h3>
                     </div>
 
-                    <!-- AULAS -->
-                    <div class="bg-[#1E293B] p-6 rounded-xl shadow-md">
-                        <h3 class="mb-4 font-semibold">Videoaulas Recentes</h3>
+                    <div class="bg-[#1E293B] p-6 rounded-xl shadow-md border-l-4 border-green-500">
+                        <p class="text-sm text-gray-400">Aulas Publicadas</p>
+                        <h3 class="text-2xl font-bold">{{ $totalAulas }}</h3>
+                    </div>
 
-                        <ul class="space-y-3">
-                            @forelse($aulasRecentes as $aula)
-                                <li class="flex justify-between items-center">
-                                    <span>{{ $aula->titulo }}</span>
-                                    <span class="text-green-400 text-sm">✔ Publicada</span>
-                                </li>
-                            @empty
-                                <li class="text-gray-400">Nenhuma aula recente encontrada.</li>
-                            @endforelse
-                        </ul>
+                    <div class="bg-[#1E293B] p-6 rounded-xl shadow-md border-l-4 border-green-500">
+                        <p class="text-sm text-gray-400">Pós-testes</p>
+                        <h3 class="text-2xl font-bold">{{ $totalProvas }}</h3>
+                    </div>
+
+                    <div class="bg-[#1E293B] p-6 rounded-xl shadow-md border-l-4 border-green-500">
+                        <p class="text-sm text-gray-400">Média Geral</p>
+                        <h3 class="text-2xl font-bold">{{ number_format($mediaGeral, 2) }}</h3>
                     </div>
 
                 </div>
 
-                <!-- AVISOS -->
-                <div class="bg-[#1E293B] p-6 rounded-xl h-fit shadow-md">
+                <!-- AULAS -->
+                <div class="bg-[#1E293B] p-6 rounded-xl shadow-md">
+                    <h3 class="mb-4 font-semibold">Videoaulas Recentes</h3>
 
-                    <h3 class="font-bold mb-4">Avisos Recentes</h3>
-
-                    <div class="space-y-4">
-                        @forelse($avisosRecentes as $aviso)
-                            <div class="bg-[#0F172A] p-4 rounded-lg border-l-4 border-green-500">
-                                <p class="font-semibold">{{ $aviso->titulo }}</p>
-                                <p class="text-sm text-gray-400">{{ $aviso->mensagem }}</p>
-                            </div>
+                    <ul class="space-y-3">
+                        @forelse($aulasRecentes as $aula)
+                            <li class="flex justify-between items-center gap-4 bg-[#0F172A] p-3 rounded-lg">
+                                <span>{{ $aula->titulo }}</span>
+                                <span class="text-green-400 text-sm whitespace-nowrap">✔ Publicada</span>
+                            </li>
                         @empty
-                            <p class="text-gray-400">Nenhum aviso encontrado</p>
+                            <li class="text-gray-400 bg-[#0F172A] p-4 rounded-lg">
+                                Nenhuma aula recente encontrada.
+                            </li>
                         @endforelse
-                    </div>
-
-                    <div class="mt-4 text-center">
-                        <button onclick="abrirModalAviso()"
-                            class="border border-dashed border-gray-500 px-4 py-2 rounded hover:bg-gray-700 transition">
-                            + Criar Novo Aviso
-                        </button>
-                    </div>
-
+                    </ul>
                 </div>
 
             </div>
 
-            <!-- SOLICITAÇÕES PENDENTES -->
-            @if($usuariosPendentes->count() > 0)
-                <div class="bg-yellow-500/10 border border-yellow-500 p-6 rounded-xl mb-8 shadow-lg">
+            <!-- AVISOS -->
+            <div class="bg-[#1E293B] p-6 rounded-xl h-fit shadow-md">
 
-                    <h3 class="text-yellow-400 font-bold text-lg mb-4">
-                        ⚠️ Solicitações de acesso pendentes
-                    </h3>
+                <h3 class="font-bold mb-4">Avisos Recentes</h3>
 
-                    <div class="space-y-4">
-
-                        @foreach($usuariosPendentes as $index => $user)
-                            <div class="bg-[#1E293B] p-5 rounded-xl flex justify-between items-center 
-                                {{ $index >= 3 ? 'hidden extra-user' : '' }}">
-
-                                <div>
-                                    <p><strong>Nome:</strong> {{ $user->name }}</p>
-                                    <p><strong>CPF:</strong> {{ $user->cpf }}</p>
-                                    <p><strong>Email:</strong> {{ $user->email }}</p>
-                                    <p><strong>Tipo:</strong> {{ ucfirst($user->tipo) }}</p>
-                                </div>
-
-                                <div class="flex gap-3">
-                                    <form method="POST" action="{{ route('usuario.aprovar', $user->id) }}">
-                                        @csrf
-                                        <button class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition">
-                                            ✅ Aprovar
-                                        </button>
-                                    </form>
-
-                                    <form method="POST" action="{{ route('usuario.rejeitar', $user->id) }}">
-                                        @csrf
-                                        <button class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">
-                                            ❌ Rejeitar
-                                        </button>
-                                    </form>
-                                </div>
-
-                            </div>
-                        @endforeach
-
-                    </div>
-
-                    <!-- BOTÃO VER MAIS -->
-                    @if($usuariosPendentes->count() > 3)
-                        <div class="mt-4 text-center">
-                            <button onclick="toggleUsuarios()" id="btnVerMais"
-                                class="border border-yellow-500 text-yellow-400 px-4 py-2 rounded hover:bg-yellow-500/20 transition">
-                                Ver mais
-                            </button>
+                <div class="space-y-4">
+                    @forelse($avisosRecentes as $aviso)
+                        <div class="bg-[#0F172A] p-4 rounded-lg border-l-4 border-green-500">
+                            <p class="font-semibold">{{ $aviso->titulo }}</p>
+                            <p class="text-sm text-gray-400">{{ $aviso->mensagem }}</p>
                         </div>
-                    @endif
+                    @empty
+                        <p class="text-gray-400 bg-[#0F172A] p-4 rounded-lg">
+                            Nenhum aviso encontrado.
+                        </p>
+                    @endforelse
+                </div>
+
+                <div class="mt-4 text-center">
+                    <button onclick="abrirModalAviso()"
+                        class="border border-dashed border-gray-500 px-4 py-2 rounded hover:bg-gray-700 transition">
+                        + Criar Novo Aviso
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- SOLICITAÇÕES PENDENTES -->
+        <div class="bg-[#1E293B] border border-slate-700 p-6 rounded-xl mb-8 shadow-lg">
+
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+                <div>
+                    <h3 class="text-yellow-400 font-bold text-lg">
+                        Solicitações de acesso pendentes
+                    </h3>
+                    <p class="text-sm text-gray-400 mt-1">
+                        Aprove ou rejeite os usuários que solicitaram acesso ao sistema.
+                    </p>
+                </div>
+
+                <div class="bg-yellow-500/10 border border-yellow-500/40 text-yellow-300 px-4 py-2 rounded-lg text-sm">
+                    {{ $usuariosPendentes->count() }} pendente(s)
+                </div>
+            </div>
+
+            @if($usuariosPendentes->count() > 0)
+
+                <div class="space-y-4">
+
+                    @foreach($usuariosPendentes as $index => $user)
+                        <div class="bg-[#0F172A] p-5 rounded-xl flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 border border-slate-700
+                            {{ $index >= 3 ? 'hidden extra-user' : '' }}">
+
+                            <div class="space-y-1 text-sm">
+                                <p><strong class="text-gray-300">Nome:</strong> {{ $user->name }}</p>
+                                <p><strong class="text-gray-300">CPF:</strong> {{ $user->cpf }}</p>
+                                <p><strong class="text-gray-300">Email:</strong> {{ $user->email }}</p>
+                                <p><strong class="text-gray-300">Tipo:</strong> {{ ucfirst($user->tipo) }}</p>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <form method="POST" action="{{ route('usuario.aprovar', $user->id) }}">
+                                    @csrf
+                                    <button class="w-full sm:w-auto bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition">
+                                        ✅ Aprovar
+                                    </button>
+                                </form>
+
+                                <form method="POST" action="{{ route('usuario.rejeitar', $user->id) }}">
+                                    @csrf
+                                    <button class="w-full sm:w-auto bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">
+                                        ❌ Rejeitar
+                                    </button>
+                                </form>
+                            </div>
+
+                        </div>
+                    @endforeach
 
                 </div>
+
+                <!-- BOTÃO VER MAIS -->
+                @if($usuariosPendentes->count() > 3)
+                    <div class="mt-4 text-center">
+                        <button onclick="toggleUsuarios()" id="btnVerMais"
+                            class="border border-yellow-500 text-yellow-400 px-4 py-2 rounded hover:bg-yellow-500/20 transition">
+                            Ver mais
+                        </button>
+                    </div>
+                @endif
+
+            @else
+
+                <!-- ESTADO VAZIO -->
+                <div class="bg-[#0F172A] border border-slate-700 rounded-xl p-8 text-center">
+                    <div class="mx-auto w-14 h-14 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mb-4">
+                        <span class="text-2xl">✅</span>
+                    </div>
+
+                    <h4 class="text-lg font-bold text-white mb-2">
+                        Nenhum usuário aguardando aprovação
+                    </h4>
+
+                    <p class="text-gray-400 text-sm max-w-md mx-auto">
+                        No momento, não há nenhum aluno ou usuário solicitando acesso ao sistema.
+                        Quando alguém fizer cadastro, a solicitação aparecerá aqui.
+                    </p>
+                </div>
+
             @endif
 
-        </main>
+        </div>
 
-    </div>
+    </main>
 
-<!-- MODAL -->
+</div>
+
+<!-- MODAL AVISO -->
 <div id="modalAviso" class="fixed inset-0 hidden items-center justify-center z-50"
     style="background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);">
 
@@ -179,12 +232,12 @@
                     <span class="text-base font-semibold text-teal-700">Novo Comunicado</span>
                 </div>
 
-                <form method="POST" id="formAviso">
+                <form method="POST" id="formAviso" action="{{ route('avisos.store') }}">
                     @csrf
                     <input type="hidden" name="_method" id="methodAviso" value="POST">
 
                     <!-- Título + Categoria -->
-                    <div class="flex gap-4 mb-4">
+                    <div class="flex flex-col sm:flex-row gap-4 mb-4">
 
                         <div class="flex-1">
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
@@ -199,7 +252,7 @@
                             >
                         </div>
 
-                        <div class="w-52">
+                        <div class="w-full sm:w-52">
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                                 Categoria
                             </label>
@@ -267,28 +320,31 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    @foreach ($avisosRecentes as $aviso)
+                                    @forelse ($avisosRecentes as $aviso)
                                         <tr class="hover:bg-gray-50 transition">
                                             <td class="px-4 py-3 text-gray-800 font-medium">
                                                 {{ $aviso->titulo }}
                                             </td>
+
                                             <td class="px-4 py-3">
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
-                                                    @if ($aviso->status === 'publicado') bg-green-100 text-green-700
+                                                    @if (($aviso->status ?? 'publicado') === 'publicado') bg-green-100 text-green-700
                                                     @else bg-yellow-100 text-yellow-700
                                                     @endif">
                                                     {{ strtoupper($aviso->status ?? 'PUBLICADO') }}
                                                 </span>
                                             </td>
+
                                             <td class="px-4 py-3 text-gray-500 text-xs">
-                                                {{ $aviso->created_at->diffForHumans() }}
+                                                {{ $aviso->created_at ? $aviso->created_at->diffForHumans() : '-' }}
                                             </td>
+
                                             <td class="px-4 py-3">
                                                 <div class="flex justify-end gap-2">
 
                                                     <button
                                                         type="button"
-                                                        onclick="editarAviso({{ $aviso->id }}, '{{ addslashes($aviso->titulo) }}', '{{ addslashes($aviso->mensagem) }}', '{{ $aviso->categoria }}')"
+                                                        onclick='editarAviso(@json($aviso->id), @json($aviso->titulo), @json($aviso->mensagem), @json($aviso->categoria))'
                                                         class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-teal-600 transition"
                                                         title="Editar"
                                                     >
@@ -317,7 +373,13 @@
                                                 </div>
                                             </td>
                                         </tr>
-                                    @endforeach
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="px-4 py-6 text-center text-gray-500">
+                                                Nenhum aviso recente encontrado.
+                                            </td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -332,6 +394,7 @@
                         >
                             Cancelar
                         </button>
+
                         <button
                             type="submit"
                             class="px-6 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-900 text-white text-sm font-semibold transition shadow-sm"
@@ -348,120 +411,89 @@
 </div>
 
 <script>
-    function abrirModalAviso() {
-        const modal = document.getElementById('modalAviso');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
-
-    function fecharModalAviso() {
-        const modal = document.getElementById('modalAviso');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        document.getElementById('formAviso').reset();
-        document.getElementById('methodAviso').value = 'POST';
-        document.getElementById('formAviso').action = '';
-    }
-
-    function editarAviso(id, titulo, mensagem, categoria) {
-        document.getElementById('tituloAviso').value = titulo;
-        document.getElementById('mensagemAviso').value = mensagem;
-        document.getElementById('categoriaAviso').value = categoria;
-        document.getElementById('methodAviso').value = 'PUT';
-        document.getElementById('formAviso').action = `/avisos/${id}`;
-    }
-
-    // Fechar ao clicar fora do modal
-    document.getElementById('modalAviso').addEventListener('click', function (e) {
-        if (e.target === this) fecharModalAviso();
-    });
-</script>
-
-    <script>
-        function abrirModalAviso() {
-            const modal = document.getElementById('modalAviso');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function fecharModalAviso() {
-            const modal = document.getElementById('modalAviso');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            // Reset form
-            document.getElementById('formAviso').reset();
-            document.getElementById('methodAviso').value = 'POST';
-            document.getElementById('formAviso').action = '';
-        }
-
-        function editarAviso(id, titulo, mensagem, categoria) {
-            document.getElementById('tituloAviso').value = titulo;
-            document.getElementById('mensagemAviso').value = mensagem;
-            document.getElementById('categoriaAviso').value = categoria;
-            document.getElementById('methodAviso').value = 'PUT';
-            document.getElementById('formAviso').action = `/avisos/${id}`;
-        }
-
-        // Fechar ao clicar fora do modal
-        document.getElementById('modalAviso').addEventListener('click', function(e) {
-            if (e.target === this) fecharModalAviso();
-        });
-    </script>
-    <script>
-
     // =========================
-    // 🔥 VER MAIS USUÁRIOS
+    // VER MAIS USUÁRIOS
     // =========================
     function toggleUsuarios() {
-        let extras = document.querySelectorAll('.extra-user');
-        let btn = document.getElementById('btnVerMais');
+        const extras = document.querySelectorAll('.extra-user');
+        const btn = document.getElementById('btnVerMais');
 
         if (!extras.length || !btn) return;
 
-        let ocultos = Array.from(extras).some(el => el.classList.contains('hidden'));
+        const existeOculto = Array.from(extras).some(el => el.classList.contains('hidden'));
 
         extras.forEach(el => {
             el.classList.toggle('hidden');
         });
 
-        btn.innerText = ocultos ? 'Ver menos' : 'Ver mais';
+        btn.innerText = existeOculto ? 'Ver menos' : 'Ver mais';
     }
 
-
     // =========================
-    // 🔥 MODAL AVISO
+    // MODAL AVISO
     // =========================
     function abrirModalAviso() {
         const modal = document.getElementById('modalAviso');
-        if (!modal) return;
+        const form = document.getElementById('formAviso');
+        const method = document.getElementById('methodAviso');
+
+        if (!modal || !form || !method) return;
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');
 
-        document.getElementById('formAviso').reset();
-        document.getElementById('formAviso').action = "{{ route('avisos.store') }}";
-        document.getElementById('methodAviso').value = "POST";
+        form.reset();
+        form.action = "{{ route('avisos.store') }}";
+        method.value = "POST";
     }
 
     function fecharModalAviso() {
         const modal = document.getElementById('modalAviso');
+        const form = document.getElementById('formAviso');
+        const method = document.getElementById('methodAviso');
+
         if (!modal) return;
 
         modal.classList.add('hidden');
+        modal.classList.remove('flex');
+
+        if (form) {
+            form.reset();
+            form.action = "{{ route('avisos.store') }}";
+        }
+
+        if (method) {
+            method.value = "POST";
+        }
     }
 
     function editarAviso(id, titulo, mensagem, categoria) {
-
         abrirModalAviso();
 
-        document.getElementById('tituloAviso').value = titulo;
-        document.getElementById('mensagemAviso').value = mensagem;
-        document.getElementById('categoriaAviso').value = categoria;
+        const tituloInput = document.getElementById('tituloAviso');
+        const mensagemInput = document.getElementById('mensagemAviso');
+        const categoriaInput = document.getElementById('categoriaAviso');
+        const form = document.getElementById('formAviso');
+        const method = document.getElementById('methodAviso');
 
-        document.getElementById('formAviso').action = "/avisos/" + id;
-        document.getElementById('methodAviso').value = "PUT";
+        if (tituloInput) tituloInput.value = titulo ?? '';
+        if (mensagemInput) mensagemInput.value = mensagem ?? '';
+        if (categoriaInput) categoriaInput.value = categoria ?? 'informativo';
+
+        if (form) form.action = "/avisos/" + id;
+        if (method) method.value = "PUT";
     }
 
-    </script>
+    // Fechar ao clicar fora do modal
+    const modalAviso = document.getElementById('modalAviso');
+
+    if (modalAviso) {
+        modalAviso.addEventListener('click', function(e) {
+            if (e.target === this) {
+                fecharModalAviso();
+            }
+        });
+    }
+</script>
 
 @endsection
