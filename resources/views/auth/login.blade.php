@@ -72,19 +72,34 @@
                         name="password"
                         id="password"
                         placeholder="Digite sua senha"
-                        class="w-full border border-gray-300 p-3 rounded-lg pr-10
+                        class="w-full border border-gray-300 p-3 rounded-lg pr-12
                                text-gray-800 placeholder-gray-400
                                focus:outline-none focus:ring-2 focus:ring-green-600"
                         required
                     >
 
-                    <!-- OLHO -->
+                    <!-- OLHO MODERNO -->
                     <button 
                         type="button"
                         onclick="toggleSenha()"
-                        class="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                     >
-                        👁️
+                        <!-- OLHO ABERTO -->
+                        <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" 
+                            class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M2.25 12s3.75-7.5 9.75-7.5S21.75 12 21.75 12s-3.75 7.5-9.75 7.5S2.25 12 2.25 12z"/>
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+
+                        <!-- OLHO FECHADO -->
+                        <svg id="eye-closed" xmlns="http://www.w3.org/2000/svg" 
+                            class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M3 3l18 18M10.584 10.587a2 2 0 002.828 2.828"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9.88 5.092A9.953 9.953 0 0112 4.5c6 0 9.75 7.5 9.75 7.5a15.348 15.348 0 01-4.293 5.774M6.228 6.228A15.29 15.29 0 002.25 12s3.75 7.5 9.75 7.5a9.77 9.77 0 003.195-.537"/>
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -132,15 +147,21 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-<!-- SCRIPT OLHO SENHA -->
+<!-- SCRIPT OLHO SENHA MELHORADO -->
 <script>
 function toggleSenha() {
     const input = document.getElementById('password');
+    const eyeOpen = document.getElementById('eye-open');
+    const eyeClosed = document.getElementById('eye-closed');
 
     if (input.type === "password") {
         input.type = "text";
+        eyeOpen.classList.add("hidden");
+        eyeClosed.classList.remove("hidden");
     } else {
         input.type = "password";
+        eyeOpen.classList.remove("hidden");
+        eyeClosed.classList.add("hidden");
     }
 }
 </script>
