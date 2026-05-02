@@ -253,11 +253,11 @@
 
                                                     @if($temMiniTeste)
                                                         <span class="text-[11px] font-bold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg">
-                                                            Mini teste
+                                                            Mini teste cadastrado
                                                         </span>
                                                     @else
                                                         <span class="text-[11px] font-bold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg">
-                                                            Sem teste
+                                                            Sem mini teste
                                                         </span>
                                                     @endif
 
@@ -286,9 +286,17 @@
                                             <!-- AÇÕES -->
                                             <div class="w-full lg:w-auto flex flex-col sm:flex-row lg:flex-col gap-2 shrink-0">
 
-                                                <a
-                                                    href="{{ route('aulas.assistir', $aula->id) }}"
-                                                    class="inline-flex items-center justify-center gap-2 bg-[#EAF5EF] text-[#004D3A] px-4 py-3 rounded-2xl text-sm font-bold hover:bg-[#DCE7DE] transition"
+                                                <!-- EDITAR CONTEÚDO -->
+                                                <button
+                                                    type="button"
+                                                    onclick='abrirModalEditarAula(
+                                                        @json($aula->id),
+                                                        @json($aula->titulo),
+                                                        @json($aula->descricao),
+                                                        @json($aula->video_url),
+                                                        @json($aula->modulo_id)
+                                                    )'
+                                                    class="inline-flex items-center justify-center gap-2 bg-white text-[#004D3A] border border-[#DCE7DE] px-4 py-3 rounded-2xl text-sm font-bold hover:bg-[#EAF5EF] hover:border-[#00A63E]/40 transition"
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg"
                                                          class="w-4 h-4"
@@ -298,15 +306,21 @@
                                                         <path stroke-linecap="round"
                                                               stroke-linejoin="round"
                                                               stroke-width="1.8"
-                                                              d="M16.862 4.487 18.55 2.8a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931z"/>
+                                                              d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931z"/>
                                                     </svg>
 
                                                     Editar Conteúdo
-                                                </a>
+                                                </button>
 
+                                                <!-- MINI TESTE -->
                                                 <a
                                                     href="{{ route('avaliacoes.criar', $aula->id) }}"
-                                                    class="inline-flex items-center justify-center gap-2 bg-[#EAF5EF] text-[#004D3A] px-4 py-3 rounded-2xl text-sm font-bold hover:bg-[#DCE7DE] transition"
+                                                    class="inline-flex items-center justify-center gap-2
+                                                        {{ $temMiniTeste
+                                                            ? 'bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100'
+                                                            : 'bg-[#EAF5EF] text-[#004D3A] border border-[#DCE7DE] hover:bg-[#DCE7DE]'
+                                                        }}
+                                                        px-4 py-3 rounded-2xl text-sm font-bold transition"
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg"
                                                          class="w-4 h-4"
@@ -319,20 +333,21 @@
                                                               d="M9 12h6m-6 4h6M9 8h6M5 4h14v16H5z"/>
                                                     </svg>
 
-                                                    Gerenciar Mini Teste
+                                                    {{ $temMiniTeste ? 'Editar Mini Teste' : 'Criar Mini Teste' }}
                                                 </a>
 
+                                                <!-- EXCLUIR -->
                                                 <form
                                                     action="{{ route('aulas.destroy', $aula->id) }}"
                                                     method="POST"
-                                                    class="w-full"
+                                                    class="w-full form-excluir-aula"
                                                 >
                                                     @csrf
                                                     @method('DELETE')
 
                                                     <button
                                                         type="button"
-                                                        onclick="confirmarExclusao(this)"
+                                                        onclick='confirmarExclusaoAula(this, @json($aula->titulo))'
                                                         class="w-full inline-flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-100 px-4 py-3 rounded-2xl text-sm font-bold hover:bg-red-100 transition"
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg"
@@ -892,10 +907,139 @@
 
 </div>
 
+<!-- MODAL EDITAR AULA -->
+<div id="modalEditarAula" class="fixed inset-0 hidden items-center justify-center z-50"
+     style="background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);">
+
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden"
+         style="max-height: 90vh; overflow-y: auto;">
+
+        <div class="flex items-start justify-between px-5 sm:px-8 pt-8 pb-4">
+
+            <div>
+                <h2 class="text-2xl font-extrabold text-[#003C2F]">
+                    Editar Conteúdo da Aula
+                </h2>
+
+                <p class="text-sm text-[#60756B] mt-1">
+                    Atualize título, descrição, vídeo e módulo da aula.
+                </p>
+            </div>
+
+            <button
+                type="button"
+                onclick="fecharModalEditarAula()"
+                class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+
+        </div>
+
+        <div class="px-5 sm:px-8 pb-8">
+
+            <form method="POST" id="formEditarAula">
+                @csrf
+                @method('PUT')
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                        Módulo
+                    </label>
+
+                    <select
+                        id="edit_modulo_id"
+                        name="modulo_id"
+                        class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer"
+                    >
+                        @foreach ($modulos as $modulo)
+                            <option value="{{ $modulo->id }}">
+                                {{ $modulo->nome }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                        Título da aula
+                    </label>
+
+                    <input
+                        type="text"
+                        id="edit_titulo"
+                        name="titulo"
+                        required
+                        class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
+                    >
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                        Descrição
+                    </label>
+
+                    <textarea
+                        id="edit_descricao"
+                        name="descricao"
+                        rows="4"
+                        class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none"
+                    ></textarea>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                        Link do vídeo
+                    </label>
+
+                    <input
+                        type="text"
+                        id="edit_video_url"
+                        name="video_url"
+                        required
+                        class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
+                    >
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-end gap-3">
+
+                    <button
+                        type="button"
+                        onclick="fecharModalEditarAula()"
+                        class="px-6 py-3 rounded-2xl border border-[#DCE7DE] text-[#60756B] text-sm font-bold hover:bg-[#F8FBF8] transition"
+                    >
+                        Cancelar
+                    </button>
+
+                    <button
+                        type="submit"
+                        id="btnAtualizarAula"
+                        class="px-6 py-3 rounded-2xl bg-[#004D3A] hover:bg-[#003C2F] text-white text-sm font-extrabold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        Salvar Alterações
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
     let perguntaIndex = 0;
 
-    // ─── Modal ────────────────────────────────────────────────────────────────
+    // ─── Modal Criar Aula ─────────────────────────────────────────────────────
 
     function abrirModalAula() {
         const modal = document.getElementById('modalAula');
@@ -946,6 +1090,66 @@
             if (btnSalvar) {
                 btnSalvar.disabled = true;
                 btnSalvar.innerText = 'Salvando...';
+            }
+        });
+    }
+
+    // ─── Modal Editar Aula ────────────────────────────────────────────────────
+
+    function abrirModalEditarAula(id, titulo, descricao, videoUrl, moduloId) {
+        const modal = document.getElementById('modalEditarAula');
+        const form = document.getElementById('formEditarAula');
+
+        if (!modal || !form) return;
+
+        document.getElementById('edit_titulo').value = titulo ?? '';
+        document.getElementById('edit_descricao').value = descricao ?? '';
+        document.getElementById('edit_video_url').value = videoUrl ?? '';
+        document.getElementById('edit_modulo_id').value = moduloId ?? '';
+
+        form.action = '/aulas/' + id;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function fecharModalEditarAula() {
+        const modal = document.getElementById('modalEditarAula');
+        const form = document.getElementById('formEditarAula');
+        const btn = document.getElementById('btnAtualizarAula');
+
+        if (!modal) return;
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+
+        if (form) form.reset();
+
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = 'Salvar Alterações';
+        }
+    }
+
+    const modalEditarAula = document.getElementById('modalEditarAula');
+
+    if (modalEditarAula) {
+        modalEditarAula.addEventListener('click', function(e) {
+            if (e.target === this) {
+                fecharModalEditarAula();
+            }
+        });
+    }
+
+    const formEditarAula = document.getElementById('formEditarAula');
+
+    if (formEditarAula) {
+        formEditarAula.addEventListener('submit', function () {
+            const btn = document.getElementById('btnAtualizarAula');
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Salvando...';
             }
         });
     }
@@ -1033,8 +1237,6 @@
         if (pergunta) pergunta.remove();
     }
 
-    // ─── Respostas ────────────────────────────────────────────────────────────
-
     const letras = ['A', 'B', 'C', 'D', 'E'];
 
     function addResposta(index) {
@@ -1081,13 +1283,50 @@
         if (resposta) resposta.remove();
     }
 
-    // ─── Exclusão ─────────────────────────────────────────────────────────────
+    // ─── Exclusão bonita com SweetAlert ───────────────────────────────────────
 
-    function confirmarExclusao(btn) {
-        if (confirm('Tem certeza que deseja excluir esta aula?')) {
-            btn.closest('form').submit();
-        }
+    function confirmarExclusaoAula(btn, titulo) {
+        Swal.fire({
+            title: 'Excluir aula?',
+            html: `
+                <div style="text-align:center;">
+                    <p style="color:#475569; margin-bottom:10px;">
+                        Você está prestes a excluir:
+                    </p>
+                    <strong style="color:#003C2F; font-size:16px;">
+                        ${titulo ?? 'esta aula'}
+                    </strong>
+                    <p style="color:#ef4444; margin-top:14px; font-size:14px;">
+                        Essa ação não poderá ser desfeita.
+                    </p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, excluir',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            background: '#ffffff',
+            color: '#003C2F',
+            customClass: {
+                popup: 'rounded-3xl',
+                confirmButton: 'rounded-xl',
+                cancelButton: 'rounded-xl'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                btn.closest('form').submit();
+            }
+        });
     }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            fecharModalAula();
+            fecharModalEditarAula();
+        }
+    });
 
     @if ($errors->any() || session('error'))
         abrirModalAula();
