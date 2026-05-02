@@ -4,6 +4,14 @@
 
 @section('content')
 
+@php
+    use Illuminate\Support\Facades\DB;
+
+    $provaFinalExistente = DB::table('avaliacoes')
+        ->where('tipo', 'final')
+        ->first();
+@endphp
+
 <style>
     html, body {
         background: #F3F7F3 !important;
@@ -69,6 +77,62 @@
                 </button>
 
             </div>
+
+            <!-- AVISO FIXO SE JÁ EXISTE PROVA FINAL -->
+            @if($provaFinalExistente)
+                <div class="mb-6 bg-white border border-[#BFD8C5] rounded-3xl shadow-sm p-5 sm:p-6">
+
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+
+                        <div class="flex items-start gap-4">
+
+                            <div class="w-14 h-14 rounded-2xl bg-[#EAF5EF] text-[#004D3A] flex items-center justify-center shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="w-7 h-7"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="1.8"
+                                          d="M9 12h6m-6 4h6M9 8h6M5 4h14v16H5z"/>
+                                </svg>
+                            </div>
+
+                            <div>
+                                <h2 class="text-lg sm:text-xl font-extrabold text-[#003C2F]">
+                                    Já existe uma prova final criada
+                                </h2>
+
+                                <p class="text-sm text-[#60756B] mt-1">
+                                    O sistema permite apenas uma prova final. Você pode editar a prova existente nesta tela ou revisar os dados antes de salvar novamente.
+                                </p>
+
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    <span class="inline-flex items-center bg-[#F8FBF8] border border-[#E3EBE4] text-[#004D3A] px-3 py-1 rounded-full text-xs font-bold">
+                                        {{ $provaFinalExistente->titulo ?? 'Prova Final' }}
+                                    </span>
+
+                                    <span class="inline-flex items-center bg-[#F8FBF8] border border-[#E3EBE4] text-[#60756B] px-3 py-1 rounded-full text-xs font-bold">
+                                        {{ $provaFinalExistente->tempo_limite ?? 60 }} minutos
+                                    </span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <button
+                            type="button"
+                            onclick="abrirAvisoProvaFinalExistente()"
+                            class="w-full lg:w-auto bg-[#004D3A] hover:bg-[#003C2F] text-white px-5 py-3 rounded-2xl font-extrabold text-sm transition shadow-sm"
+                        >
+                            Ver aviso
+                        </button>
+
+                    </div>
+
+                </div>
+            @endif
 
             <!-- ALERTAS -->
             @if(session('success'))
@@ -141,13 +205,13 @@
                                 <input
                                     type="text"
                                     name="titulo"
-                                    value="{{ old('titulo', 'Prova Final') }}"
+                                    value="{{ old('titulo', $provaFinalExistente->titulo ?? 'Prova Final') }}"
                                     placeholder="Ex: Prova Final"
                                     class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
                                 >
                             </div>
 
-                            <!-- NOTA MÍNIMA VISUAL -->
+                            <!-- NOTA MÍNIMA -->
                             <div class="mb-5">
                                 <label class="block text-[11px] font-extrabold text-[#60756B] uppercase tracking-widest mb-2">
                                     Nota mínima para aprovação
@@ -202,14 +266,14 @@
                                     <input
                                         type="number"
                                         name="tempo_limite"
-                                        value="{{ old('tempo_limite', 60) }}"
+                                        value="{{ old('tempo_limite', $provaFinalExistente->tempo_limite ?? 60) }}"
                                         min="1"
                                         class="w-24 px-3 py-2 rounded-xl bg-white border border-[#DCE7DE] text-[#004D3A] text-center font-extrabold focus:outline-none focus:ring-2 focus:ring-[#00A63E]"
                                     >
                                 </div>
                             </div>
 
-                            <!-- TENTATIVAS VISUAL -->
+                            <!-- TENTATIVAS -->
                             <div class="mb-5">
                                 <label class="block text-[11px] font-extrabold text-[#60756B] uppercase tracking-widest mb-3">
                                     Número máximo de tentativas
@@ -453,7 +517,7 @@
 
                 </div>
 
-                <!-- BARRA FIXA DE SALVAR -->
+                <!-- BARRA DE SALVAR -->
                 <div class="mt-8 bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
                     <div>
@@ -482,7 +546,7 @@
                                   d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L6 12Zm0 0h7.5"/>
                         </svg>
 
-                        Publicar Prova
+                        {{ $provaFinalExistente ? 'Atualizar Prova' : 'Publicar Prova' }}
                     </button>
 
                 </div>
@@ -495,13 +559,113 @@
 
 </div>
 
-<!-- SWEETALERT -->
+<!-- MODAL PROVA FINAL EXISTENTE -->
+@if($provaFinalExistente)
+    <div id="modalProvaFinalExistente"
+         class="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-[#E3EBE4] overflow-hidden">
+
+            <div class="p-6 text-center">
+
+                <div class="w-20 h-20 mx-auto rounded-full bg-[#EAF5EF] flex items-center justify-center mb-5">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="w-10 h-10 text-[#004D3A]"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              d="M9 12h6m-6 4h6M9 8h6M5 4h14v16H5z"/>
+                    </svg>
+                </div>
+
+                <h2 class="text-2xl font-extrabold text-[#003C2F] mb-2">
+                    Prova final já criada
+                </h2>
+
+                <p class="text-sm text-[#60756B] leading-relaxed mb-5">
+                    Já existe uma prova final cadastrada no sistema.
+                    Como o curso permite apenas uma prova final, você pode editar a prova existente em vez de criar uma nova.
+                </p>
+
+                <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 text-left mb-6">
+
+                    <p class="text-xs font-extrabold text-[#60756B] uppercase tracking-widest mb-1">
+                        Prova encontrada
+                    </p>
+
+                    <p class="font-extrabold text-[#003C2F]">
+                        {{ $provaFinalExistente->titulo ?? 'Prova Final' }}
+                    </p>
+
+                    <p class="text-xs text-[#60756B] mt-1">
+                        Tempo limite:
+                        <strong>{{ $provaFinalExistente->tempo_limite ?? 60 }} minutos</strong>
+                    </p>
+
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+
+                    <button type="button"
+                            onclick="fecharAvisoProvaFinal()"
+                            class="w-full px-5 py-3 rounded-2xl border border-[#DCE7DE] text-[#60756B] font-bold hover:bg-[#F8FBF8] transition">
+                        Continuar editando
+                    </button>
+
+                    <button type="button"
+                            onclick="editarProvaFinalExistente()"
+                            class="w-full px-5 py-3 rounded-2xl bg-[#004D3A] text-white font-bold hover:bg-[#003C2F] transition shadow">
+                        Entendi
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+@endif
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     let contador = 1;
 
     const letras = ['A', 'B', 'C', 'D'];
+
+    function fecharAvisoProvaFinal() {
+        const modal = document.getElementById('modalProvaFinalExistente');
+
+        if (!modal) return;
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    function abrirAvisoProvaFinalExistente() {
+        const modal = document.getElementById('modalProvaFinalExistente');
+
+        if (!modal) return;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function editarProvaFinalExistente() {
+        fecharAvisoProvaFinal();
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Modo edição ativado',
+            text: 'Você pode editar os dados da prova final nesta tela. Ao salvar, a prova existente deve ser atualizada pelo sistema.',
+            confirmButtonText: 'Entendi',
+            confirmButtonColor: '#004D3A'
+        });
+    }
 
     function templatePergunta(index) {
         const numero = String(index + 1).padStart(2, '0');
@@ -812,7 +976,7 @@
 
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = 'Publicando...';
+                btn.innerHTML = 'Salvando...';
             }
         });
     }
