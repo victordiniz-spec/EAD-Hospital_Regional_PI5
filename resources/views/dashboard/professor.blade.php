@@ -4,6 +4,57 @@
 
 @section('content')
 
+@php
+    use Illuminate\Support\Facades\DB;
+
+    $mesesNomes = [
+        1 => 'JAN',
+        2 => 'FEV',
+        3 => 'MAR',
+        4 => 'ABR',
+        5 => 'MAI',
+        6 => 'JUN',
+        7 => 'JUL',
+        8 => 'AGO',
+        9 => 'SET',
+        10 => 'OUT',
+        11 => 'NOV',
+        12 => 'DEZ',
+    ];
+
+    $dadosGrafico = [];
+
+    for ($i = 5; $i >= 0; $i--) {
+        $inicio = now()->copy()->subMonths($i)->startOfMonth();
+        $fim = now()->copy()->subMonths($i)->endOfMonth();
+
+        $aulasAssistidasMes = DB::table('aulas_assistidas')
+            ->where('assistido', true)
+            ->whereBetween('created_at', [$inicio, $fim])
+            ->count();
+
+        $posTestesFeitosMes = DB::table('notas')
+            ->whereBetween('created_at', [$inicio, $fim])
+            ->count();
+
+        $totalMes = $aulasAssistidasMes + $posTestesFeitosMes;
+
+        $dadosGrafico[] = [
+            'mes' => $mesesNomes[(int) $inicio->format('n')],
+            'aulas' => $aulasAssistidasMes,
+            'testes' => $posTestesFeitosMes,
+            'total' => $totalMes,
+        ];
+    }
+
+    $maiorValorGrafico = collect($dadosGrafico)->max('total') ?: 1;
+    $totalAtividadesPeriodo = collect($dadosGrafico)->sum('total');
+    $melhorMes = collect($dadosGrafico)->sortByDesc('total')->first();
+
+    $totalAvisos = isset($avisosRecentes) ? $avisosRecentes->count() : 0;
+    $totalPendentes = isset($usuariosPendentes) ? $usuariosPendentes->count() : 0;
+@endphp
+
 <style>
     html, body {
         background: #F3F7F3 !important;
@@ -147,7 +198,7 @@
                         </div>
 
                         <span class="text-[11px] font-bold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
-                            +12%
+                            Ativos
                         </span>
                     </div>
 
@@ -155,7 +206,7 @@
                     <h3 class="text-3xl font-extrabold mt-1 text-[#003C2F]">{{ $totalAlunos }}</h3>
 
                     <div class="mt-4 h-1.5 bg-[#E8EFE9] rounded-full overflow-hidden">
-                        <div class="h-full bg-[#004D3A] rounded-full" style="width: 70%;"></div>
+                        <div class="h-full bg-[#004D3A] rounded-full" style="width: {{ $totalAlunos > 0 ? 100 : 0 }}%;"></div>
                     </div>
                 </div>
 
@@ -176,7 +227,7 @@
                         </div>
 
                         <span class="text-[11px] font-bold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
-                            +5 hoje
+                            Publicadas
                         </span>
                     </div>
 
@@ -184,11 +235,11 @@
                     <h3 class="text-3xl font-extrabold mt-1 text-[#003C2F]">{{ $totalAulas }}</h3>
 
                     <div class="mt-4 h-1.5 bg-[#E8EFE9] rounded-full overflow-hidden">
-                        <div class="h-full bg-[#00A63E] rounded-full" style="width: 55%;"></div>
+                        <div class="h-full bg-[#00A63E] rounded-full" style="width: {{ $totalAulas > 0 ? 100 : 0 }}%;"></div>
                     </div>
                 </div>
 
-                <!-- Avisos -->
+                <!-- Pós-testes -->
                 <div class="bg-white rounded-3xl p-5 shadow-sm border border-[#E3EBE4] hover:shadow-lg transition">
                     <div class="flex items-start justify-between mb-5">
                         <div class="w-12 h-12 rounded-2xl bg-[#EAF5EF] flex items-center justify-center">
@@ -200,20 +251,20 @@
                                 <path stroke-linecap="round"
                                       stroke-linejoin="round"
                                       stroke-width="1.8"
-                                      d="M14.857 17.082a23.848 23.848 0 0 1-5.714 0M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/>
+                                      d="M9 12h6m-6 4h6M9 8h6M5 4h14v16H5z"/>
                             </svg>
                         </div>
 
                         <span class="text-[11px] font-bold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
-                            Ativos
+                            Testes
                         </span>
                     </div>
 
-                    <p class="text-sm text-[#60756B]">Avisos Enviados</p>
-                    <h3 class="text-3xl font-extrabold mt-1 text-[#003C2F]">{{ $avisosRecentes->count() }}</h3>
+                    <p class="text-sm text-[#60756B]">Pós-testes</p>
+                    <h3 class="text-3xl font-extrabold mt-1 text-[#003C2F]">{{ $totalProvas }}</h3>
 
                     <div class="mt-4 h-1.5 bg-[#E8EFE9] rounded-full overflow-hidden">
-                        <div class="h-full bg-[#7CA982] rounded-full" style="width: 40%;"></div>
+                        <div class="h-full bg-[#7CA982] rounded-full" style="width: {{ $totalProvas > 0 ? 100 : 0 }}%;"></div>
                     </div>
                 </div>
 
@@ -253,8 +304,8 @@
             <!-- GRID PRINCIPAL -->
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-7 mb-7">
 
-                <!-- DESEMPENHO -->
-                <div class="xl:col-span-2 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-[#E3EBE4] min-h-[360px]">
+                <!-- DESEMPENHO REAL -->
+                <div class="xl:col-span-2 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-[#E3EBE4] min-h-[380px]">
 
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                         <div>
@@ -262,46 +313,122 @@
                                 Desempenho Geral de Engajamento
                             </h2>
                             <p class="text-xs text-[#60756B]">
-                                Taxa de conclusão e evolução da plataforma.
+                                Dados reais dos últimos 6 meses: aulas assistidas + pós-testes feitos.
                             </p>
                         </div>
 
-                        <div class="flex gap-2">
-                            <button type="button"
-                                    class="px-4 py-2 rounded-xl bg-[#F1F6F2] text-[#003C2F] text-xs font-bold hover:bg-[#E6EFE8] transition">
-                                Semanal
-                            </button>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-4 py-2 rounded-xl bg-[#F1F6F2] text-[#003C2F] text-xs font-bold">
+                                {{ $totalAtividadesPeriodo }} atividade(s)
+                            </span>
 
-                            <button type="button"
-                                    class="px-4 py-2 rounded-xl bg-[#004D3A] text-white text-xs font-bold hover:bg-[#003C2F] transition">
-                                Mensal
-                            </button>
+                            <span class="px-4 py-2 rounded-xl bg-[#004D3A] text-white text-xs font-bold">
+                                Melhor: {{ $melhorMes['mes'] ?? '-' }}
+                            </span>
                         </div>
                     </div>
 
-                    <!-- GRÁFICO FAKE VISUAL -->
-                    <div class="h-64 flex items-end justify-between gap-3 px-2 sm:px-6 pt-6">
+                    @if($totalAtividadesPeriodo > 0)
 
-                        @php
-                            $grafico = [35, 48, 42, 70, 62, 88];
-                            $meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN'];
-                        @endphp
+                        <div class="h-72 flex items-end justify-between gap-3 px-1 sm:px-6 pt-6">
 
-                        @foreach($grafico as $i => $valor)
-                            <div class="flex-1 flex flex-col items-center justify-end gap-3 h-full">
-                                <div class="w-full max-w-[42px] bg-[#E8EFE9] rounded-full flex items-end overflow-hidden h-[190px]">
-                                    <div class="w-full bg-[#004D3A] rounded-full transition-all duration-700"
-                                         style="height: {{ $valor }}%;">
+                            @foreach($dadosGrafico as $item)
+
+                                @php
+                                    $alturaTotal = $maiorValorGrafico > 0
+                                        ? max(6, round(($item['total'] / $maiorValorGrafico) * 100))
+                                        : 0;
+
+                                    $alturaAulas = $item['total'] > 0
+                                        ? round(($item['aulas'] / $item['total']) * $alturaTotal)
+                                        : 0;
+
+                                    $alturaTestes = $item['total'] > 0
+                                        ? $alturaTotal - $alturaAulas
+                                        : 0;
+                                @endphp
+
+                                <div class="flex-1 flex flex-col items-center justify-end gap-3 h-full group">
+
+                                    <div class="text-center opacity-0 group-hover:opacity-100 transition bg-[#003C2F] text-white rounded-xl px-3 py-2 shadow-lg text-xs">
+                                        <p class="font-bold">{{ $item['total'] }} total</p>
+                                        <p>{{ $item['aulas'] }} aula(s)</p>
+                                        <p>{{ $item['testes'] }} teste(s)</p>
                                     </div>
+
+                                    <div class="w-full max-w-[46px] bg-[#E8EFE9] rounded-full flex items-end overflow-hidden h-[190px] border border-[#DCE7DE]">
+
+                                        <div class="w-full flex flex-col justify-end" style="height: {{ $alturaTotal }}%;">
+
+                                            @if($alturaTestes > 0)
+                                                <div class="w-full bg-[#00A63E]" style="height: {{ $alturaTestes }}%;"></div>
+                                            @endif
+
+                                            @if($alturaAulas > 0)
+                                                <div class="w-full bg-[#004D3A]" style="height: {{ $alturaAulas }}%;"></div>
+                                            @endif
+
+                                        </div>
+
+                                    </div>
+
+                                    <div class="text-center">
+                                        <span class="block text-[10px] font-bold text-[#60756B]">
+                                            {{ $item['mes'] }}
+                                        </span>
+
+                                        <span class="block text-[11px] font-extrabold text-[#003C2F]">
+                                            {{ $item['total'] }}
+                                        </span>
+                                    </div>
+
                                 </div>
 
-                                <span class="text-[10px] font-bold text-[#60756B]">
-                                    {{ $meses[$i] }}
-                                </span>
-                            </div>
-                        @endforeach
+                            @endforeach
 
-                    </div>
+                        </div>
+
+                        <div class="mt-5 flex flex-wrap items-center justify-center gap-4 text-xs text-[#60756B]">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-[#004D3A]"></span>
+                                Aulas assistidas
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-[#00A63E]"></span>
+                                Pós-testes feitos
+                            </div>
+                        </div>
+
+                    @else
+
+                        <div class="h-72 flex items-center justify-center bg-[#F8FBF8] border border-dashed border-[#DCE7DE] rounded-3xl">
+                            <div class="text-center max-w-md px-4">
+                                <div class="w-16 h-16 rounded-full bg-[#EAF5EF] mx-auto mb-4 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="w-8 h-8 text-[#004D3A]"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="1.8"
+                                              d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125z"/>
+                                    </svg>
+                                </div>
+
+                                <h3 class="font-extrabold text-[#003C2F]">
+                                    Ainda não há dados de engajamento
+                                </h3>
+
+                                <p class="text-sm text-[#60756B] mt-2">
+                                    Quando os alunos assistirem aulas ou fizerem pós-testes, o gráfico será preenchido automaticamente.
+                                </p>
+                            </div>
+                        </div>
+
+                    @endif
+
                 </div>
 
                 <!-- AVISOS RECENTES -->
@@ -345,7 +472,7 @@
                                     {{ $aviso->titulo }}
                                 </h3>
 
-                                <p class="text-xs text-[#60756B] mt-1 break-words line-clamp-2">
+                                <p class="text-xs text-[#60756B] mt-1 break-words">
                                     {{ $aviso->mensagem ?? $aviso->descricao ?? '' }}
                                 </p>
                             </div>
@@ -487,7 +614,7 @@
                         </div>
 
                         <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">
-                            {{ $usuariosPendentes->count() }}
+                            {{ $totalPendentes }}
                         </span>
                     </div>
 
