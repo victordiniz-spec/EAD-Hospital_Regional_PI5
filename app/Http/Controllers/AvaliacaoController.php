@@ -250,9 +250,96 @@ class AvaliacaoController extends Controller
             }
         }
 
+        // Salva as respostas escolhidas pelo aluno
+        if (DB::getSchemaBuilder()->hasTable('respostas_alunos')) {
+            foreach ($perguntas as $pergunta) {
+                if (isset($request->respostas[$pergunta->id])) {
+                    DB::table('respostas_alunos')->updateOrInsert(
+                        [
+                            'aluno_id' => $alunoId,
+                            'avaliacao_id' => $id,
+                            'pergunta_id' => $pergunta->id,
+                        ],
+                        [
+                            'resposta_id' => $request->respostas[$pergunta->id],
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]
+                    );
+                }
+            }
+        }
+
         return redirect()
             ->route('dashboard.aluno')
             ->with('success', 'Você concluiu o pós-teste. Nota: ' . number_format($nota, 1));
+    }
+
+    // =========================
+    // RESULTADO DO PÓS-TESTE
+    // =========================
+    public function resultado($id)
+    {
+        $alunoId = auth()->id();
+
+        if (!$alunoId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Usuário não autenticado.'
+            ], 401);
+        }
+
+        $avaliacao = DB::table('avaliacoes')
+            ->where('id', $id)
+            ->first();
+
+        if (!$avaliacao) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Avaliação não encontrada.'
+            ], 404);
+        }
+
+        $nota = null;
+
+        if (DB::getSchemaBuilder()->hasTable('notas')) {
+            $nota = DB::table('notas')
+                ->where('aluno_id', $alunoId)
+                ->where('avaliacao_id', $id)
+                ->value('nota');
+        }
+
+        $perguntas = DB::table('perguntas')
+            ->where('avaliacao_id', $id)
+            ->orderBy('id')
+            ->get();
+
+        foreach ($perguntas as $pergunta) {
+            $respostas = DB::table('respostas')
+                ->where('pergunta_id', $pergunta->id)
+                ->orderBy('id')
+                ->get();
+
+            $respostaAlunoId = null;
+
+            if (DB::getSchemaBuilder()->hasTable('respostas_alunos')) {
+                $respostaAlunoId = DB::table('respostas_alunos')
+                    ->where('aluno_id', $alunoId)
+                    ->where('avaliacao_id', $id)
+                    ->where('pergunta_id', $pergunta->id)
+                    ->value('resposta_id');
+            }
+
+            $pergunta->respostas = $respostas;
+            $pergunta->resposta_aluno_id = $respostaAlunoId;
+        }
+
+        return response()->json([
+            'success' => true,
+            'avaliacao' => $avaliacao,
+            'nota' => $nota,
+            'perguntas' => $perguntas,
+        ]);
     }
 
     // =========================
@@ -348,7 +435,6 @@ class AvaliacaoController extends Controller
 
         $nota = ($acertos / $perguntas->count()) * 10;
 
-        // Salva na tabela notas se existir
         if (DB::getSchemaBuilder()->hasTable('notas')) {
             $notaExistente = DB::table('notas')
                 ->where('aluno_id', $alunoId)

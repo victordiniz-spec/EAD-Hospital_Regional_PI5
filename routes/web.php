@@ -62,7 +62,6 @@ Route::middleware('auth')->group(function () {
         ->name('controle.usuarios');
 
     Route::put('/usuarios/{id}', function ($id) {
-
         $user = \App\Models\User::findOrFail($id);
 
         $user->update([
@@ -120,6 +119,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/avaliacoes', [AvaliacaoController::class, 'store'])
         ->name('avaliacoes.store');
 
+    // IMPORTANTE: esta rota precisa ficar antes de /avaliacoes/{id}
+    Route::get('/avaliacoes/{id}/resultado', [AvaliacaoController::class, 'resultado'])
+        ->name('avaliacoes.resultado');
+
     Route::get('/avaliacoes/{id}', [AvaliacaoController::class, 'show'])
         ->name('avaliacoes.show');
 
@@ -158,7 +161,6 @@ Route::middleware('auth')->group(function () {
 
     // SALVAR MODELO
     Route::post('/certificados', function () {
-
         $caminho = request()->hasFile('assinatura')
             ? request()->file('assinatura')->store('assinaturas', 'public')
             : null;
@@ -175,8 +177,7 @@ Route::middleware('auth')->group(function () {
         return back()->with('success', 'Certificado salvo com sucesso!');
     })->name('certificados.store');
 
-
-    // 🔥 GERAR PDF
+    // GERAR PDF
     Route::get('/certificado/gerar/{id}', [CertificadoController::class, 'gerar'])
         ->name('certificado.gerar');
 

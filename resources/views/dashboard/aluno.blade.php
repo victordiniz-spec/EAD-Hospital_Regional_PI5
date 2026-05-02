@@ -74,8 +74,6 @@
                                                     ->exists();
                                             }
 
-                                            // Se não tiver pós-teste, basta assistir a aula.
-                                            // Se tiver pós-teste, precisa assistir e responder.
                                             $atividadeConcluida = $aulaAssistida && (!$avaliacaoId || $posTesteConcluido);
                                         @endphp
 
@@ -167,9 +165,12 @@
                                                                 📝 Fazer pós-teste
                                                             </button>
                                                         @elseif($avaliacaoId && $posTesteConcluido)
-                                                            <span class="bg-emerald-600/20 text-emerald-400 border border-emerald-500/40 px-3 py-1.5 rounded text-sm">
+                                                            <button
+                                                                type="button"
+                                                                onclick="verResultadoPosTeste('{{ $avaliacaoId }}')"
+                                                                class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 px-3 py-1.5 rounded text-sm transition">
                                                                 ✓ Pós-teste feito
-                                                            </span>
+                                                            </button>
                                                         @else
                                                             <span class="text-xs text-slate-400 self-center">
                                                                 Sem pós-teste
@@ -424,6 +425,172 @@ function marcarAssistida() {
                 confirmButtonColor: '#dc2626'
             });
         });
+}
+
+function verResultadoPosTeste(avaliacaoId) {
+    if (!avaliacaoId || avaliacaoId === 'null') {
+        Swal.fire({
+            icon: 'info',
+            title: 'Sem pós-teste',
+            text: 'Esta aula ainda não possui pós-teste cadastrado.',
+            confirmButtonColor: '#2563eb'
+        });
+        return;
+    }
+
+    fetch('/avaliacoes/' + avaliacaoId + '/resultado')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: data.message || 'Não foi possível carregar o resultado.',
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
+
+            let html = `
+                <div id="conteudoResultadoPDF" style="text-align:left; font-family: Arial, sans-serif;">
+                    <div style="background:#f1f5f9; border-radius:14px; padding:16px; margin-bottom:16px;">
+                        <h2 style="margin:0; color:#0f172a; font-size:20px;">
+                            ${data.avaliacao.titulo || 'Pós-teste'}
+                        </h2>
+                        <p style="margin:8px 0 0; color:#475569;">
+                            Nota: <strong>${data.nota !== null ? Number(data.nota).toFixed(1) : 'Não registrada'}</strong>
+                        </p>
+                    </div>
+            `;
+
+            data.perguntas.forEach((pergunta, index) => {
+                html += `
+                    <div style="border:1px solid #e2e8f0; border-radius:14px; padding:14px; margin-bottom:14px;">
+                        <p style="font-weight:bold; color:#0f172a; margin-bottom:10px;">
+                            ${index + 1}. ${pergunta.pergunta}
+                        </p>
+                `;
+
+                pergunta.respostas.forEach(resposta => {
+                    const correta = resposta.correta === true || resposta.correta === 1 || resposta.correta === '1';
+                    const marcada = Number(pergunta.resposta_aluno_id) === Number(resposta.id);
+
+                    let fundo = '#ffffff';
+                    let borda = '#e2e8f0';
+                    let extra = '';
+
+                    if (correta) {
+                        fundo = '#dcfce7';
+                        borda = '#22c55e';
+                        extra += ' ✅ Correta';
+                    }
+
+                    if (marcada && !correta) {
+                        fundo = '#fee2e2';
+                        borda = '#ef4444';
+                        extra += ' ❌ Sua resposta';
+                    }
+
+                    if (marcada && correta) {
+                        extra += ' — Sua resposta';
+                    }
+
+                    html += `
+                        <div style="background:${fundo}; border:1px solid ${borda}; border-radius:10px; padding:10px; margin-bottom:8px; color:#334155;">
+                            ${resposta.resposta}
+                            <strong style="color:#0f172a;">${extra}</strong>
+                        </div>
+                    `;
+                });
+
+                if (!pergunta.resposta_aluno_id) {
+                    html += `
+                        <p style="color:#dc2626; font-size:13px; margin-top:8px;">
+                            Resposta do aluno não registrada para esta pergunta.
+                        </p>
+                    `;
+                }
+
+                html += `</div>`;
+            });
+
+            html += `</div>`;
+
+            Swal.fire({
+                title: 'Resultado do pós-teste',
+                html: html,
+                width: 850,
+                showCancelButton: true,
+                confirmButtonText: 'Gerar PDF',
+                cancelButtonText: 'Fechar',
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#64748b'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    gerarPDFResultado();
+                }
+            });
+        })
+        .catch(() => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: 'Não foi possível carregar o resultado do pós-teste.',
+                confirmButtonColor: '#dc2626'
+            });
+        });
+}
+
+function gerarPDFResultado() {
+    const conteudo = document.getElementById('conteudoResultadoPDF');
+
+    if (!conteudo) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro',
+            text: 'Não foi possível gerar o PDF.',
+            confirmButtonColor: '#dc2626'
+        });
+        return;
+    }
+
+    const janela = window.open('', '_blank');
+
+    janela.document.write(`
+        <html>
+            <head>
+                <title>Resultado do Pós-teste</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        padding: 30px;
+                        color: #0f172a;
+                    }
+
+                    h1, h2, h3 {
+                        color: #0f172a;
+                    }
+
+                    @media print {
+                        button {
+                            display: none;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                ${conteudo.innerHTML}
+
+                <script>
+                    window.onload = function() {
+                        window.print();
+                    }
+                <\/script>
+            </body>
+        </html>
+    `);
+
+    janela.document.close();
 }
 
 function bloqueado() {
