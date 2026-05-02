@@ -78,22 +78,8 @@
     <!-- CONTEÚDO -->
     <main class="flex-1 min-w-0 w-full bg-[#F3F7F3] overflow-x-hidden">
 
-        <!-- TOPBAR -->
-        <header class="w-full bg-white/90 backdrop-blur border-b border-[#E3EBE4] px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-end shadow-sm">
-
-            <div class="flex items-center gap-3">
-                <div class="text-right hidden sm:block">
-                    <p class="text-sm font-semibold text-[#003C2F]">Administrador</p>
-                    <p class="text-xs text-[#6B7C73]">Meu Perfil</p>
-                </div>
-
-                <div class="w-11 h-11 rounded-full bg-[#00A63E] flex items-center justify-center text-white font-bold shadow-md">
-                    A
-                </div>
-            </div>
-
-        </header>
-
+        @include('partials.navbar')
+        
         <section class="p-4 pt-20 sm:p-6 lg:p-8 lg:pt-8">
 
             <!-- ALERTAS -->
