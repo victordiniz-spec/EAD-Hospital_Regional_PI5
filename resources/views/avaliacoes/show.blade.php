@@ -18,11 +18,11 @@
         <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
             <div>
-                <a href="{{ route('dashboard.aluno') }}"
-                   onclick="return confirmarSaida()"
-                   class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition mb-4">
+                <button type="button"
+                        onclick="confirmarSaidaBonito()"
+                        class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition mb-4">
                     ← Voltar para o dashboard
-                </a>
+                </button>
 
                 <h1 class="text-3xl font-bold">
                     📝 {{ $avaliacao->titulo ?? 'Pós-teste' }}
@@ -168,11 +168,11 @@
                 <!-- BOTÕES -->
                 <div class="sticky bottom-0 mt-8 bg-slate-950/90 backdrop-blur border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3 shadow-2xl">
 
-                    <a href="{{ route('dashboard.aluno') }}"
-                       onclick="return confirmarSaida()"
-                       class="w-full sm:w-auto text-center bg-slate-700 hover:bg-slate-600 px-5 py-3 rounded-lg transition">
+                    <button type="button"
+                            onclick="confirmarSaidaBonito()"
+                            class="w-full sm:w-auto text-center bg-slate-700 hover:bg-slate-600 px-5 py-3 rounded-lg transition">
                         Voltar
-                    </a>
+                    </button>
 
                     <button type="submit"
                             onclick="finalizandoFormulario = true"
@@ -210,22 +210,47 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
     let finalizandoFormulario = false;
     const tempoLimiteMinutos = {{ $tempoLimite }};
     const form = document.getElementById('formPosTeste');
 
-    function confirmarSaida() {
-        return confirm('Você tem certeza que quer sair do pós-teste? Se sair agora, ao voltar o tempo será reiniciado.');
+    function confirmarSaidaBonito() {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Deseja sair do pós-teste?',
+            html: `
+                <div style="text-align: center;">
+                    <p style="color:#475569; font-size:15px; line-height:1.6; margin-bottom: 10px;">
+                        Se você sair agora, suas respostas não serão enviadas.
+                    </p>
+                    <p style="color:#64748b; font-size:14px; line-height:1.5;">
+                        Ao voltar para o pós-teste, o tempo será reiniciado.
+                    </p>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Sim, sair',
+            cancelButtonText: 'Continuar respondendo',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#2563eb',
+            reverseButtons: true,
+            background: '#ffffff',
+            color: '#0f172a',
+            customClass: {
+                popup: 'rounded-2xl',
+                confirmButton: 'rounded-lg',
+                cancelButton: 'rounded-lg'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                finalizandoFormulario = true;
+                window.location.href = "{{ route('dashboard.aluno') }}";
+            }
+        });
     }
-
-    // Confirmação ao tentar fechar, atualizar ou voltar pelo navegador
-    window.addEventListener('beforeunload', function (e) {
-        if (!finalizandoFormulario && form) {
-            e.preventDefault();
-            e.returnValue = '';
-        }
-    });
 
     // Contador
     if (tempoLimiteMinutos > 0 && form) {
@@ -246,8 +271,18 @@
 
             if (tempoRestante <= 0) {
                 finalizandoFormulario = true;
-                alert('O tempo acabou. Seu pós-teste será enviado automaticamente.');
-                form.submit();
+
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Tempo esgotado!',
+                    text: 'Seu pós-teste será enviado automaticamente.',
+                    confirmButtonColor: '#2563eb',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                }).then(() => {
+                    form.submit();
+                });
+
                 return;
             }
 
