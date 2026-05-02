@@ -21,21 +21,35 @@
         <!-- CONTEÚDO -->
         <main class="flex-1 overflow-auto p-8">
 
+            <!-- ALERTAS -->
+            @if(session('success'))
+                <div class="mb-4 bg-green-500/20 text-green-400 border border-green-500 p-4 rounded-xl">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-4 bg-red-500/20 text-red-400 border border-red-500 p-4 rounded-xl">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <!-- MÓDULOS -->
             @if(isset($modulos))
                 <div id="modulos" class="mb-10">
 
                     <h2 class="text-xl font-bold mb-4">📚 Módulos</h2>
 
-                    @foreach($modulos as $modulo)
+                    @forelse($modulos as $modulo)
                         <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl mb-3">
 
-                            <h3 class="font-semibold mb-2 cursor-pointer"
+                            <h3 class="font-semibold mb-2 cursor-pointer flex items-center justify-between"
                                 onclick="toggleModulo({{ $modulo->id }})">
-                                ▶ {{ $modulo->nome }}
+                                <span>▶ {{ $modulo->nome }}</span>
+                                <span class="text-xs text-slate-500">Clique para abrir</span>
                             </h3>
 
-                            <div id="modulo-{{ $modulo->id }}" class="hidden">
+                            <div id="modulo-{{ $modulo->id }}" class="hidden mt-3">
 
                                 @if(isset($modulo->aulas))
                                     @forelse($modulo->aulas as $aula)
@@ -52,7 +66,7 @@
                                                 ->exists();
                                         @endphp
 
-                                        <div class="bg-slate-800 p-3 rounded mb-2">
+                                        <div class="bg-slate-800 p-3 rounded mb-2 border border-slate-700">
 
                                             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
 
@@ -75,7 +89,10 @@
                                                     @if(!$aulaAssistida)
                                                         <button
                                                             type="button"
-                                                            onclick="abrirModal(@json($aula->video_url), @json($aula->id), @json($avaliacaoId))"
+                                                            data-video="{{ $aula->video_url }}"
+                                                            data-aula="{{ $aula->id }}"
+                                                            data-avaliacao="{{ $avaliacaoId }}"
+                                                            onclick="abrirModal(this.dataset.video, this.dataset.aula, this.dataset.avaliacao)"
                                                             class="bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded text-sm transition"
                                                         >
                                                             ▶ Assistir
@@ -83,7 +100,10 @@
                                                     @else
                                                         <button
                                                             type="button"
-                                                            onclick="abrirModal(@json($aula->video_url), @json($aula->id), @json($avaliacaoId))"
+                                                            data-video="{{ $aula->video_url }}"
+                                                            data-aula="{{ $aula->id }}"
+                                                            data-avaliacao="{{ $avaliacaoId }}"
+                                                            onclick="abrirModal(this.dataset.video, this.dataset.aula, this.dataset.avaliacao)"
                                                             class="bg-slate-600 hover:bg-slate-700 px-3 py-1.5 rounded text-sm transition"
                                                         >
                                                             ▶ Assistir novamente
@@ -92,7 +112,7 @@
                                                         @if($avaliacaoId)
                                                             <button
                                                                 type="button"
-                                                                onclick="fazerPosTeste(@json($avaliacaoId))"
+                                                                onclick="fazerPosTeste('{{ $avaliacaoId }}')"
                                                                 class="bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded text-sm transition"
                                                             >
                                                                 📝 Fazer pós-teste
@@ -120,7 +140,11 @@
                             </div>
 
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl text-slate-400">
+                            Nenhum módulo encontrado.
+                        </div>
+                    @endforelse
 
                 </div>
             @endif
@@ -211,6 +235,7 @@
             id="videoFrame"
             class="w-full h-[400px] rounded"
             src=""
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen>
         </iframe>
 
@@ -233,23 +258,57 @@
 let aulaIdAtual = null;
 let avaliacaoIdAtual = null;
 
+function normalizarUrlYoutube(url) {
+    if (!url) return '';
+
+    let video = String(url).trim();
+
+    if (video.includes('watch?v=')) {
+        video = video.replace('watch?v=', 'embed/');
+    }
+
+    if (video.includes('youtu.be/')) {
+        video = video.replace('youtu.be/', 'www.youtube.com/embed/');
+    }
+
+    return video;
+}
+
 function abrirModal(url, aulaId, avaliacaoId = null) {
     aulaIdAtual = aulaId;
-    avaliacaoIdAtual = avaliacaoId;
+    avaliacaoIdAtual = avaliacaoId && avaliacaoId !== 'null' && avaliacaoId !== '' ? avaliacaoId : null;
 
-    document.getElementById('videoFrame').src = url;
-    document.getElementById('modalVideo').classList.remove('hidden');
-    document.getElementById('modalVideo').classList.add('flex');
+    const video = normalizarUrlYoutube(url);
+
+    if (!video) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Vídeo não encontrado',
+            text: 'Esta aula não possui link de vídeo cadastrado.',
+            confirmButtonColor: '#dc2626'
+        });
+        return;
+    }
+
+    const modal = document.getElementById('modalVideo');
+    const frame = document.getElementById('videoFrame');
+
+    frame.src = video;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
 function fecharModal() {
-    document.getElementById('modalVideo').classList.add('hidden');
-    document.getElementById('modalVideo').classList.remove('flex');
-    document.getElementById('videoFrame').src = "";
+    const modal = document.getElementById('modalVideo');
+    const frame = document.getElementById('videoFrame');
+
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    frame.src = "";
 }
 
 function fazerPosTeste(avaliacaoId) {
-    if (!avaliacaoId) {
+    if (!avaliacaoId || avaliacaoId === 'null') {
         Swal.fire({
             icon: 'info',
             title: 'Sem pós-teste',
@@ -266,7 +325,13 @@ function marcarAssistida() {
     if (!aulaIdAtual) return;
 
     fetch('/assistir-aula/' + aulaIdAtual)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao marcar aula como assistida.');
+            }
+
+            return response.json();
+        })
         .then(() => {
             fecharModal();
 
