@@ -3,18 +3,18 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Aviso;
 
 class AvisoController extends Controller
 {
     // =========================
-    // LISTAR AVISOS (PÁGINA PRINCIPAL)
+    // LISTAR AVISOS
     // =========================
     public function index()
     {
         $avisos = Aviso::orderBy('created_at', 'desc')->get();
 
-        // 🔥 CORRIGIDO AQUI
         return view('dashboard.avisos', compact('avisos'));
     }
 
@@ -26,24 +26,43 @@ class AvisoController extends Controller
         $request->validate([
             'titulo' => 'required|string|max:255',
             'mensagem' => 'required|string',
-            'categoria' => 'required|in:urgente,informativo'
+            'categoria' => 'required|in:urgente,informativo',
         ]);
 
-        Aviso::create([
-            'titulo' => $request->titulo,
-            'mensagem' => $request->mensagem,
-            'categoria' => $request->categoria,
-        ]);
+        try {
+            $dados = [
+                'titulo' => $request->titulo,
+                'mensagem' => $request->mensagem,
+                'categoria' => $request->categoria,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
 
-        return back()->with('success', 'Aviso criado com sucesso!');
+            // Só adiciona status se a coluna existir no banco
+            if (DB::getSchemaBuilder()->hasColumn('avisos', 'status')) {
+                $dados['status'] = $request->has('publicar_agora') ? 'publicado' : 'rascunho';
+            }
+
+            DB::table('avisos')->insert($dados);
+
+            return redirect()
+                ->route('dashboard.professor')
+                ->with('success', 'Aviso criado com sucesso!');
+
+        } catch (\Throwable $e) {
+            return back()
+                ->withInput()
+                ->with('error', 'Erro ao criar aviso: ' . $e->getMessage());
+        }
     }
 
     // =========================
-    // EDITAR AVISO (RETORNA JSON)
+    // EDITAR AVISO
     // =========================
     public function edit($id)
     {
         $aviso = Aviso::findOrFail($id);
+
         return response()->json($aviso);
     }
 
@@ -55,18 +74,34 @@ class AvisoController extends Controller
         $request->validate([
             'titulo' => 'required|string|max:255',
             'mensagem' => 'required|string',
-            'categoria' => 'required|in:urgente,informativo'
+            'categoria' => 'required|in:urgente,informativo',
         ]);
 
-        $aviso = Aviso::findOrFail($id);
+        try {
+            $dados = [
+                'titulo' => $request->titulo,
+                'mensagem' => $request->mensagem,
+                'categoria' => $request->categoria,
+                'updated_at' => now(),
+            ];
 
-        $aviso->update([
-            'titulo' => $request->titulo,
-            'mensagem' => $request->mensagem,
-            'categoria' => $request->categoria,
-        ]);
+            if (DB::getSchemaBuilder()->hasColumn('avisos', 'status')) {
+                $dados['status'] = $request->has('publicar_agora') ? 'publicado' : 'rascunho';
+            }
 
-        return back()->with('success', 'Aviso atualizado com sucesso!');
+            DB::table('avisos')
+                ->where('id', $id)
+                ->update($dados);
+
+            return redirect()
+                ->route('dashboard.professor')
+                ->with('success', 'Aviso atualizado com sucesso!');
+
+        } catch (\Throwable $e) {
+            return back()
+                ->withInput()
+                ->with('error', 'Erro ao atualizar aviso: ' . $e->getMessage());
+        }
     }
 
     // =========================
@@ -74,9 +109,18 @@ class AvisoController extends Controller
     // =========================
     public function destroy($id)
     {
-        $aviso = Aviso::findOrFail($id);
-        $aviso->delete();
+        try {
+            DB::table('avisos')
+                ->where('id', $id)
+                ->delete();
 
-        return back()->with('success', 'Aviso excluído com sucesso!');
+            return redirect()
+                ->route('dashboard.professor')
+                ->with('success', 'Aviso excluído com sucesso!');
+
+        } catch (\Throwable $e) {
+            return back()
+                ->with('error', 'Erro ao excluir aviso: ' . $e->getMessage());
+        }
     }
 }
