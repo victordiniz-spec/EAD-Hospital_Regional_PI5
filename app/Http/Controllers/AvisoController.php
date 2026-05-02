@@ -8,9 +8,6 @@ use App\Models\Aviso;
 
 class AvisoController extends Controller
 {
-    // =========================
-    // LISTAR AVISOS
-    // =========================
     public function index()
     {
         $avisos = Aviso::orderBy('created_at', 'desc')->get();
@@ -18,9 +15,6 @@ class AvisoController extends Controller
         return view('dashboard.avisos', compact('avisos'));
     }
 
-    // =========================
-    // CRIAR AVISO
-    // =========================
     public function store(Request $request)
     {
         $request->validate([
@@ -32,15 +26,25 @@ class AvisoController extends Controller
         try {
             $dados = [
                 'titulo' => $request->titulo,
-                'mensagem' => $request->mensagem,
                 'categoria' => $request->categoria,
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
 
-            // Só adiciona status se a coluna existir no banco
+            if (DB::getSchemaBuilder()->hasColumn('avisos', 'mensagem')) {
+                $dados['mensagem'] = $request->mensagem;
+            }
+
+            if (DB::getSchemaBuilder()->hasColumn('avisos', 'descricao')) {
+                $dados['descricao'] = $request->mensagem;
+            }
+
             if (DB::getSchemaBuilder()->hasColumn('avisos', 'status')) {
                 $dados['status'] = $request->has('publicar_agora') ? 'publicado' : 'rascunho';
+            }
+
+            if (DB::getSchemaBuilder()->hasColumn('avisos', 'tipo')) {
+                $dados['tipo'] = $request->categoria;
             }
 
             DB::table('avisos')->insert($dados);
@@ -56,9 +60,6 @@ class AvisoController extends Controller
         }
     }
 
-    // =========================
-    // EDITAR AVISO
-    // =========================
     public function edit($id)
     {
         $aviso = Aviso::findOrFail($id);
@@ -66,9 +67,6 @@ class AvisoController extends Controller
         return response()->json($aviso);
     }
 
-    // =========================
-    // ATUALIZAR AVISO
-    // =========================
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -80,13 +78,24 @@ class AvisoController extends Controller
         try {
             $dados = [
                 'titulo' => $request->titulo,
-                'mensagem' => $request->mensagem,
                 'categoria' => $request->categoria,
                 'updated_at' => now(),
             ];
 
+            if (DB::getSchemaBuilder()->hasColumn('avisos', 'mensagem')) {
+                $dados['mensagem'] = $request->mensagem;
+            }
+
+            if (DB::getSchemaBuilder()->hasColumn('avisos', 'descricao')) {
+                $dados['descricao'] = $request->mensagem;
+            }
+
             if (DB::getSchemaBuilder()->hasColumn('avisos', 'status')) {
                 $dados['status'] = $request->has('publicar_agora') ? 'publicado' : 'rascunho';
+            }
+
+            if (DB::getSchemaBuilder()->hasColumn('avisos', 'tipo')) {
+                $dados['tipo'] = $request->categoria;
             }
 
             DB::table('avisos')
@@ -104,9 +113,6 @@ class AvisoController extends Controller
         }
     }
 
-    // =========================
-    // EXCLUIR AVISO
-    // =========================
     public function destroy($id)
     {
         try {
