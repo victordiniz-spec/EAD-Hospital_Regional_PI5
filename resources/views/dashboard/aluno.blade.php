@@ -64,21 +64,70 @@
                                                 ->where('aula_id', $aula->id)
                                                 ->where('assistido', true)
                                                 ->exists();
+
+                                            $posTesteConcluido = false;
+
+                                            if ($avaliacaoId) {
+                                                $posTesteConcluido = DB::table('notas')
+                                                    ->where('aluno_id', auth()->id())
+                                                    ->where('avaliacao_id', $avaliacaoId)
+                                                    ->exists();
+                                            }
+
+                                            // Se não tiver pós-teste, basta assistir a aula.
+                                            // Se tiver pós-teste, precisa assistir e responder.
+                                            $atividadeConcluida = $aulaAssistida && (!$avaliacaoId || $posTesteConcluido);
                                         @endphp
 
-                                        <div class="bg-slate-800 p-3 rounded mb-2 border border-slate-700">
+                                        <div class="
+                                            p-3 rounded mb-2 border transition
+                                            {{ $atividadeConcluida
+                                                ? 'bg-slate-800/40 border-emerald-500/20 opacity-70'
+                                                : 'bg-slate-800 border-slate-700'
+                                            }}
+                                        ">
 
                                             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
 
                                                 <div>
-                                                    <p class="font-semibold">{{ $aula->titulo }}</p>
+                                                    <div class="flex items-center gap-2 flex-wrap">
 
-                                                    @if($aulaAssistida)
-                                                        <span class="inline-block mt-1 text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-1 rounded">
+                                                        @if($atividadeConcluida)
+                                                            <span class="text-emerald-400 text-sm">✓</span>
+                                                        @endif
+
+                                                        <p class="
+                                                            font-semibold transition
+                                                            {{ $atividadeConcluida
+                                                                ? 'text-slate-500 line-through decoration-slate-500'
+                                                                : 'text-white'
+                                                            }}
+                                                        ">
+                                                            {{ $aula->titulo }}
+                                                        </p>
+
+                                                        @if($atividadeConcluida)
+                                                            <span class="text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                                                                Concluído
+                                                            </span>
+                                                        @endif
+
+                                                    </div>
+
+                                                    @if($atividadeConcluida)
+                                                        <span class="inline-block mt-2 text-xs bg-slate-700/60 text-slate-400 border border-slate-600 px-2 py-1 rounded">
+                                                            Aula e atividade finalizadas
+                                                        </span>
+                                                    @elseif($aulaAssistida && $avaliacaoId && !$posTesteConcluido)
+                                                        <span class="inline-block mt-2 text-xs bg-blue-500/20 text-blue-400 border border-blue-500/40 px-2 py-1 rounded">
+                                                            Aula assistida — pós-teste liberado
+                                                        </span>
+                                                    @elseif($aulaAssistida)
+                                                        <span class="inline-block mt-2 text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-1 rounded">
                                                             Aula concluída
                                                         </span>
                                                     @else
-                                                        <span class="inline-block mt-1 text-xs bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 px-2 py-1 rounded">
+                                                        <span class="inline-block mt-2 text-xs bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 px-2 py-1 rounded">
                                                             Assista para liberar o pós-teste
                                                         </span>
                                                     @endif
@@ -109,7 +158,7 @@
                                                             ▶ Assistir novamente
                                                         </button>
 
-                                                        @if($avaliacaoId)
+                                                        @if($avaliacaoId && !$posTesteConcluido)
                                                             <button
                                                                 type="button"
                                                                 onclick="fazerPosTeste('{{ $avaliacaoId }}')"
@@ -117,6 +166,10 @@
                                                             >
                                                                 📝 Fazer pós-teste
                                                             </button>
+                                                        @elseif($avaliacaoId && $posTesteConcluido)
+                                                            <span class="bg-emerald-600/20 text-emerald-400 border border-emerald-500/40 px-3 py-1.5 rounded text-sm">
+                                                                ✓ Pós-teste feito
+                                                            </span>
                                                         @else
                                                             <span class="text-xs text-slate-400 self-center">
                                                                 Sem pós-teste
