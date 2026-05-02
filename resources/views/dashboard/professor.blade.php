@@ -4,429 +4,797 @@
 
 @section('content')
 
-<div class="flex min-h-screen bg-[#0B1120]">
+<style>
+    html, body {
+        background: #F3F7F3 !important;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        min-height: 100%;
+    }
+
+    #app {
+        background: #F3F7F3 !important;
+        min-height: 100vh;
+        width: 100%;
+    }
+</style>
+
+<div class="flex min-h-screen w-full bg-[#F3F7F3] text-[#003C2F] overflow-x-hidden">
 
     @include('partials.sidebar-professor')
 
     <!-- CONTEÚDO -->
-    <main class="flex-1 p-4 pt-20 sm:p-6 lg:p-8 lg:pt-8 bg-[#0B1120] text-white overflow-x-hidden">
+    <main class="flex-1 min-w-0 w-full bg-[#F3F7F3] overflow-x-hidden">
 
-        <!-- CABEÇALHO -->
-        <div class="mb-6">
-            <h2 class="text-2xl sm:text-3xl font-bold">Dashboard</h2>
-            <p class="text-sm text-gray-400 mt-1">
-                Acompanhe usuários, aulas, avisos e solicitações de acesso.
-            </p>
-        </div>
+        <!-- TOPBAR -->
+        <header class="w-full bg-white/90 backdrop-blur border-b border-[#E3EBE4] px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-end shadow-sm">
 
-        <!-- ALERTAS -->
-        @if(session('success'))
-            <div class="bg-green-500/20 text-green-400 p-3 mb-4 rounded border border-green-500">
-                {{ session('success') }}
+            <div class="flex items-center gap-3">
+                <div class="text-right hidden sm:block">
+                    <p class="text-sm font-semibold text-[#003C2F]">Administrador</p>
+                    <p class="text-xs text-[#6B7C73]">Meu Perfil</p>
+                </div>
+
+                <div class="w-11 h-11 rounded-full bg-[#00A63E] flex items-center justify-center text-white font-bold shadow-md">
+                    A
+                </div>
             </div>
-        @endif
 
-        @if(session('error'))
-            <div class="bg-red-500/20 text-red-400 p-3 mb-4 rounded border border-red-500">
-                {{ session('error') }}
-            </div>
-        @endif
+        </header>
 
-        @if ($errors->any())
-            <div class="bg-red-500/20 text-red-400 p-3 mb-4 rounded border border-red-500">
-                <p class="font-semibold mb-2">Corrija os erros abaixo:</p>
-                <ul class="list-disc pl-5 text-sm">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+        <section class="p-4 pt-20 sm:p-6 lg:p-8 lg:pt-8">
 
-        <!-- GRID PRINCIPAL -->
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+            <!-- ALERTAS -->
+            @if(session('success'))
+                <div class="bg-green-100 text-green-700 p-4 mb-5 rounded-2xl border border-green-200 shadow-sm">
+                    {{ session('success') }}
+                </div>
+            @endif
 
-            <div class="xl:col-span-2">
+            @if(session('error'))
+                <div class="bg-red-100 text-red-700 p-4 mb-5 rounded-2xl border border-red-200 shadow-sm">
+                    {{ session('error') }}
+                </div>
+            @endif
 
-                <!-- CARDS -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            @if ($errors->any())
+                <div class="bg-red-100 text-red-700 p-4 mb-5 rounded-2xl border border-red-200 shadow-sm">
+                    <p class="font-semibold mb-2">Corrija os erros abaixo:</p>
+                    <ul class="list-disc pl-5 text-sm">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-                    <div class="bg-[#1E293B] p-5 sm:p-6 rounded-xl shadow-md border-l-4 border-green-500">
-                        <p class="text-sm text-gray-400">Total Usuários</p>
-                        <h3 class="text-2xl font-bold mt-1">{{ $totalAlunos }}</h3>
+            <!-- CABEÇALHO -->
+            <div class="mb-7 flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
+
+                <div>
+                    <div class="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#00A63E] mb-2">
+                        <span class="w-2 h-2 rounded-full bg-[#00A63E]"></span>
+                        Sistema operacional
                     </div>
 
-                    <div class="bg-[#1E293B] p-5 sm:p-6 rounded-xl shadow-md border-l-4 border-green-500">
-                        <p class="text-sm text-gray-400">Aulas Publicadas</p>
-                        <h3 class="text-2xl font-bold mt-1">{{ $totalAulas }}</h3>
-                    </div>
+                    <h1 class="text-3xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight">
+                        Visão Geral Administrativa
+                    </h1>
 
-                    <div class="bg-[#1E293B] p-5 sm:p-6 rounded-xl shadow-md border-l-4 border-green-500">
-                        <p class="text-sm text-gray-400">Pós-testes</p>
-                        <h3 class="text-2xl font-bold mt-1">{{ $totalProvas }}</h3>
-                    </div>
+                    <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
+                        Acompanhe métricas de engajamento, produção de conteúdo, comunicados institucionais e solicitações de acesso.
+                    </p>
+                </div>
 
-                    <div class="bg-[#1E293B] p-5 sm:p-6 rounded-xl shadow-md border-l-4 border-green-500">
-                        <p class="text-sm text-gray-400">Média Geral</p>
-                        <h3 class="text-2xl font-bold mt-1">{{ number_format($mediaGeral, 2) }}</h3>
-                    </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+
+                    <a href="{{ route('controle.usuarios') }}"
+                       class="inline-flex items-center justify-center gap-2 bg-white border border-[#DCE7DE] text-[#003C2F] px-4 py-3 rounded-2xl shadow-sm hover:shadow-md hover:border-[#00A63E]/40 transition">
+
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="w-5 h-5 text-[#00A63E]"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="1.8"
+                                  d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0zM4.5 20.25a8.25 8.25 0 0 1 15 0"/>
+                        </svg>
+
+                        Gerenciar usuários
+                    </a>
+
+                    <button onclick="abrirModalAviso()"
+                            class="inline-flex items-center justify-center gap-2 bg-[#004D3A] text-white px-4 py-3 rounded-2xl shadow-sm hover:bg-[#003C2F] transition">
+
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="w-5 h-5"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="1.8"
+                                  d="M12 4.5v15m7.5-7.5h-15"/>
+                        </svg>
+
+                        Criar aviso
+                    </button>
 
                 </div>
 
-                <!-- AULAS -->
-                <div class="bg-[#1E293B] p-5 sm:p-6 rounded-xl shadow-md">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                        <h3 class="font-semibold">Videoaulas Recentes</h3>
+            </div>
 
-                        <a href="{{ route('videoaulas') }}"
-                           class="text-sm text-green-400 hover:text-green-300 transition">
-                            Ver todas
+            <!-- CARDS MÉTRICAS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-7">
+
+                <!-- Usuários -->
+                <div class="bg-white rounded-3xl p-5 shadow-sm border border-[#E3EBE4] hover:shadow-lg transition">
+                    <div class="flex items-start justify-between mb-5">
+                        <div class="w-12 h-12 rounded-2xl bg-[#EAF5EF] flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="w-6 h-6 text-[#004D3A]"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="1.8"
+                                      d="M18 18.72a8.94 8.94 0 0 0-6-2.22 8.94 8.94 0 0 0-6 2.22M15 11.25a3 3 0 1 0-6 0 3 3 0 0 0 6 0z"/>
+                            </svg>
+                        </div>
+
+                        <span class="text-[11px] font-bold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
+                            +12%
+                        </span>
+                    </div>
+
+                    <p class="text-sm text-[#60756B]">Total Usuários</p>
+                    <h3 class="text-3xl font-extrabold mt-1 text-[#003C2F]">{{ $totalAlunos }}</h3>
+
+                    <div class="mt-4 h-1.5 bg-[#E8EFE9] rounded-full overflow-hidden">
+                        <div class="h-full bg-[#004D3A] rounded-full" style="width: 70%;"></div>
+                    </div>
+                </div>
+
+                <!-- Aulas -->
+                <div class="bg-white rounded-3xl p-5 shadow-sm border border-[#E3EBE4] hover:shadow-lg transition">
+                    <div class="flex items-start justify-between mb-5">
+                        <div class="w-12 h-12 rounded-2xl bg-[#EAF5EF] flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="w-6 h-6 text-[#00A63E]"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="1.8"
+                                      d="M5.25 5.653c0-1.427 1.54-2.33 2.79-1.637l9.54 5.347c1.26.707 1.26 2.567 0 3.274l-9.54 5.347c-1.25.693-2.79-.21-2.79-1.637V5.653z"/>
+                            </svg>
+                        </div>
+
+                        <span class="text-[11px] font-bold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
+                            +5 hoje
+                        </span>
+                    </div>
+
+                    <p class="text-sm text-[#60756B]">Aulas Publicadas</p>
+                    <h3 class="text-3xl font-extrabold mt-1 text-[#003C2F]">{{ $totalAulas }}</h3>
+
+                    <div class="mt-4 h-1.5 bg-[#E8EFE9] rounded-full overflow-hidden">
+                        <div class="h-full bg-[#00A63E] rounded-full" style="width: 55%;"></div>
+                    </div>
+                </div>
+
+                <!-- Avisos -->
+                <div class="bg-white rounded-3xl p-5 shadow-sm border border-[#E3EBE4] hover:shadow-lg transition">
+                    <div class="flex items-start justify-between mb-5">
+                        <div class="w-12 h-12 rounded-2xl bg-[#EAF5EF] flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="w-6 h-6 text-[#7CA982]"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="1.8"
+                                      d="M14.857 17.082a23.848 23.848 0 0 1-5.714 0M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/>
+                            </svg>
+                        </div>
+
+                        <span class="text-[11px] font-bold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
+                            Ativos
+                        </span>
+                    </div>
+
+                    <p class="text-sm text-[#60756B]">Avisos Enviados</p>
+                    <h3 class="text-3xl font-extrabold mt-1 text-[#003C2F]">{{ $avisosRecentes->count() }}</h3>
+
+                    <div class="mt-4 h-1.5 bg-[#E8EFE9] rounded-full overflow-hidden">
+                        <div class="h-full bg-[#7CA982] rounded-full" style="width: 40%;"></div>
+                    </div>
+                </div>
+
+                <!-- Média -->
+                <div class="bg-white rounded-3xl p-5 shadow-sm border border-[#E3EBE4] hover:shadow-lg transition">
+                    <div class="flex items-start justify-between mb-5">
+                        <div class="w-12 h-12 rounded-2xl bg-[#EAF5EF] flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="w-6 h-6 text-[#004D3A]"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="1.8"
+                                      d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>
+                            </svg>
+                        </div>
+
+                        <span class="text-[11px] font-bold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
+                            Média
+                        </span>
+                    </div>
+
+                    <p class="text-sm text-[#60756B]">Média Geral</p>
+                    <h3 class="text-3xl font-extrabold mt-1 text-[#003C2F]">
+                        {{ number_format($mediaGeral, 1) }}
+                    </h3>
+
+                    <div class="mt-4 h-1.5 bg-[#E8EFE9] rounded-full overflow-hidden">
+                        <div class="h-full bg-[#004D3A] rounded-full" style="width: {{ min(100, max(0, $mediaGeral * 10)) }}%;"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- GRID PRINCIPAL -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-7 mb-7">
+
+                <!-- DESEMPENHO -->
+                <div class="xl:col-span-2 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-[#E3EBE4] min-h-[360px]">
+
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="font-extrabold text-[#003C2F] text-lg">
+                                Desempenho Geral de Engajamento
+                            </h2>
+                            <p class="text-xs text-[#60756B]">
+                                Taxa de conclusão e evolução da plataforma.
+                            </p>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button type="button"
+                                    class="px-4 py-2 rounded-xl bg-[#F1F6F2] text-[#003C2F] text-xs font-bold hover:bg-[#E6EFE8] transition">
+                                Semanal
+                            </button>
+
+                            <button type="button"
+                                    class="px-4 py-2 rounded-xl bg-[#004D3A] text-white text-xs font-bold hover:bg-[#003C2F] transition">
+                                Mensal
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- GRÁFICO FAKE VISUAL -->
+                    <div class="h-64 flex items-end justify-between gap-3 px-2 sm:px-6 pt-6">
+
+                        @php
+                            $grafico = [35, 48, 42, 70, 62, 88];
+                            $meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN'];
+                        @endphp
+
+                        @foreach($grafico as $i => $valor)
+                            <div class="flex-1 flex flex-col items-center justify-end gap-3 h-full">
+                                <div class="w-full max-w-[42px] bg-[#E8EFE9] rounded-full flex items-end overflow-hidden h-[190px]">
+                                    <div class="w-full bg-[#004D3A] rounded-full transition-all duration-700"
+                                         style="height: {{ $valor }}%;">
+                                    </div>
+                                </div>
+
+                                <span class="text-[10px] font-bold text-[#60756B]">
+                                    {{ $meses[$i] }}
+                                </span>
+                            </div>
+                        @endforeach
+
+                    </div>
+                </div>
+
+                <!-- AVISOS RECENTES -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-[#E3EBE4]">
+
+                    <div class="flex items-center justify-between mb-5">
+                        <h2 class="font-extrabold text-[#003C2F] text-lg">
+                            Avisos Recentes
+                        </h2>
+
+                        <a href="{{ route('avisos') }}"
+                           class="text-[11px] font-bold text-[#00A63E] hover:text-[#004D3A] transition">
+                            Ver todos
                         </a>
                     </div>
 
-                    <ul class="space-y-3">
-                        @forelse($aulasRecentes as $aula)
-                            <li class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-[#0F172A] p-3 rounded-lg">
-                                <span class="break-words">{{ $aula->titulo }}</span>
-                                <span class="text-green-400 text-sm whitespace-nowrap">✔ Publicada</span>
-                            </li>
+                    <div class="space-y-5">
+                        @forelse($avisosRecentes->take(4) as $aviso)
+
+                            <div class="relative pl-5 border-l-2
+                                @if(($aviso->categoria ?? '') === 'urgente') border-red-400
+                                @elseif(($aviso->categoria ?? '') === 'informativo') border-[#00A63E]
+                                @else border-[#9DB7A4]
+                                @endif">
+
+                                <div class="flex items-start justify-between gap-3">
+                                    <span class="text-[10px] font-bold uppercase px-2 py-1 rounded
+                                        @if(($aviso->categoria ?? '') === 'urgente') bg-red-100 text-red-700
+                                        @elseif(($aviso->categoria ?? '') === 'informativo') bg-green-100 text-green-700
+                                        @else bg-gray-100 text-gray-600
+                                        @endif">
+                                        {{ strtoupper($aviso->categoria ?? 'INFO') }}
+                                    </span>
+
+                                    <span class="text-[10px] text-[#8A9B92] whitespace-nowrap">
+                                        {{ $aviso->created_at ? $aviso->created_at->diffForHumans() : '' }}
+                                    </span>
+                                </div>
+
+                                <h3 class="font-bold text-sm text-[#003C2F] mt-2 break-words">
+                                    {{ $aviso->titulo }}
+                                </h3>
+
+                                <p class="text-xs text-[#60756B] mt-1 break-words line-clamp-2">
+                                    {{ $aviso->mensagem ?? $aviso->descricao ?? '' }}
+                                </p>
+                            </div>
+
                         @empty
-                            <li class="text-gray-400 bg-[#0F172A] p-4 rounded-lg">
-                                Nenhuma aula recente encontrada.
-                            </li>
+                            <div class="text-center py-8 text-[#60756B]">
+                                <div class="w-12 h-12 rounded-full bg-[#F1F6F2] flex items-center justify-center mx-auto mb-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="w-6 h-6"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="1.8"
+                                              d="M14.857 17.082a23.848 23.848 0 0 1-5.714 0M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/>
+                                    </svg>
+                                </div>
+
+                                <p class="text-sm">Nenhum aviso encontrado.</p>
+                            </div>
                         @endforelse
-                    </ul>
-                </div>
-
-            </div>
-
-            <!-- AVISOS -->
-            <div class="bg-[#1E293B] p-5 sm:p-6 rounded-xl h-fit shadow-md">
-
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                    <h3 class="font-bold">Avisos Recentes</h3>
+                    </div>
 
                     <button onclick="abrirModalAviso()"
-                        class="text-sm border border-dashed border-gray-500 px-3 py-2 rounded hover:bg-gray-700 transition">
-                        + Novo
+                            class="mt-6 w-full border border-dashed border-[#AFC5B5] text-[#004D3A] rounded-2xl py-3 text-sm font-bold hover:bg-[#F1F6F2] transition flex items-center justify-center gap-2">
+                        <span>＋</span>
+                        Criar Novo Aviso
                     </button>
                 </div>
 
-                <div class="space-y-4">
-                    @forelse($avisosRecentes as $aviso)
-                        <div class="bg-[#0F172A] p-4 rounded-lg border-l-4 border-green-500">
-                            <p class="font-semibold break-words">{{ $aviso->titulo }}</p>
-                            <p class="text-sm text-gray-400 break-words">
-                                {{ $aviso->mensagem ?? $aviso->descricao ?? '' }}
+            </div>
+
+            <!-- AULAS RECENTES + SOLICITAÇÕES -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-7">
+
+                <!-- VIDEOAULAS RECENTES -->
+                <div class="xl:col-span-2 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-[#E3EBE4]">
+
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="font-extrabold text-[#003C2F] text-lg">
+                                Videoaulas Recentes
+                            </h2>
+                            <p class="text-xs text-[#60756B]">
+                                Últimos conteúdos adicionados à plataforma.
                             </p>
                         </div>
-                    @empty
-                        <p class="text-gray-400 bg-[#0F172A] p-4 rounded-lg">
-                            Nenhum aviso encontrado.
-                        </p>
-                    @endforelse
+
+                        <a href="{{ route('videoaulas') }}"
+                           class="inline-flex items-center justify-center gap-2 bg-[#004D3A] text-white px-4 py-2.5 rounded-2xl text-sm font-bold hover:bg-[#003C2F] transition">
+                            Gerenciar Todas
+                        </a>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[650px] text-sm">
+
+                            <thead>
+                                <tr class="text-left text-[11px] uppercase tracking-widest text-[#60756B] border-b border-[#E3EBE4]">
+                                    <th class="py-3 px-3">Aula</th>
+                                    <th class="py-3 px-3">Status</th>
+                                    <th class="py-3 px-3">Tipo</th>
+                                    <th class="py-3 px-3 text-right">Ações</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @forelse($aulasRecentes as $aula)
+                                    <tr class="border-b border-[#EEF3EF] hover:bg-[#F8FBF8] transition">
+                                        <td class="py-4 px-3">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 rounded-xl bg-[#004D3A] text-white flex items-center justify-center font-bold">
+                                                    {{ strtoupper(substr($aula->titulo, 0, 1)) }}
+                                                </div>
+
+                                                <div class="min-w-0">
+                                                    <p class="font-bold text-[#003C2F] break-words">
+                                                        {{ $aula->titulo }}
+                                                    </p>
+                                                    <p class="text-xs text-[#60756B]">
+                                                        Videoaula cadastrada
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td class="py-4 px-3">
+                                            <span class="inline-flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
+                                                <span class="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+                                                Publicada
+                                            </span>
+                                        </td>
+
+                                        <td class="py-4 px-3 text-[#60756B]">
+                                            Aula
+                                        </td>
+
+                                        <td class="py-4 px-3 text-right">
+                                            <a href="{{ route('videoaulas') }}"
+                                               class="inline-flex items-center justify-center w-9 h-9 rounded-xl hover:bg-[#EAF5EF] text-[#004D3A] transition">
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     class="w-5 h-5"
+                                                     fill="none"
+                                                     viewBox="0 0 24 24"
+                                                     stroke="currentColor">
+                                                    <path stroke-linecap="round"
+                                                          stroke-linejoin="round"
+                                                          stroke-width="1.8"
+                                                          d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931z"/>
+                                                </svg>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="py-8 text-center text-[#60756B]">
+                                            Nenhuma aula recente encontrada.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+
+                        </table>
+                    </div>
                 </div>
 
-            </div>
+                <!-- SOLICITAÇÕES PENDENTES -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-[#E3EBE4]">
 
-        </div>
+                    <div class="flex items-center justify-between mb-5">
+                        <div>
+                            <h2 class="font-extrabold text-[#003C2F] text-lg">
+                                Acessos Pendentes
+                            </h2>
+                            <p class="text-xs text-[#60756B]">
+                                Solicitações aguardando aprovação.
+                            </p>
+                        </div>
 
-        <!-- SOLICITAÇÕES PENDENTES -->
-        <div class="bg-[#1E293B] border border-slate-700 p-5 sm:p-6 rounded-xl mb-8 shadow-lg">
+                        <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">
+                            {{ $usuariosPendentes->count() }}
+                        </span>
+                    </div>
 
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-                <div>
-                    <h3 class="text-yellow-400 font-bold text-lg">
-                        Solicitações de acesso pendentes
-                    </h3>
-                    <p class="text-sm text-gray-400 mt-1">
-                        Aprove ou rejeite os usuários que solicitaram acesso ao sistema.
-                    </p>
-                </div>
+                    @if($usuariosPendentes->count() > 0)
+                        <div class="space-y-4">
 
-                <div class="bg-yellow-500/10 border border-yellow-500/40 text-yellow-300 px-4 py-2 rounded-lg text-sm w-fit">
-                    {{ $usuariosPendentes->count() }} pendente(s)
-                </div>
-            </div>
+                            @foreach($usuariosPendentes as $index => $user)
+                                <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 {{ $index >= 3 ? 'hidden extra-user' : '' }}">
 
-            @if($usuariosPendentes->count() > 0)
+                                    <div class="flex items-start gap-3 mb-4">
+                                        <div class="w-10 h-10 rounded-xl bg-[#9DB7A4] text-white flex items-center justify-center font-bold">
+                                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                                        </div>
 
-                <div class="space-y-4">
+                                        <div class="min-w-0">
+                                            <p class="font-bold text-[#003C2F] break-words">
+                                                {{ $user->name }}
+                                            </p>
+                                            <p class="text-xs text-[#60756B] break-words">
+                                                {{ $user->email }}
+                                            </p>
+                                            <p class="text-xs text-[#60756B] mt-1">
+                                                CPF: {{ $user->cpf }}
+                                            </p>
+                                        </div>
+                                    </div>
 
-                    @foreach($usuariosPendentes as $index => $user)
-                        <div class="bg-[#0F172A] p-4 sm:p-5 rounded-xl flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 border border-slate-700
-                            {{ $index >= 3 ? 'hidden extra-user' : '' }}">
+                                    <div class="flex flex-col sm:flex-row gap-2">
+                                        <form method="POST" action="{{ route('usuario.aprovar', $user->id) }}" class="w-full">
+                                            @csrf
+                                            <button class="w-full bg-[#00A63E] hover:bg-[#008F35] text-white px-3 py-2 rounded-xl text-sm font-bold transition">
+                                                Aprovar
+                                            </button>
+                                        </form>
 
-                            <div class="space-y-1 text-sm min-w-0">
-                                <p class="break-words"><strong class="text-gray-300">Nome:</strong> {{ $user->name }}</p>
-                                <p class="break-words"><strong class="text-gray-300">CPF:</strong> {{ $user->cpf }}</p>
-                                <p class="break-words"><strong class="text-gray-300">Email:</strong> {{ $user->email }}</p>
-                                <p class="break-words"><strong class="text-gray-300">Tipo:</strong> {{ ucfirst($user->tipo) }}</p>
-                            </div>
+                                        <form method="POST" action="{{ route('usuario.rejeitar', $user->id) }}" class="w-full">
+                                            @csrf
+                                            <button class="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-2 rounded-xl text-sm font-bold transition">
+                                                Rejeitar
+                                            </button>
+                                        </form>
+                                    </div>
 
-                            <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                                <form method="POST" action="{{ route('usuario.aprovar', $user->id) }}" class="w-full sm:w-auto">
-                                    @csrf
-                                    <button class="w-full sm:w-auto bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition">
-                                        ✅ Aprovar
-                                    </button>
-                                </form>
-
-                                <form method="POST" action="{{ route('usuario.rejeitar', $user->id) }}" class="w-full sm:w-auto">
-                                    @csrf
-                                    <button class="w-full sm:w-auto bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">
-                                        ❌ Rejeitar
-                                    </button>
-                                </form>
-                            </div>
+                                </div>
+                            @endforeach
 
                         </div>
-                    @endforeach
+
+                        @if($usuariosPendentes->count() > 3)
+                            <button onclick="toggleUsuarios()" id="btnVerMais"
+                                    class="mt-4 w-full border border-[#AFC5B5] text-[#004D3A] rounded-2xl py-3 text-sm font-bold hover:bg-[#F1F6F2] transition">
+                                Ver mais
+                            </button>
+                        @endif
+                    @else
+                        <div class="text-center bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-6">
+                            <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="w-7 h-7 text-green-700"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="1.8"
+                                          d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                                </svg>
+                            </div>
+
+                            <h3 class="font-bold text-[#003C2F]">
+                                Tudo em dia
+                            </h3>
+
+                            <p class="text-sm text-[#60756B] mt-1">
+                                Nenhum usuário aguardando aprovação no momento.
+                            </p>
+                        </div>
+                    @endif
 
                 </div>
 
-                <!-- BOTÃO VER MAIS -->
-                @if($usuariosPendentes->count() > 3)
-                    <div class="mt-4 text-center">
-                        <button onclick="toggleUsuarios()" id="btnVerMais"
-                            class="border border-yellow-500 text-yellow-400 px-4 py-2 rounded hover:bg-yellow-500/20 transition">
-                            Ver mais
-                        </button>
-                    </div>
-                @endif
+            </div>
 
-            @else
-
-                <!-- ESTADO VAZIO -->
-                <div class="bg-[#0F172A] border border-slate-700 rounded-xl p-6 sm:p-8 text-center">
-                    <div class="mx-auto w-14 h-14 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mb-4">
-                        <span class="text-2xl">✅</span>
-                    </div>
-
-                    <h4 class="text-lg font-bold text-white mb-2">
-                        Nenhum usuário aguardando aprovação
-                    </h4>
-
-                    <p class="text-gray-400 text-sm max-w-md mx-auto">
-                        No momento, não há nenhum aluno ou usuário solicitando acesso ao sistema.
-                        Quando alguém fizer cadastro, a solicitação aparecerá aqui.
-                    </p>
-                </div>
-
-            @endif
-
-        </div>
+        </section>
 
     </main>
 
 </div>
 
+<!-- BOTÃO FLUTUANTE -->
+<button onclick="abrirModalAviso()"
+        class="fixed right-5 bottom-5 w-14 h-14 rounded-full bg-[#004D3A] text-white shadow-2xl flex items-center justify-center hover:bg-[#003C2F] transition z-40">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         class="w-7 h-7"
+         fill="none"
+         viewBox="0 0 24 24"
+         stroke="currentColor">
+        <path stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4.5v15m7.5-7.5h-15"/>
+    </svg>
+</button>
+
 <!-- MODAL AVISO -->
 <div id="modalAviso" class="fixed inset-0 hidden items-center justify-center z-50"
-    style="background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);">
+     style="background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);">
 
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden"
-        style="max-height: 90vh; overflow-y: auto;">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden"
+         style="max-height: 90vh; overflow-y: auto;">
 
-        <!-- Header -->
-        <div class="px-5 sm:px-8 pt-8 pb-2">
-            <h2 class="text-2xl font-bold text-gray-800">Gerenciar Avisos Institucionais</h2>
+        <div class="px-5 sm:px-8 pt-8 pb-2 flex items-start justify-between gap-4">
+            <div>
+                <h2 class="text-2xl font-extrabold text-[#003C2F]">
+                    Gerenciar Avisos Institucionais
+                </h2>
+                <p class="text-sm text-[#60756B] mt-1">
+                    Crie, publique e acompanhe comunicados recentes.
+                </p>
+            </div>
+
+            <button type="button"
+                    onclick="fecharModalAviso()"
+                    class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="w-5 h-5"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          d="M6 18 18 6M6 6l12 12"/>
+                </svg>
+            </button>
         </div>
 
         <div class="px-5 sm:px-8 pb-8 pt-4">
 
-            <!-- Seção Novo Comunicado -->
-            <div class="mb-6">
+            <form method="POST" id="formAviso" action="{{ route('avisos.store') }}">
+                @csrf
+                <input type="hidden" name="_method" id="methodAviso" value="POST">
 
-                <div class="flex items-center gap-2 mb-5">
-                    <div class="w-6 h-6 rounded-full border-2 border-teal-600 flex items-center justify-center">
-                        <svg class="w-3 h-3 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
-                        </svg>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                            Título do Aviso
+                        </label>
+
+                        <input
+                            id="tituloAviso"
+                            type="text"
+                            name="titulo"
+                            placeholder="Ex: Atualização do Protocolo de Triagem"
+                            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
+                        >
                     </div>
-                    <span class="text-base font-semibold text-teal-700">Novo Comunicado</span>
+
+                    <div>
+                        <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                            Categoria
+                        </label>
+
+                        <select
+                            id="categoriaAviso"
+                            name="categoria"
+                            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                            <option value="urgente">Urgente</option>
+                            <option value="informativo">Informativo</option>
+                        </select>
+                    </div>
+
                 </div>
 
-                <form method="POST" id="formAviso" action="{{ route('avisos.store') }}">
-                    @csrf
-                    <input type="hidden" name="_method" id="methodAviso" value="POST">
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                        Mensagem / Descrição
+                    </label>
 
-                    <!-- Título + Categoria -->
-                    <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                    <textarea
+                        id="mensagemAviso"
+                        name="mensagem"
+                        rows="4"
+                        placeholder="Descreva os detalhes do aviso aqui..."
+                        class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none"
+                    ></textarea>
+                </div>
 
-                        <div class="flex-1">
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                                Título do Aviso
-                            </label>
-                            <input
-                                id="tituloAviso"
-                                type="text"
-                                name="titulo"
-                                placeholder="Ex: Atualização do Protocolo de Triagem"
-                                class="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
-                            >
+                <div class="flex items-center gap-3 mb-6">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="publicar_agora" id="publicarAgora" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer
+                            peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#00A63E]
+                            peer-checked:bg-[#00A63E]
+                            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                            after:bg-white after:border after:border-gray-300 after:rounded-full
+                            after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full peer-checked:after:border-white">
                         </div>
+                    </label>
 
-                        <div class="w-full sm:w-52">
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                                Categoria
-                            </label>
-                            <div class="relative">
-                                <select
-                                    id="categoriaAviso"
-                                    name="categoria"
-                                    class="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition cursor-pointer"
-                                >
-                                    <option value="urgente">Urgente</option>
-                                    <option value="informativo">Informativo</option>
-                                </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
+                    <span class="text-sm font-bold text-[#003C2F]">Publicar Agora</span>
+                </div>
 
-                    </div>
+                <!-- HISTÓRICO -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-extrabold text-[#003C2F] mb-3">Histórico Recente</h3>
 
-                    <!-- Mensagem / Descrição -->
-                    <div class="mb-4">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                            Mensagem / Descrição
-                        </label>
-                        <textarea
-                            id="mensagemAviso"
-                            name="mensagem"
-                            rows="4"
-                            placeholder="Descreva os detalhes do aviso aqui..."
-                            class="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition resize-none"
-                        ></textarea>
-                    </div>
+                    <div class="border border-[#DCE7DE] rounded-2xl overflow-x-auto">
+                        <table class="w-full min-w-[560px] text-sm">
+                            <thead>
+                                <tr class="bg-[#F8FBF8] border-b border-[#DCE7DE]">
+                                    <th class="text-left px-4 py-3 text-xs font-bold text-[#60756B] uppercase tracking-wider">Título</th>
+                                    <th class="text-left px-4 py-3 text-xs font-bold text-[#60756B] uppercase tracking-wider">Status</th>
+                                    <th class="text-left px-4 py-3 text-xs font-bold text-[#60756B] uppercase tracking-wider">Data</th>
+                                    <th class="text-right px-4 py-3 text-xs font-bold text-[#60756B] uppercase tracking-wider">Ações</th>
+                                </tr>
+                            </thead>
 
-                    <!-- Toggle Publicar Agora -->
-                    <div class="flex items-center gap-3 mb-6">
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="publicar_agora" id="publicarAgora" class="sr-only peer" checked>
-                            <div class="w-11 h-6 bg-gray-200 rounded-full peer
-                                peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-teal-400
-                                peer-checked:bg-teal-600
-                                after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                                after:bg-white after:border after:border-gray-300 after:rounded-full
-                                after:h-5 after:w-5 after:transition-all
-                                peer-checked:after:translate-x-full peer-checked:after:border-white">
-                            </div>
-                        </label>
-                        <span class="text-sm font-medium text-gray-700">Publicar Agora</span>
-                    </div>
+                            <tbody class="divide-y divide-[#EEF3EF]">
+                                @forelse ($avisosRecentes as $aviso)
+                                    <tr class="hover:bg-[#F8FBF8] transition">
+                                        <td class="px-4 py-3 text-[#003C2F] font-bold">
+                                            {{ $aviso->titulo }}
+                                        </td>
 
-                    <!-- Histórico Recente -->
-                    <div class="mb-6">
-                        <h3 class="text-lg font-bold text-gray-800 mb-3">Histórico Recente</h3>
+                                        <td class="px-4 py-3">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold
+                                                @if (($aviso->status ?? 'publicado') === 'publicado') bg-green-100 text-green-700
+                                                @else bg-yellow-100 text-yellow-700
+                                                @endif">
+                                                {{ strtoupper($aviso->status ?? 'PUBLICADO') }}
+                                            </span>
+                                        </td>
 
-                        <div class="border border-gray-200 rounded-xl overflow-x-auto">
-                            <table class="w-full min-w-[560px] text-sm">
-                                <thead>
-                                    <tr class="bg-gray-50 border-b border-gray-200">
-                                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Título</th>
-                                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Data</th>
-                                        <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    @forelse ($avisosRecentes as $aviso)
-                                        <tr class="hover:bg-gray-50 transition">
-                                            <td class="px-4 py-3 text-gray-800 font-medium">
-                                                {{ $aviso->titulo }}
-                                            </td>
+                                        <td class="px-4 py-3 text-[#60756B] text-xs">
+                                            {{ $aviso->created_at ? $aviso->created_at->diffForHumans() : '-' }}
+                                        </td>
 
-                                            <td class="px-4 py-3">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
-                                                    @if (($aviso->status ?? 'publicado') === 'publicado') bg-green-100 text-green-700
-                                                    @else bg-yellow-100 text-yellow-700
-                                                    @endif">
-                                                    {{ strtoupper($aviso->status ?? 'PUBLICADO') }}
-                                                </span>
-                                            </td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex justify-end gap-2">
 
-                                            <td class="px-4 py-3 text-gray-500 text-xs">
-                                                {{ $aviso->created_at ? $aviso->created_at->diffForHumans() : '-' }}
-                                            </td>
+                                                <button
+                                                    type="button"
+                                                    onclick='editarAviso(@json($aviso->id), @json($aviso->titulo), @json($aviso->mensagem ?? $aviso->descricao ?? ""), @json($aviso->categoria))'
+                                                    class="p-2 rounded-xl hover:bg-green-100 text-[#60756B] hover:text-[#004D3A] transition"
+                                                    title="Editar">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                </button>
 
-                                            <td class="px-4 py-3">
-                                                <div class="flex justify-end gap-2">
+                                                <form method="POST" action="{{ route('avisos.destroy', $aviso->id) }}" class="inline">
+                                                    @csrf
+                                                    @method('DELETE')
 
                                                     <button
-                                                        type="button"
-                                                        onclick='editarAviso(@json($aviso->id), @json($aviso->titulo), @json($aviso->mensagem ?? $aviso->descricao ?? ""), @json($aviso->categoria))'
-                                                        class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-teal-600 transition"
-                                                        title="Editar"
-                                                    >
+                                                        type="submit"
+                                                        onclick="return confirm('Deseja excluir este aviso?')"
+                                                        class="p-2 rounded-xl hover:bg-red-50 text-[#60756B] hover:text-red-600 transition"
+                                                        title="Excluir">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                         </svg>
                                                     </button>
+                                                </form>
 
-                                                    <form method="POST" action="{{ route('avisos.destroy', $aviso->id) }}" class="inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button
-                                                            type="submit"
-                                                            onclick="return confirm('Deseja excluir este aviso?')"
-                                                            class="p-1.5 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-600 transition"
-                                                            title="Excluir"
-                                                        >
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                    </form>
-
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="4" class="px-4 py-6 text-center text-gray-500">
-                                                Nenhum aviso recente encontrado.
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="px-4 py-6 text-center text-[#60756B]">
+                                            Nenhum aviso recente encontrado.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
+                </div>
 
-                    <!-- Botões de Ação -->
-                    <div class="flex flex-col sm:flex-row justify-end gap-3">
-                        <button
-                            type="button"
-                            onclick="fecharModalAviso()"
-                            class="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition">
-                            Cancelar
-                        </button>
+                <div class="flex flex-col sm:flex-row justify-end gap-3">
+                    <button
+                        type="button"
+                        onclick="fecharModalAviso()"
+                        class="px-6 py-3 rounded-2xl border border-[#DCE7DE] text-[#60756B] text-sm font-bold hover:bg-[#F8FBF8] transition">
+                        Cancelar
+                    </button>
 
-                        <button
-                            type="submit"
-                            class="px-6 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-900 text-white text-sm font-semibold transition shadow-sm">
-                            Salvar e Publicar
-                        </button>
-                    </div>
+                    <button
+                        type="submit"
+                        class="px-6 py-3 rounded-2xl bg-[#004D3A] hover:bg-[#003C2F] text-white text-sm font-bold transition shadow-sm">
+                        Salvar e Publicar
+                    </button>
+                </div>
 
-                </form>
-            </div>
+            </form>
 
         </div>
     </div>
 </div>
 
 <script>
-    // =========================
-    // VER MAIS USUÁRIOS
-    // =========================
     function toggleUsuarios() {
         const extras = document.querySelectorAll('.extra-user');
         const btn = document.getElementById('btnVerMais');
@@ -442,9 +810,6 @@
         btn.innerText = existeOculto ? 'Ver menos' : 'Ver mais';
     }
 
-    // =========================
-    // MODAL AVISO
-    // =========================
     function abrirModalAviso() {
         const modal = document.getElementById('modalAviso');
         const form = document.getElementById('formAviso');
@@ -497,7 +862,6 @@
         if (method) method.value = "PUT";
     }
 
-    // Fechar ao clicar fora do modal
     const modalAviso = document.getElementById('modalAviso');
 
     if (modalAviso) {
@@ -507,6 +871,12 @@
             }
         });
     }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            fecharModalAviso();
+        }
+    });
 </script>
 
 @endsection
