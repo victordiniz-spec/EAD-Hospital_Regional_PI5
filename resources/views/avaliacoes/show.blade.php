@@ -4,28 +4,88 @@
 
 @section('content')
 
+@php
+    $tempoLimite = isset($avaliacao->tempo_limite) && $avaliacao->tempo_limite
+        ? (int) $avaliacao->tempo_limite
+        : 0;
+@endphp
+
 <div class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
 
-    <div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="max-w-5xl mx-auto px-4 py-8">
 
-        <!-- Cabeçalho -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-6 shadow">
-            <h1 class="text-2xl font-bold mb-2">
-                📝 {{ $avaliacao->titulo ?? 'Pós-teste' }}
-            </h1>
+        <!-- TOPO -->
+        <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
-            <p class="text-slate-400 text-sm">
-                Responda as perguntas abaixo e clique em finalizar.
-            </p>
+            <div>
+                <a href="{{ route('dashboard.aluno') }}"
+                   onclick="return confirmarSaida()"
+                   class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition mb-4">
+                    ← Voltar para o dashboard
+                </a>
 
-            @if(isset($avaliacao->tempo_limite) && $avaliacao->tempo_limite)
-                <p class="text-sm text-blue-400 mt-2">
-                    Tempo limite: {{ $avaliacao->tempo_limite }} minutos
+                <h1 class="text-3xl font-bold">
+                    📝 {{ $avaliacao->titulo ?? 'Pós-teste' }}
+                </h1>
+
+                <p class="text-slate-400 text-sm mt-2">
+                    Responda todas as questões e clique em finalizar.
                 </p>
+            </div>
+
+            <!-- CONTADOR -->
+            @if($tempoLimite > 0)
+                <div class="bg-slate-900 border border-blue-500/40 rounded-2xl px-6 py-4 shadow-lg min-w-[220px]">
+                    <p class="text-xs uppercase tracking-widest text-slate-400 mb-1">
+                        Tempo restante
+                    </p>
+
+                    <div id="contador"
+                         class="text-3xl font-bold text-blue-400">
+                        --:--
+                    </div>
+
+                    <p class="text-xs text-slate-500 mt-1">
+                        Limite: {{ $tempoLimite }} minuto(s)
+                    </p>
+                </div>
+            @else
+                <div class="bg-slate-900 border border-slate-700 rounded-2xl px-6 py-4 shadow-lg min-w-[220px]">
+                    <p class="text-xs uppercase tracking-widest text-slate-400 mb-1">
+                        Tempo
+                    </p>
+
+                    <div class="text-xl font-bold text-emerald-400">
+                        Sem limite
+                    </div>
+                </div>
             @endif
+
         </div>
 
-        <!-- Alertas -->
+        <!-- CARD INFORMATIVO -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-6 shadow">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                <div class="bg-slate-800/70 rounded-xl p-4 border border-slate-700">
+                    <p class="text-xs text-slate-400 uppercase tracking-widest">Questões</p>
+                    <h3 class="text-2xl font-bold mt-1">{{ $perguntas->count() }}</h3>
+                </div>
+
+                <div class="bg-slate-800/70 rounded-xl p-4 border border-slate-700">
+                    <p class="text-xs text-slate-400 uppercase tracking-widest">Tipo</p>
+                    <h3 class="text-2xl font-bold mt-1">Pós-teste</h3>
+                </div>
+
+                <div class="bg-slate-800/70 rounded-xl p-4 border border-slate-700">
+                    <p class="text-xs text-slate-400 uppercase tracking-widest">Status</p>
+                    <h3 class="text-2xl font-bold mt-1 text-yellow-400">Em andamento</h3>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ALERTAS -->
         @if(session('success'))
             <div class="mb-4 bg-green-500/20 text-green-400 border border-green-500 p-4 rounded-xl">
                 {{ session('success') }}
@@ -40,24 +100,40 @@
 
         @if($perguntas->count() > 0)
 
-            <form method="POST" action="{{ route('avaliacoes.submit', $avaliacao->id) }}">
+            <form method="POST"
+                  action="{{ route('avaliacoes.submit', $avaliacao->id) }}"
+                  id="formPosTeste">
                 @csrf
 
                 <div class="space-y-5">
 
                     @foreach($perguntas as $index => $pergunta)
 
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg hover:border-blue-500/40 transition">
 
-                            <h2 class="font-semibold mb-4">
-                                {{ $index + 1 }}. {{ $pergunta->pergunta }}
-                            </h2>
+                            <div class="flex items-start gap-4 mb-5">
+
+                                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold shrink-0">
+                                    {{ $index + 1 }}
+                                </div>
+
+                                <div>
+                                    <p class="text-xs uppercase tracking-widest text-slate-500 mb-1">
+                                        Questão {{ $index + 1 }}
+                                    </p>
+
+                                    <h2 class="font-semibold text-lg leading-relaxed">
+                                        {{ $pergunta->pergunta }}
+                                    </h2>
+                                </div>
+
+                            </div>
 
                             <div class="space-y-3">
 
                                 @forelse($pergunta->respostas as $resposta)
 
-                                    <label class="flex items-center gap-3 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 cursor-pointer hover:bg-slate-700 transition">
+                                    <label class="grupo-resposta flex items-center gap-3 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 cursor-pointer hover:bg-slate-700 hover:border-blue-500/50 transition">
 
                                         <input
                                             type="radio"
@@ -67,7 +143,7 @@
                                             class="accent-blue-600"
                                         >
 
-                                        <span class="text-sm">
+                                        <span class="text-sm text-slate-200">
                                             {{ $resposta->resposta }}
                                         </span>
 
@@ -75,7 +151,7 @@
 
                                 @empty
 
-                                    <p class="text-red-400 text-sm">
+                                    <p class="text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-xl p-3">
                                         Nenhuma alternativa cadastrada para esta pergunta.
                                     </p>
 
@@ -89,15 +165,18 @@
 
                 </div>
 
-                <div class="flex justify-between items-center mt-8">
+                <!-- BOTÕES -->
+                <div class="sticky bottom-0 mt-8 bg-slate-950/90 backdrop-blur border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3 shadow-2xl">
 
                     <a href="{{ route('dashboard.aluno') }}"
-                       class="bg-slate-700 hover:bg-slate-600 px-5 py-3 rounded-lg transition">
+                       onclick="return confirmarSaida()"
+                       class="w-full sm:w-auto text-center bg-slate-700 hover:bg-slate-600 px-5 py-3 rounded-lg transition">
                         Voltar
                     </a>
 
                     <button type="submit"
-                            class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold transition">
+                            onclick="finalizandoFormulario = true"
+                            class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold transition shadow-lg shadow-blue-600/20">
                         Finalizar pós-teste
                     </button>
 
@@ -107,7 +186,12 @@
 
         @else
 
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center shadow-lg">
+
+                <div class="w-16 h-16 rounded-full bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center mx-auto mb-4">
+                    <span class="text-3xl">⚠️</span>
+                </div>
+
                 <h2 class="text-xl font-bold mb-2">Nenhuma pergunta encontrada</h2>
 
                 <p class="text-slate-400 mb-6">
@@ -125,5 +209,67 @@
     </div>
 
 </div>
+
+<script>
+    let finalizandoFormulario = false;
+    const tempoLimiteMinutos = {{ $tempoLimite }};
+    const form = document.getElementById('formPosTeste');
+
+    function confirmarSaida() {
+        return confirm('Você tem certeza que quer sair do pós-teste? Se sair agora, ao voltar o tempo será reiniciado.');
+    }
+
+    // Confirmação ao tentar fechar, atualizar ou voltar pelo navegador
+    window.addEventListener('beforeunload', function (e) {
+        if (!finalizandoFormulario && form) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    // Contador
+    if (tempoLimiteMinutos > 0 && form) {
+        let tempoRestante = tempoLimiteMinutos * 60;
+        const contador = document.getElementById('contador');
+
+        function atualizarContador() {
+            const minutos = Math.floor(tempoRestante / 60);
+            const segundos = tempoRestante % 60;
+
+            contador.textContent =
+                String(minutos).padStart(2, '0') + ':' + String(segundos).padStart(2, '0');
+
+            if (tempoRestante <= 60) {
+                contador.classList.remove('text-blue-400');
+                contador.classList.add('text-red-400');
+            }
+
+            if (tempoRestante <= 0) {
+                finalizandoFormulario = true;
+                alert('O tempo acabou. Seu pós-teste será enviado automaticamente.');
+                form.submit();
+                return;
+            }
+
+            tempoRestante--;
+        }
+
+        atualizarContador();
+        setInterval(atualizarContador, 1000);
+    }
+
+    // Destaque visual na alternativa selecionada
+    document.querySelectorAll('input[type="radio"]').forEach((radio) => {
+        radio.addEventListener('change', function () {
+            const name = this.name;
+
+            document.querySelectorAll(`input[name="${name}"]`).forEach((input) => {
+                input.closest('label').classList.remove('border-blue-500', 'bg-blue-500/10');
+            });
+
+            this.closest('label').classList.add('border-blue-500', 'bg-blue-500/10');
+        });
+    });
+</script>
 
 @endsection
