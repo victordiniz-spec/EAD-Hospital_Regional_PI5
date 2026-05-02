@@ -4,14 +4,20 @@
 
 @section('content')
 
-<div class="flex min-h-screen">
+<div class="flex min-h-screen bg-[#0B1120]">
 
     @include('partials.sidebar-professor')
 
     <!-- CONTEÚDO -->
-    <main class="flex-1 p-8 bg-[#0B1120] text-white">
+    <main class="flex-1 p-4 pt-20 sm:p-6 lg:p-8 lg:pt-8 bg-[#0B1120] text-white overflow-x-hidden">
 
-        <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
+        <!-- CABEÇALHO -->
+        <div class="mb-6">
+            <h2 class="text-2xl sm:text-3xl font-bold">Dashboard</h2>
+            <p class="text-sm text-gray-400 mt-1">
+                Acompanhe usuários, aulas, avisos e solicitações de acesso.
+            </p>
+        </div>
 
         <!-- ALERTAS -->
         @if(session('success'))
@@ -45,36 +51,43 @@
                 <!-- CARDS -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
-                    <div class="bg-[#1E293B] p-6 rounded-xl shadow-md border-l-4 border-green-500">
+                    <div class="bg-[#1E293B] p-5 sm:p-6 rounded-xl shadow-md border-l-4 border-green-500">
                         <p class="text-sm text-gray-400">Total Usuários</p>
-                        <h3 class="text-2xl font-bold">{{ $totalAlunos }}</h3>
+                        <h3 class="text-2xl font-bold mt-1">{{ $totalAlunos }}</h3>
                     </div>
 
-                    <div class="bg-[#1E293B] p-6 rounded-xl shadow-md border-l-4 border-green-500">
+                    <div class="bg-[#1E293B] p-5 sm:p-6 rounded-xl shadow-md border-l-4 border-green-500">
                         <p class="text-sm text-gray-400">Aulas Publicadas</p>
-                        <h3 class="text-2xl font-bold">{{ $totalAulas }}</h3>
+                        <h3 class="text-2xl font-bold mt-1">{{ $totalAulas }}</h3>
                     </div>
 
-                    <div class="bg-[#1E293B] p-6 rounded-xl shadow-md border-l-4 border-green-500">
+                    <div class="bg-[#1E293B] p-5 sm:p-6 rounded-xl shadow-md border-l-4 border-green-500">
                         <p class="text-sm text-gray-400">Pós-testes</p>
-                        <h3 class="text-2xl font-bold">{{ $totalProvas }}</h3>
+                        <h3 class="text-2xl font-bold mt-1">{{ $totalProvas }}</h3>
                     </div>
 
-                    <div class="bg-[#1E293B] p-6 rounded-xl shadow-md border-l-4 border-green-500">
+                    <div class="bg-[#1E293B] p-5 sm:p-6 rounded-xl shadow-md border-l-4 border-green-500">
                         <p class="text-sm text-gray-400">Média Geral</p>
-                        <h3 class="text-2xl font-bold">{{ number_format($mediaGeral, 2) }}</h3>
+                        <h3 class="text-2xl font-bold mt-1">{{ number_format($mediaGeral, 2) }}</h3>
                     </div>
 
                 </div>
 
                 <!-- AULAS -->
-                <div class="bg-[#1E293B] p-6 rounded-xl shadow-md">
-                    <h3 class="mb-4 font-semibold">Videoaulas Recentes</h3>
+                <div class="bg-[#1E293B] p-5 sm:p-6 rounded-xl shadow-md">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                        <h3 class="font-semibold">Videoaulas Recentes</h3>
+
+                        <a href="{{ route('videoaulas') }}"
+                           class="text-sm text-green-400 hover:text-green-300 transition">
+                            Ver todas
+                        </a>
+                    </div>
 
                     <ul class="space-y-3">
                         @forelse($aulasRecentes as $aula)
-                            <li class="flex justify-between items-center gap-4 bg-[#0F172A] p-3 rounded-lg">
-                                <span>{{ $aula->titulo }}</span>
+                            <li class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-[#0F172A] p-3 rounded-lg">
+                                <span class="break-words">{{ $aula->titulo }}</span>
                                 <span class="text-green-400 text-sm whitespace-nowrap">✔ Publicada</span>
                             </li>
                         @empty
@@ -88,15 +101,24 @@
             </div>
 
             <!-- AVISOS -->
-            <div class="bg-[#1E293B] p-6 rounded-xl h-fit shadow-md">
+            <div class="bg-[#1E293B] p-5 sm:p-6 rounded-xl h-fit shadow-md">
 
-                <h3 class="font-bold mb-4">Avisos Recentes</h3>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                    <h3 class="font-bold">Avisos Recentes</h3>
+
+                    <button onclick="abrirModalAviso()"
+                        class="text-sm border border-dashed border-gray-500 px-3 py-2 rounded hover:bg-gray-700 transition">
+                        + Novo
+                    </button>
+                </div>
 
                 <div class="space-y-4">
                     @forelse($avisosRecentes as $aviso)
                         <div class="bg-[#0F172A] p-4 rounded-lg border-l-4 border-green-500">
-                            <p class="font-semibold">{{ $aviso->titulo }}</p>
-                            <p class="text-sm text-gray-400">{{ $aviso->mensagem }}</p>
+                            <p class="font-semibold break-words">{{ $aviso->titulo }}</p>
+                            <p class="text-sm text-gray-400 break-words">
+                                {{ $aviso->mensagem ?? $aviso->descricao ?? '' }}
+                            </p>
                         </div>
                     @empty
                         <p class="text-gray-400 bg-[#0F172A] p-4 rounded-lg">
@@ -105,19 +127,12 @@
                     @endforelse
                 </div>
 
-                <div class="mt-4 text-center">
-                    <button onclick="abrirModalAviso()"
-                        class="border border-dashed border-gray-500 px-4 py-2 rounded hover:bg-gray-700 transition">
-                        + Criar Novo Aviso
-                    </button>
-                </div>
-
             </div>
 
         </div>
 
         <!-- SOLICITAÇÕES PENDENTES -->
-        <div class="bg-[#1E293B] border border-slate-700 p-6 rounded-xl mb-8 shadow-lg">
+        <div class="bg-[#1E293B] border border-slate-700 p-5 sm:p-6 rounded-xl mb-8 shadow-lg">
 
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                 <div>
@@ -129,7 +144,7 @@
                     </p>
                 </div>
 
-                <div class="bg-yellow-500/10 border border-yellow-500/40 text-yellow-300 px-4 py-2 rounded-lg text-sm">
+                <div class="bg-yellow-500/10 border border-yellow-500/40 text-yellow-300 px-4 py-2 rounded-lg text-sm w-fit">
                     {{ $usuariosPendentes->count() }} pendente(s)
                 </div>
             </div>
@@ -139,25 +154,25 @@
                 <div class="space-y-4">
 
                     @foreach($usuariosPendentes as $index => $user)
-                        <div class="bg-[#0F172A] p-5 rounded-xl flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 border border-slate-700
+                        <div class="bg-[#0F172A] p-4 sm:p-5 rounded-xl flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 border border-slate-700
                             {{ $index >= 3 ? 'hidden extra-user' : '' }}">
 
-                            <div class="space-y-1 text-sm">
-                                <p><strong class="text-gray-300">Nome:</strong> {{ $user->name }}</p>
-                                <p><strong class="text-gray-300">CPF:</strong> {{ $user->cpf }}</p>
-                                <p><strong class="text-gray-300">Email:</strong> {{ $user->email }}</p>
-                                <p><strong class="text-gray-300">Tipo:</strong> {{ ucfirst($user->tipo) }}</p>
+                            <div class="space-y-1 text-sm min-w-0">
+                                <p class="break-words"><strong class="text-gray-300">Nome:</strong> {{ $user->name }}</p>
+                                <p class="break-words"><strong class="text-gray-300">CPF:</strong> {{ $user->cpf }}</p>
+                                <p class="break-words"><strong class="text-gray-300">Email:</strong> {{ $user->email }}</p>
+                                <p class="break-words"><strong class="text-gray-300">Tipo:</strong> {{ ucfirst($user->tipo) }}</p>
                             </div>
 
-                            <div class="flex flex-col sm:flex-row gap-3">
-                                <form method="POST" action="{{ route('usuario.aprovar', $user->id) }}">
+                            <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                                <form method="POST" action="{{ route('usuario.aprovar', $user->id) }}" class="w-full sm:w-auto">
                                     @csrf
                                     <button class="w-full sm:w-auto bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition">
                                         ✅ Aprovar
                                     </button>
                                 </form>
 
-                                <form method="POST" action="{{ route('usuario.rejeitar', $user->id) }}">
+                                <form method="POST" action="{{ route('usuario.rejeitar', $user->id) }}" class="w-full sm:w-auto">
                                     @csrf
                                     <button class="w-full sm:w-auto bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">
                                         ❌ Rejeitar
@@ -183,7 +198,7 @@
             @else
 
                 <!-- ESTADO VAZIO -->
-                <div class="bg-[#0F172A] border border-slate-700 rounded-xl p-8 text-center">
+                <div class="bg-[#0F172A] border border-slate-700 rounded-xl p-6 sm:p-8 text-center">
                     <div class="mx-auto w-14 h-14 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mb-4">
                         <span class="text-2xl">✅</span>
                     </div>
@@ -214,11 +229,11 @@
         style="max-height: 90vh; overflow-y: auto;">
 
         <!-- Header -->
-        <div class="px-8 pt-8 pb-2">
+        <div class="px-5 sm:px-8 pt-8 pb-2">
             <h2 class="text-2xl font-bold text-gray-800">Gerenciar Avisos Institucionais</h2>
         </div>
 
-        <div class="px-8 pb-8 pt-4">
+        <div class="px-5 sm:px-8 pb-8 pt-4">
 
             <!-- Seção Novo Comunicado -->
             <div class="mb-6">
@@ -309,8 +324,8 @@
                     <div class="mb-6">
                         <h3 class="text-lg font-bold text-gray-800 mb-3">Histórico Recente</h3>
 
-                        <div class="border border-gray-200 rounded-xl overflow-hidden">
-                            <table class="w-full text-sm">
+                        <div class="border border-gray-200 rounded-xl overflow-x-auto">
+                            <table class="w-full min-w-[560px] text-sm">
                                 <thead>
                                     <tr class="bg-gray-50 border-b border-gray-200">
                                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Título</th>
@@ -344,7 +359,7 @@
 
                                                     <button
                                                         type="button"
-                                                        onclick='editarAviso(@json($aviso->id), @json($aviso->titulo), @json($aviso->mensagem), @json($aviso->categoria))'
+                                                        onclick='editarAviso(@json($aviso->id), @json($aviso->titulo), @json($aviso->mensagem ?? $aviso->descricao ?? ""), @json($aviso->categoria))'
                                                         class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-teal-600 transition"
                                                         title="Editar"
                                                     >
@@ -386,19 +401,17 @@
                     </div>
 
                     <!-- Botões de Ação -->
-                    <div class="flex justify-end gap-3">
+                    <div class="flex flex-col sm:flex-row justify-end gap-3">
                         <button
                             type="button"
                             onclick="fecharModalAviso()"
-                            class="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition"
-                        >
+                            class="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition">
                             Cancelar
                         </button>
 
                         <button
                             type="submit"
-                            class="px-6 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-900 text-white text-sm font-semibold transition shadow-sm"
-                        >
+                            class="px-6 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-900 text-white text-sm font-semibold transition shadow-sm">
                             Salvar e Publicar
                         </button>
                     </div>
