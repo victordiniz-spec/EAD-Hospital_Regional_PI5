@@ -48,19 +48,108 @@
             @if(isset($modulos) && count($modulos) > 0)
 
                 @foreach($modulos as $modulo)
-                    <div class="bg-slate-900 border border-slate-800 p-4 sm:p-5 rounded-xl mb-4 shadow">
 
-                        <!-- TÍTULO DO MÓDULO -->
-                        <div class="flex justify-between items-center cursor-pointer gap-3"
+                    @php
+                        $totalEtapasModulo = 0;
+                        $etapasConcluidasModulo = 0;
+
+                        if (isset($modulo->aulas)) {
+                            foreach ($modulo->aulas as $aulaProgresso) {
+                                $avaliacaoModuloId = DB::table('avaliacoes')
+                                    ->where('aula_id', $aulaProgresso->id)
+                                    ->value('id');
+
+                                $aulaModuloAssistida = DB::table('aulas_assistidas')
+                                    ->where('aluno_id', auth()->id())
+                                    ->where('aula_id', $aulaProgresso->id)
+                                    ->where('assistido', true)
+                                    ->exists();
+
+                                $posTesteModuloFeito = false;
+
+                                if ($avaliacaoModuloId) {
+                                    $posTesteModuloFeito = DB::table('notas')
+                                        ->where('aluno_id', auth()->id())
+                                        ->where('avaliacao_id', $avaliacaoModuloId)
+                                        ->exists();
+                                }
+
+                                // Cada aula conta como uma etapa
+                                $totalEtapasModulo++;
+
+                                if ($aulaModuloAssistida) {
+                                    $etapasConcluidasModulo++;
+                                }
+
+                                // Se tiver pós-teste, ele conta como mais uma etapa
+                                if ($avaliacaoModuloId) {
+                                    $totalEtapasModulo++;
+
+                                    if ($posTesteModuloFeito) {
+                                        $etapasConcluidasModulo++;
+                                    }
+                                }
+                            }
+                        }
+
+                        $progressoModulo = $totalEtapasModulo > 0
+                            ? round(($etapasConcluidasModulo / $totalEtapasModulo) * 100)
+                            : 0;
+                    @endphp
+
+                    <div class="
+                        border p-4 sm:p-5 rounded-xl mb-4 shadow transition
+                        {{ $progressoModulo >= 100
+                            ? 'bg-slate-900/70 border-emerald-500/30'
+                            : 'bg-slate-900 border-slate-800'
+                        }}
+                    ">
+
+                        <!-- TÍTULO DO MÓDULO + PROGRESSO -->
+                        <div class="cursor-pointer"
                              onclick="toggleModulo({{ $modulo->id }})">
 
-                            <h3 class="font-semibold text-lg">
-                                ▶ {{ $modulo->nome }}
-                            </h3>
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 
-                            <span class="text-xs text-slate-400 whitespace-nowrap">
-                                {{ count($modulo->aulas ?? []) }} aula(s)
-                            </span>
+                                <div>
+                                    <h3 class="font-semibold text-lg flex items-center gap-2 flex-wrap">
+                                        ▶ {{ $modulo->nome }}
+
+                                        @if($progressoModulo >= 100)
+                                            <span class="text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                                                Concluído
+                                            </span>
+                                        @endif
+                                    </h3>
+
+                                    <p class="text-xs text-slate-500 mt-1">
+                                        {{ $etapasConcluidasModulo }} de {{ $totalEtapasModulo }} etapa(s) concluída(s)
+                                    </p>
+                                </div>
+
+                                <div class="sm:text-right">
+                                    <span class="text-sm font-bold
+                                        {{ $progressoModulo >= 100 ? 'text-emerald-400' : 'text-blue-400' }}">
+                                        {{ $progressoModulo }}%
+                                    </span>
+
+                                    <p class="text-xs text-slate-500">
+                                        {{ count($modulo->aulas ?? []) }} aula(s)
+                                    </p>
+                                </div>
+
+                            </div>
+
+                            <!-- BARRA DE PROGRESSO -->
+                            <div class="mt-4 w-full bg-slate-800 rounded-full h-3 overflow-hidden border border-slate-700">
+
+                                <div class="h-full rounded-full transition-all duration-700
+                                    {{ $progressoModulo >= 100 ? 'bg-emerald-500' : 'bg-blue-500' }}"
+                                    style="width: {{ $progressoModulo }}%;">
+                                </div>
+
+                            </div>
+
                         </div>
 
                         <!-- AULAS -->
