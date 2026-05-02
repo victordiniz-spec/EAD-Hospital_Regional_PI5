@@ -79,8 +79,8 @@
     <main class="flex-1 min-w-0 w-full bg-[#F3F7F3] overflow-x-hidden">
 
         @include('partials.navbar')
-        
-        <section class="p-4 pt-20 sm:p-6 lg:p-8 lg:pt-8">
+
+        <section class="p-4 sm:p-6 lg:p-8">
 
             <!-- ALERTAS -->
             @if(session('success'))
