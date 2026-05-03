@@ -45,6 +45,25 @@ Route::post('/reenviar-codigo-cadastro', [UserController::class, 'reenviarCodigo
     ->name('cadastro.reenviar.codigo');
 
 
+// =========================
+// ESQUECI MINHA SENHA
+// =========================
+Route::get('/esqueci-minha-senha', [UserController::class, 'telaEsqueciSenha'])
+    ->name('senha.esqueci');
+
+Route::post('/esqueci-minha-senha', [UserController::class, 'enviarCodigoRedefinicaoSenha'])
+    ->name('senha.enviar.codigo');
+
+Route::get('/redefinir-senha', [UserController::class, 'telaRedefinirSenha'])
+    ->name('senha.redefinir');
+
+Route::post('/redefinir-senha', [UserController::class, 'redefinirSenha'])
+    ->name('senha.atualizar');
+
+Route::post('/reenviar-codigo-senha', [UserController::class, 'reenviarCodigoRedefinicaoSenha'])
+    ->name('senha.reenviar.codigo');
+
+
 /*
 |--------------------------------------------------------------------------
 | ROTAS PROTEGIDAS

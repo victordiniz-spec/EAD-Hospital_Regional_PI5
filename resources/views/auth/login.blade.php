@@ -7,7 +7,7 @@
 @section('content')
 
 <!-- FUNDO COM DEGRADÊ -->
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-100 via-white to-green-200">
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-100 via-white to-green-200 px-4 py-8">
 
     <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-2xl border border-gray-200">
 
@@ -27,31 +27,40 @@
 
         <!-- ALERTAS -->
         @if(session('erro'))
-            <div class="bg-red-100 text-red-600 p-3 mb-4 rounded text-center border border-red-300">
+            <div class="bg-red-100 text-red-600 p-3 mb-4 rounded-xl text-center border border-red-300 text-sm">
                 {{ session('erro') }}
             </div>
         @endif
 
         @if(session('success'))
-            <div class="bg-green-100 text-green-600 p-3 mb-4 rounded text-center border border-green-300">
+            <div class="bg-green-100 text-green-600 p-3 mb-4 rounded-xl text-center border border-green-300 text-sm">
                 {{ session('success') }}
             </div>
         @endif
 
+        @if($errors->any())
+            <div class="bg-red-100 text-red-600 p-3 mb-4 rounded-xl border border-red-300 text-sm">
+                @foreach($errors->all() as $error)
+                    <p>{{ $error }}</p>
+                @endforeach
+            </div>
+        @endif
+
         <!-- FORM -->
-        <form method="POST" action="/login" class="space-y-4">
+        <form method="POST" action="{{ route('login.post') }}" class="space-y-4">
             @csrf
 
             <!-- CPF -->
             <div>
-                <label class="text-sm text-gray-600">CPF</label>
+                <label class="text-sm text-gray-600 font-medium">CPF</label>
                 <input
                     type="text"
                     name="cpf"
                     value="{{ old('cpf') }}"
                     placeholder="000.000.000-00"
+                    maxlength="14"
                     class="w-full border border-gray-300 p-3 rounded-lg 
-                           text-gray-800 placeholder-gray-400
+                           text-gray-800 placeholder-gray-400 mt-1
                            focus:outline-none focus:ring-2 focus:ring-green-600"
                     required
                 >
@@ -60,13 +69,14 @@
             <!-- SENHA -->
             <div>
                 <div class="flex justify-between items-center">
-                    <label class="text-sm text-gray-600">Senha</label>
-                    <a href="#" class="text-green-600 text-sm hover:underline">
+                    <label class="text-sm text-gray-600 font-medium">Senha</label>
+
+                    <a href="{{ route('senha.esqueci') }}" class="text-green-600 text-sm font-semibold hover:underline">
                         Esqueci minha senha
                     </a>
                 </div>
 
-                <div class="relative">
+                <div class="relative mt-1">
                     <input
                         type="password"
                         name="password"
@@ -82,7 +92,8 @@
                     <button 
                         type="button"
                         onclick="toggleSenha()"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-green-700 transition"
+                        aria-label="Mostrar ou ocultar senha"
                     >
                         <!-- OLHO ABERTO -->
                         <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" 
@@ -135,24 +146,28 @@
 document.addEventListener('DOMContentLoaded', function () {
     const cpfInput = document.querySelector('input[name="cpf"]');
 
-    cpfInput.addEventListener('input', function(e) {
-        let v = e.target.value.replace(/\D/g, '');
+    if (cpfInput) {
+        cpfInput.addEventListener('input', function(e) {
+            let v = e.target.value.replace(/\D/g, '');
 
-        v = v.replace(/(\d{3})(\d)/, '$1.$2');
-        v = v.replace(/(\d{3})(\d)/, '$1.$2');
-        v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
 
-        e.target.value = v;
-    });
+            e.target.value = v.slice(0, 14);
+        });
+    }
 });
 </script>
 
-<!-- SCRIPT OLHO SENHA MELHORADO -->
+<!-- SCRIPT OLHO SENHA -->
 <script>
 function toggleSenha() {
     const input = document.getElementById('password');
     const eyeOpen = document.getElementById('eye-open');
     const eyeClosed = document.getElementById('eye-closed');
+
+    if (!input || !eyeOpen || !eyeClosed) return;
 
     if (input.type === "password") {
         input.type = "text";

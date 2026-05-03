@@ -338,6 +338,200 @@ class UserController extends Controller
     }
 
     // =========================
+    // TELA ESQUECI MINHA SENHA
+    // =========================
+    public function telaEsqueciSenha()
+    {
+        return view('auth.esqueci-senha');
+    }
+
+    // =========================
+    // ENVIAR CÓDIGO DE REDEFINIÇÃO
+    // =========================
+    public function enviarCodigoRedefinicaoSenha(Request $request)
+    {
+        $cpfLimpo = preg_replace('/\D/', '', $request->cpf);
+
+        $request->merge([
+            'cpf_limpo' => $cpfLimpo,
+        ]);
+
+        $request->validate([
+            'cpf_limpo' => ['required', 'digits:11'],
+            'email' => ['required', 'email', 'max:255'],
+        ], [
+            'cpf_limpo.required' => 'Informe seu CPF.',
+            'cpf_limpo.digits' => 'O CPF precisa ter 11 números.',
+            'email.required' => 'Informe seu e-mail.',
+            'email.email' => 'Informe um e-mail válido.',
+        ]);
+
+        $user = User::where('cpf', $cpfLimpo)
+            ->where('email', strtolower($request->email))
+            ->first();
+
+        if (!$user) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'dados' => 'CPF e e-mail não encontrados juntos no sistema.'
+                ]);
+        }
+
+        $codigo = (string) random_int(100000, 999999);
+
+        Session::put('redefinir_senha_pendente', [
+            'user_id' => $user->id,
+            'nome' => $user->name,
+            'cpf' => $user->cpf,
+            'email' => $user->email,
+            'codigo' => $codigo,
+            'expira_em' => now()->addMinutes(15)->timestamp,
+        ]);
+
+        Session::put('redefinir_senha_email', $user->email);
+
+        Mail::send('emails.codigo-redefinicao-senha', [
+            'nome' => $user->name,
+            'codigo' => $codigo,
+        ], function ($message) use ($user) {
+            $message->to($user->email)
+                ->subject('Código para redefinir senha - Integrar ReSaúde');
+        });
+
+        return redirect()
+            ->route('senha.redefinir')
+            ->with('success', 'Enviamos um código de verificação para o seu e-mail.');
+    }
+
+    // =========================
+    // TELA REDEFINIR SENHA
+    // =========================
+    public function telaRedefinirSenha()
+    {
+        if (!Session::has('redefinir_senha_pendente')) {
+            return redirect()
+                ->route('senha.esqueci')
+                ->withErrors(['senha' => 'Informe seus dados primeiro.']);
+        }
+
+        return view('auth.redefinir-senha');
+    }
+
+    // =========================
+    // REDEFINIR SENHA
+    // =========================
+    public function redefinirSenha(Request $request)
+    {
+        $request->validate([
+            'codigo' => ['required', 'digits:6'],
+            'senha' => [
+                'required',
+                'confirmed',
+                'min:8',
+                'regex:/[A-Z]/',
+                'regex:/[a-z]/',
+                'regex:/[0-9]/',
+            ],
+        ], [
+            'codigo.required' => 'Digite o código recebido por e-mail.',
+            'codigo.digits' => 'O código precisa ter 6 dígitos.',
+            'senha.required' => 'Informe a nova senha.',
+            'senha.confirmed' => 'As senhas não coincidem.',
+            'senha.min' => 'A senha precisa ter pelo menos 8 caracteres.',
+            'senha.regex' => 'A senha precisa conter letra maiúscula, letra minúscula e número.',
+        ]);
+
+        $dados = Session::get('redefinir_senha_pendente');
+
+        if (!$dados) {
+            return redirect()
+                ->route('senha.esqueci')
+                ->withErrors(['senha' => 'A solicitação expirou. Tente novamente.']);
+        }
+
+        if (now()->timestamp > $dados['expira_em']) {
+            Session::forget('redefinir_senha_pendente');
+            Session::forget('redefinir_senha_email');
+
+            return redirect()
+                ->route('senha.esqueci')
+                ->withErrors(['codigo' => 'O código expirou. Solicite um novo código.']);
+        }
+
+        if ($request->codigo !== $dados['codigo']) {
+            return back()
+                ->withInput()
+                ->with('error', 'Código incorreto. Verifique seu e-mail e tente novamente.');
+        }
+
+        $user = User::find($dados['user_id']);
+
+        if (!$user) {
+            Session::forget('redefinir_senha_pendente');
+            Session::forget('redefinir_senha_email');
+
+            return redirect()
+                ->route('senha.esqueci')
+                ->withErrors(['usuario' => 'Usuário não encontrado.']);
+        }
+
+        // Reaproveita a mesma validação forte do cadastro
+        $erroSenha = $this->senhaInsegura(
+            $request->senha,
+            $user->name,
+            $user->email
+        );
+
+        if ($erroSenha) {
+            return back()
+                ->withInput()
+                ->withErrors(['senha' => $erroSenha]);
+        }
+
+        $user->password = Hash::make($request->senha);
+        $user->save();
+
+        Session::forget('redefinir_senha_pendente');
+        Session::forget('redefinir_senha_email');
+
+        return redirect('/')
+            ->with('success', 'Senha redefinida com sucesso! Faça login com sua nova senha.');
+    }
+
+    // =========================
+    // REENVIAR CÓDIGO DE REDEFINIÇÃO
+    // =========================
+    public function reenviarCodigoRedefinicaoSenha()
+    {
+        $dados = Session::get('redefinir_senha_pendente');
+
+        if (!$dados) {
+            return redirect()
+                ->route('senha.esqueci')
+                ->withErrors(['senha' => 'Informe seus dados novamente.']);
+        }
+
+        $codigo = (string) random_int(100000, 999999);
+
+        $dados['codigo'] = $codigo;
+        $dados['expira_em'] = now()->addMinutes(15)->timestamp;
+
+        Session::put('redefinir_senha_pendente', $dados);
+        Session::put('redefinir_senha_email', $dados['email']);
+
+        Mail::send('emails.codigo-redefinicao-senha', [
+            'nome' => $dados['nome'],
+            'codigo' => $codigo,
+        ], function ($message) use ($dados) {
+            $message->to($dados['email'])
+                ->subject('Código para redefinir senha - Integrar ReSaúde');
+        });
+
+        return back()->with('success', 'Enviamos um novo código para o seu e-mail.');
+    }
+
+    // =========================
     // LOGIN COM CPF
     // =========================
     public function login(Request $request)
