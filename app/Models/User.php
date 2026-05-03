@@ -14,12 +14,13 @@ class User extends Authenticatable
      * Campos que podem ser preenchidos
      */
     protected $fillable = [
-        'name',
-        'cpf',
-        'email',
-        'password',
-        'tipo',
-        'status'    
+    'name',
+    'email',
+    'password',
+    'cpf',
+    'tipo',
+    'status',
+    'email_verified_at',
     ];
 
     /**

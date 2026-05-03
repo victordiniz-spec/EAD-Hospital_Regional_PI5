@@ -24,10 +24,7 @@ Route::get('/', function () {
 Route::post('/login', [UserController::class, 'login'])->name('login.post');
 
 // LOGOUT
-Route::post('/logout', function () {
-    Auth::logout();
-    return redirect('/');
-})->name('logout');
+Route::post('/logout', [UserController::class, 'logout'])->name('logout');
 
 // CADASTRO
 Route::get('/cadastro-aluno', function () {
@@ -36,6 +33,16 @@ Route::get('/cadastro-aluno', function () {
 
 Route::post('/salvar-aluno', [UserController::class, 'salvarAluno'])
     ->name('salvar.aluno');
+
+// VERIFICAÇÃO DE E-MAIL NO CADASTRO
+Route::get('/verificar-email-cadastro', [UserController::class, 'telaVerificarCadastro'])
+    ->name('cadastro.verificar');
+
+Route::post('/verificar-email-cadastro', [UserController::class, 'verificarCodigoCadastro'])
+    ->name('cadastro.verificar.codigo');
+
+Route::post('/reenviar-codigo-cadastro', [UserController::class, 'reenviarCodigoCadastro'])
+    ->name('cadastro.reenviar.codigo');
 
 
 /*
@@ -64,10 +71,22 @@ Route::middleware('auth')->group(function () {
     Route::put('/usuarios/{id}', function ($id) {
         $user = \App\Models\User::findOrFail($id);
 
+        $cpf = preg_replace('/\D/', '', request('cpf'));
+
+        request()->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $id,
+            'cpf' => 'required',
+        ]);
+
+        if (\App\Models\User::where('cpf', $cpf)->where('id', '!=', $id)->exists()) {
+            return back()->with('error', 'Este CPF já está cadastrado em outro usuário.');
+        }
+
         $user->update([
             'name' => request('name'),
             'email' => request('email'),
-            'cpf' => request('cpf'),
+            'cpf' => $cpf,
         ]);
 
         return back()->with('success', 'Usuário atualizado!');
@@ -96,6 +115,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/videoaulas', [AulaController::class, 'store'])
         ->name('aulas.store');
 
+    Route::put('/aulas/{id}', [AulaController::class, 'update'])
+        ->name('aulas.update');
+
     Route::delete('/aulas/{id}', [AulaController::class, 'destroy'])
         ->name('aulas.destroy');
 
@@ -119,7 +141,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/avaliacoes', [AvaliacaoController::class, 'store'])
         ->name('avaliacoes.store');
 
-    // IMPORTANTE: esta rota precisa ficar antes de /avaliacoes/{id}
     Route::get('/avaliacoes/{id}/resultado', [AvaliacaoController::class, 'resultado'])
         ->name('avaliacoes.resultado');
 
@@ -154,30 +175,24 @@ Route::middleware('auth')->group(function () {
     // 🎓 CERTIFICADOS
     // =========================
 
-    // CRIAR MODELO
     Route::get('/certificados/criar', function () {
         return view('dashboard.certificados.criar');
     })->name('certificados.criar');
 
-    // SALVAR MODELO
     Route::post('/certificados', function () {
-        $caminho = request()->hasFile('assinatura')
-            ? request()->file('assinatura')->store('assinaturas', 'public')
-            : null;
-
         \Illuminate\Support\Facades\DB::table('certificados')->insert([
             'curso' => request('curso'),
             'carga_horaria' => request('carga_horaria'),
             'responsavel' => request('responsavel'),
             'cargo' => request('cargo'),
-            'assinatura' => $caminho,
+            'assinatura' => null,
             'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         return back()->with('success', 'Certificado salvo com sucesso!');
     })->name('certificados.store');
 
-    // GERAR PDF
     Route::get('/certificado/gerar/{id}', [CertificadoController::class, 'gerar'])
         ->name('certificado.gerar');
 

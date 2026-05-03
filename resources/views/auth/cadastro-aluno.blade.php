@@ -19,8 +19,17 @@
         <!-- TÍTULO -->
         <div class="text-center mb-6">
             <h2 class="text-2xl font-bold text-gray-800">Criar nova conta</h2>
-            <p class="text-gray-500 text-sm">Preencha os dados e crie sua conta</p>
+            <p class="text-gray-500 text-sm">
+                Preencha os dados. Enviaremos um código para validar seu e-mail.
+            </p>
         </div>
+
+        <!-- SUCESSO -->
+        @if(session('success'))
+            <div class="bg-green-100 text-green-700 p-3 mb-4 rounded-xl border border-green-200 text-sm">
+                {{ session('success') }}
+            </div>
+        @endif
 
         <!-- ERROS -->
         @if($errors->any())
@@ -31,21 +40,22 @@
             </div>
         @endif
 
-        <!-- AVISO SENHA FRACA -->
-        <div id="avisoSenhaFraca"
+        <!-- AVISO -->
+        <div id="avisoCadastro"
              class="hidden bg-red-50 text-red-700 border border-red-200 p-3 mb-4 rounded-xl text-sm">
-            A senha está fraca. Crie uma senha média ou forte para continuar.
         </div>
 
         <!-- FORM -->
-        <form method="POST" action="/salvar-aluno" class="space-y-4" id="formCadastro">
+        <form method="POST" action="{{ route('salvar.aluno') }}" class="space-y-4" id="formCadastro">
             @csrf
 
             <!-- NOME -->
             <div>
                 <label class="text-sm text-gray-600 font-medium">Nome completo</label>
+
                 <input type="text"
                        name="nome"
+                       value="{{ old('nome') }}"
                        placeholder="Digite seu nome"
                        class="w-full border border-gray-300 p-3 rounded-lg text-gray-800 mt-1 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                        required>
@@ -54,23 +64,35 @@
             <!-- CPF -->
             <div>
                 <label class="text-sm text-gray-600 font-medium">CPF</label>
+
                 <input type="text"
                        name="cpf"
                        id="cpf"
+                       value="{{ old('cpf') }}"
                        placeholder="000.000.000-00"
                        maxlength="14"
                        class="w-full border border-gray-300 p-3 rounded-lg text-gray-800 mt-1 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                        required>
+
+                <p class="text-xs text-gray-500 mt-1">
+                    O sistema não permite cadastro com CPF já utilizado.
+                </p>
             </div>
 
             <!-- EMAIL -->
             <div>
                 <label class="text-sm text-gray-600 font-medium">E-mail</label>
+
                 <input type="email"
                        name="email"
+                       value="{{ old('email') }}"
                        placeholder="seu@email.com"
                        class="w-full border border-gray-300 p-3 rounded-lg text-gray-800 mt-1 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                        required>
+
+                <p class="text-xs text-gray-500 mt-1">
+                    Você receberá um código de verificação neste e-mail.
+                </p>
             </div>
 
             <!-- SENHA -->
@@ -90,7 +112,6 @@
                             class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-lg flex items-center justify-center text-gray-500 hover:text-green-700 hover:bg-green-50 transition"
                             aria-label="Mostrar ou ocultar senha">
                         <span id="iconeSenha">
-                            <!-- OLHO ABERTO -->
                             <svg xmlns="http://www.w3.org/2000/svg"
                                  class="w-5 h-5"
                                  fill="none"
@@ -160,7 +181,6 @@
                             class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-lg flex items-center justify-center text-gray-500 hover:text-green-700 hover:bg-green-50 transition"
                             aria-label="Mostrar ou ocultar confirmação da senha">
                         <span id="iconeConfirmarSenha">
-                            <!-- OLHO ABERTO -->
                             <svg xmlns="http://www.w3.org/2000/svg"
                                  class="w-5 h-5"
                                  fill="none"
@@ -188,30 +208,27 @@
                 <div class="grid grid-cols-2 gap-4 mt-3">
 
                     <label class="cursor-pointer">
-                        <input type="radio" name="tipo" value="residente" class="hidden peer" required>
+                        <input type="radio"
+                               name="tipo"
+                               value="residente"
+                               class="hidden peer"
+                               {{ old('tipo') === 'residente' ? 'checked' : '' }}
+                               required>
 
-                        <div class="border rounded-xl p-4 text-center transition
-                                    hover:border-green-500
-                                    peer-checked:border-green-600
-                                    peer-checked:bg-green-50
-                                    peer-checked:ring-2
-                                    peer-checked:ring-green-100">
-
+                        <div class="border rounded-xl p-4 text-center transition hover:border-green-500 peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:ring-2 peer-checked:ring-green-100">
                             <div class="text-3xl mb-2">👨‍⚕️</div>
                             <p class="text-gray-700 font-medium">Residente</p>
                         </div>
                     </label>
 
                     <label class="cursor-pointer">
-                        <input type="radio" name="tipo" value="preceptor" class="hidden peer">
+                        <input type="radio"
+                               name="tipo"
+                               value="preceptor"
+                               class="hidden peer"
+                               {{ old('tipo') === 'preceptor' ? 'checked' : '' }}>
 
-                        <div class="border rounded-xl p-4 text-center transition
-                                    hover:border-green-500
-                                    peer-checked:border-green-600
-                                    peer-checked:bg-green-50
-                                    peer-checked:ring-2
-                                    peer-checked:ring-green-100">
-
+                        <div class="border rounded-xl p-4 text-center transition hover:border-green-500 peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:ring-2 peer-checked:ring-green-100">
                             <div class="text-3xl mb-2">🧑‍🏫</div>
                             <p class="text-gray-700 font-medium">Preceptor</p>
                         </div>
@@ -224,7 +241,7 @@
             <button type="submit"
                     id="btnEnviar"
                     class="w-full bg-green-700 text-white p-3 rounded-lg font-semibold hover:bg-green-800 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
-                Enviar solicitação
+                Enviar código de verificação
             </button>
         </form>
 
@@ -315,7 +332,7 @@
         const barra = document.getElementById('barraSenha');
         const texto = document.getElementById('textoForcaSenha');
         const pontuacao = document.getElementById('pontuacaoSenha');
-        const aviso = document.getElementById('avisoSenhaFraca');
+        const aviso = document.getElementById('avisoCadastro');
 
         let pontos = 0;
 
@@ -352,7 +369,6 @@
             barra.classList.add('w-1/3', 'bg-red-500');
             texto.innerText = 'Senha fraca';
             texto.className = 'text-xs font-semibold text-red-600';
-            aviso.classList.add('hidden');
         } else if (pontos === 3 || pontos === 4) {
             senhaAceita = true;
             barra.classList.add('w-2/3', 'bg-yellow-500');
@@ -410,7 +426,7 @@
     document.getElementById('formCadastro').addEventListener('submit', function (e) {
         const senha = document.getElementById('senha').value;
         const confirmarSenha = document.getElementById('confirmarSenha').value;
-        const aviso = document.getElementById('avisoSenhaFraca');
+        const aviso = document.getElementById('avisoCadastro');
 
         verificarForcaSenha();
 
@@ -440,7 +456,7 @@
 
         const btn = document.getElementById('btnEnviar');
         btn.disabled = true;
-        btn.innerText = 'Enviando solicitação...';
+        btn.innerText = 'Enviando código...';
     });
 </script>
 
