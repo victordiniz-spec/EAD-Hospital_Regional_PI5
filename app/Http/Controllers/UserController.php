@@ -13,6 +13,118 @@ use Illuminate\Validation\Rule;
 class UserController extends Controller
 {
     // =========================
+    // LIMPAR TEXTO PARA COMPARAÇÃO
+    // =========================
+    private function limparTextoSenha($texto)
+    {
+        $texto = (string) $texto;
+
+        $texto = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $texto);
+
+        return strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $texto));
+    }
+
+    // =========================
+    // VERIFICAR SE A SENHA É INSEGURA
+    // =========================
+    private function senhaInsegura($senha, $nome, $email)
+    {
+        $senhaLimpa = $this->limparTextoSenha($senha);
+        $nomeLimpo = $this->limparTextoSenha($nome);
+        $emailUsuario = $this->limparTextoSenha(explode('@', $email)[0] ?? '');
+
+        $senhasBloqueadas = [
+            '123',
+            '1234',
+            '12345',
+            '123456',
+            '1234567',
+            '12345678',
+            '123456789',
+            '1234567890',
+            '000000',
+            '111111',
+            '222222',
+            '333333',
+            '444444',
+            '555555',
+            '666666',
+            '777777',
+            '888888',
+            '999999',
+            'admin',
+            'admin123',
+            'teste',
+            'teste123',
+            'senha',
+            'senha123',
+            'password',
+            'password123',
+            'qwerty',
+            'qwerty123',
+            'abc123',
+            'abcd1234',
+            'integrar',
+            'integrar123',
+            'resaude',
+            'resaude123',
+            'integrarresaude',
+            'integrarresaude123',
+        ];
+
+        if (in_array($senhaLimpa, $senhasBloqueadas)) {
+            return 'Essa senha é muito comum ou insegura. Não use 123, admin, teste, senha ou password.';
+        }
+
+        if (preg_match('/^\d+$/', $senhaLimpa)) {
+            return 'A senha não pode conter apenas números.';
+        }
+
+        if (preg_match('/(.)\1{4,}/', $senhaLimpa)) {
+            return 'A senha não pode ter muitos caracteres repetidos.';
+        }
+
+        $sequencias = [
+            '0123456789',
+            '9876543210',
+            'abcdefghijklmnopqrstuvwxyz',
+            'zyxwvutsrqponmlkjihgfedcba',
+            'qwertyuiop',
+            'poiuytrewq',
+        ];
+
+        foreach ($sequencias as $sequencia) {
+            for ($i = 0; $i <= strlen($sequencia) - 5; $i++) {
+                $trecho = substr($sequencia, $i, 5);
+
+                if (str_contains($senhaLimpa, $trecho)) {
+                    return 'A senha não pode conter sequências óbvias como 12345, abcde ou qwerty.';
+                }
+            }
+        }
+
+        if (strlen($nomeLimpo) >= 4 && str_contains($senhaLimpa, $nomeLimpo)) {
+            return 'Não use seu nome completo na senha. Crie uma senha diferente e mais segura.';
+        }
+
+        $partesNome = preg_split('/\s+/', strtolower((string) $nome));
+
+        foreach ($partesNome as $parte) {
+            $parteLimpa = $this->limparTextoSenha($parte);
+
+            if (strlen($parteLimpa) >= 4 && str_contains($senhaLimpa, $parteLimpa)) {
+                return 'Não use partes do seu nome na senha. Crie uma senha diferente e mais segura.';
+            }
+        }
+
+        if (strlen($emailUsuario) >= 4 && str_contains($senhaLimpa, $emailUsuario)) {
+            return 'Não use seu e-mail na senha. Crie uma senha diferente e mais segura.';
+        }
+
+        return null;
+    }
+
+    // =========================
     // CADASTRO - ENVIAR CÓDIGO
     // =========================
     public function salvarAluno(Request $request)
@@ -69,6 +181,19 @@ class UserController extends Controller
             'tipo.required' => 'Escolha o tipo de usuário.',
             'tipo.in' => 'Tipo de usuário inválido.',
         ]);
+
+        // Segurança extra no backend: bloqueia senhas fracas, comuns ou com dados pessoais
+        $erroSenha = $this->senhaInsegura(
+            $request->senha,
+            $request->nome,
+            $request->email
+        );
+
+        if ($erroSenha) {
+            return back()
+                ->withInput()
+                ->withErrors(['senha' => $erroSenha]);
+        }
 
         $codigo = (string) random_int(100000, 999999);
 

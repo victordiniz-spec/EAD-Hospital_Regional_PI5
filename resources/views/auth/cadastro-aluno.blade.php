@@ -55,6 +55,7 @@
 
                 <input type="text"
                        name="nome"
+                       id="nome"
                        value="{{ old('nome') }}"
                        placeholder="Digite seu nome"
                        class="w-full border border-gray-300 p-3 rounded-lg text-gray-800 mt-1 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
@@ -85,6 +86,7 @@
 
                 <input type="email"
                        name="email"
+                       id="email"
                        value="{{ old('email') }}"
                        placeholder="seu@email.com"
                        class="w-full border border-gray-300 p-3 rounded-lg text-gray-800 mt-1 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
@@ -143,7 +145,7 @@
                         </p>
 
                         <p id="pontuacaoSenha" class="text-xs text-gray-400">
-                            0/5
+                            0/7
                         </p>
                     </div>
                 </div>
@@ -159,7 +161,9 @@
                         <p id="regraMaiuscula" class="text-gray-500">○ Letra maiúscula</p>
                         <p id="regraMinuscula" class="text-gray-500">○ Letra minúscula</p>
                         <p id="regraNumero" class="text-gray-500">○ Número</p>
-                        <p id="regraEspecial" class="text-gray-500 sm:col-span-2">○ Símbolo especial, exemplo: @ # !</p>
+                        <p id="regraEspecial" class="text-gray-500">○ Símbolo especial, exemplo: @ # !</p>
+                        <p id="regraNaoComum" class="text-gray-500">○ Não usar senha comum</p>
+                        <p id="regraNaoDados" class="text-gray-500 sm:col-span-2">○ Não usar seu nome ou e-mail na senha</p>
                     </div>
                 </div>
             </div>
@@ -258,6 +262,45 @@
 <script>
     let senhaAceita = false;
 
+    const senhasBloqueadas = [
+        '123',
+        '1234',
+        '12345',
+        '123456',
+        '1234567',
+        '12345678',
+        '123456789',
+        '1234567890',
+        '000000',
+        '111111',
+        '222222',
+        '333333',
+        '444444',
+        '555555',
+        '666666',
+        '777777',
+        '888888',
+        '999999',
+        'admin',
+        'admin123',
+        'teste',
+        'teste123',
+        'senha',
+        'senha123',
+        'password',
+        'password123',
+        'qwerty',
+        'qwerty123',
+        'abc123',
+        'abcd1234',
+        'integrar',
+        'integrar123',
+        'resaude',
+        'resaude123',
+        'integrarresaude',
+        'integrarresaude123'
+    ];
+
     const iconeOlhoAberto = `
         <svg xmlns="http://www.w3.org/2000/svg"
              class="w-5 h-5"
@@ -311,6 +354,90 @@
         }
     }
 
+    function limparTexto(texto) {
+        return (texto || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]/g, '');
+    }
+
+    function senhaTemSequencia(senha) {
+        const s = limparTexto(senha);
+
+        const sequencias = [
+            '0123456789',
+            '9876543210',
+            'abcdefghijklmnopqrstuvwxyz',
+            'zyxwvutsrqponmlkjihgfedcba',
+            'qwertyuiop',
+            'poiuytrewq'
+        ];
+
+        return sequencias.some(seq => {
+            for (let i = 0; i <= seq.length - 5; i++) {
+                if (s.includes(seq.substring(i, i + 5))) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+    }
+
+    function senhaTemRepeticao(senha) {
+        const s = limparTexto(senha);
+
+        return /(.)\1{4,}/.test(s);
+    }
+
+    function senhaUsaDadosPessoais(senha) {
+        const senhaLimpa = limparTexto(senha);
+        const nome = limparTexto(document.getElementById('nome')?.value || '');
+        const email = limparTexto((document.getElementById('email')?.value || '').split('@')[0]);
+
+        if (!senhaLimpa) return false;
+
+        const partesNome = nome
+            .split(/(?=[A-Z])|\s+/)
+            .filter(Boolean);
+
+        const nomeCompletoNaSenha = nome.length >= 4 && senhaLimpa.includes(nome);
+        const emailNaSenha = email.length >= 4 && senhaLimpa.includes(email);
+
+        let algumaParteDoNome = false;
+
+        if (nome.length >= 4) {
+            const palavrasNome = (document.getElementById('nome')?.value || '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .split(/\s+/)
+                .map(p => p.replace(/[^a-z0-9]/g, ''))
+                .filter(p => p.length >= 4);
+
+            algumaParteDoNome = palavrasNome.some(palavra => senhaLimpa.includes(palavra));
+        }
+
+        return nomeCompletoNaSenha || emailNaSenha || algumaParteDoNome;
+    }
+
+    function senhaComumOuInsegura(senha) {
+        const senhaLimpa = limparTexto(senha);
+
+        if (!senhaLimpa) return false;
+
+        if (senhasBloqueadas.includes(senhaLimpa)) return true;
+
+        if (/^\d+$/.test(senhaLimpa)) return true;
+
+        if (senhaTemSequencia(senhaLimpa)) return true;
+
+        if (senhaTemRepeticao(senhaLimpa)) return true;
+
+        return false;
+    }
+
     function atualizarRegra(id, valido, texto) {
         const elemento = document.getElementById(id);
 
@@ -342,19 +469,26 @@
         const temNumero = /[0-9]/.test(senha);
         const temEspecial = /[^A-Za-z0-9]/.test(senha);
 
+        const naoComum = senha.length > 0 && !senhaComumOuInsegura(senha);
+        const naoUsaDados = senha.length > 0 && !senhaUsaDadosPessoais(senha);
+
         if (temTamanho) pontos++;
         if (temMaiuscula) pontos++;
         if (temMinuscula) pontos++;
         if (temNumero) pontos++;
         if (temEspecial) pontos++;
+        if (naoComum) pontos++;
+        if (naoUsaDados) pontos++;
 
         atualizarRegra('regraTamanho', temTamanho, 'Mínimo 8 caracteres');
         atualizarRegra('regraMaiuscula', temMaiuscula, 'Letra maiúscula');
         atualizarRegra('regraMinuscula', temMinuscula, 'Letra minúscula');
         atualizarRegra('regraNumero', temNumero, 'Número');
         atualizarRegra('regraEspecial', temEspecial, 'Símbolo especial, exemplo: @ # !');
+        atualizarRegra('regraNaoComum', naoComum, 'Não usar senha comum');
+        atualizarRegra('regraNaoDados', naoUsaDados, 'Não usar seu nome ou e-mail na senha');
 
-        pontuacao.innerText = pontos + '/5';
+        pontuacao.innerText = pontos + '/7';
 
         barra.className = 'h-full rounded-full transition-all duration-300';
 
@@ -364,12 +498,22 @@
             texto.innerText = 'Digite uma senha';
             texto.className = 'text-xs font-semibold text-gray-500';
             aviso.classList.add('hidden');
-        } else if (pontos <= 2) {
+        } else if (!naoComum) {
+            senhaAceita = false;
+            barra.classList.add('w-1/3', 'bg-red-500');
+            texto.innerText = 'Senha muito comum ou insegura';
+            texto.className = 'text-xs font-semibold text-red-600';
+        } else if (!naoUsaDados) {
+            senhaAceita = false;
+            barra.classList.add('w-1/3', 'bg-red-500');
+            texto.innerText = 'Não use seu nome ou e-mail na senha';
+            texto.className = 'text-xs font-semibold text-red-600';
+        } else if (pontos <= 3) {
             senhaAceita = false;
             barra.classList.add('w-1/3', 'bg-red-500');
             texto.innerText = 'Senha fraca';
             texto.className = 'text-xs font-semibold text-red-600';
-        } else if (pontos === 3 || pontos === 4) {
+        } else if (pontos === 4 || pontos === 5) {
             senhaAceita = true;
             barra.classList.add('w-2/3', 'bg-yellow-500');
             texto.innerText = 'Senha média — aceita';
@@ -418,6 +562,8 @@
 
     document.getElementById('senha').addEventListener('input', verificarForcaSenha);
     document.getElementById('confirmarSenha').addEventListener('input', verificarConfirmacaoSenha);
+    document.getElementById('nome').addEventListener('input', verificarForcaSenha);
+    document.getElementById('email').addEventListener('input', verificarForcaSenha);
 
     document.getElementById('cpf').addEventListener('input', function () {
         this.value = mascararCPF(this.value);
@@ -433,9 +579,15 @@
         if (!senhaAceita) {
             e.preventDefault();
 
-            aviso.innerText = 'A senha está fraca. Use pelo menos uma senha média para continuar.';
-            aviso.classList.remove('hidden');
+            if (senhaComumOuInsegura(senha)) {
+                aviso.innerText = 'Essa senha é muito comum ou insegura. Não use 123, admin, teste, senha, sequências ou apenas números.';
+            } else if (senhaUsaDadosPessoais(senha)) {
+                aviso.innerText = 'Não use seu nome ou seu e-mail na senha. Crie uma senha diferente e mais segura.';
+            } else {
+                aviso.innerText = 'A senha está fraca. Use pelo menos uma senha média para continuar.';
+            }
 
+            aviso.classList.remove('hidden');
             document.getElementById('senha').focus();
 
             return;
