@@ -82,13 +82,29 @@
                            name="senha"
                            id="senha"
                            placeholder="Digite sua senha"
-                           class="w-full border border-gray-300 p-3 rounded-lg text-gray-800 pr-12 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                           class="w-full border border-gray-300 p-3 rounded-lg text-gray-800 pr-14 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                            required>
 
                     <button type="button"
                             onclick="toggleSenha('senha', 'iconeSenha')"
-                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">
-                        <span id="iconeSenha">👁️</span>
+                            class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-lg flex items-center justify-center text-gray-500 hover:text-green-700 hover:bg-green-50 transition"
+                            aria-label="Mostrar ou ocultar senha">
+                        <span id="iconeSenha">
+                            <!-- OLHO ABERTO -->
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="w-5 h-5"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                                 stroke-width="1.8">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                        </span>
                     </button>
                 </div>
 
@@ -136,13 +152,29 @@
                            name="senha_confirmation"
                            id="confirmarSenha"
                            placeholder="Digite a senha novamente"
-                           class="w-full border border-gray-300 p-3 rounded-lg text-gray-800 pr-12 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                           class="w-full border border-gray-300 p-3 rounded-lg text-gray-800 pr-14 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                            required>
 
                     <button type="button"
                             onclick="toggleSenha('confirmarSenha', 'iconeConfirmarSenha')"
-                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">
-                        <span id="iconeConfirmarSenha">👁️</span>
+                            class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-lg flex items-center justify-center text-gray-500 hover:text-green-700 hover:bg-green-50 transition"
+                            aria-label="Mostrar ou ocultar confirmação da senha">
+                        <span id="iconeConfirmarSenha">
+                            <!-- OLHO ABERTO -->
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="w-5 h-5"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                                 stroke-width="1.8">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                        </span>
                     </button>
                 </div>
 
@@ -209,18 +241,56 @@
 <script>
     let senhaAceita = false;
 
+    const iconeOlhoAberto = `
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-5 h-5"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor"
+             stroke-width="1.8">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        </svg>
+    `;
+
+    const iconeOlhoFechado = `
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-5 h-5"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor"
+             stroke-width="1.8">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3.98 8.223A10.477 10.477 0 0 0 2.036 12.322a1.012 1.012 0 0 0 0 .639C3.423 17.49 7.36 20.5 12 20.5c1.518 0 2.954-.314 4.25-.879" />
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M6.228 6.228A10.45 10.45 0 0 1 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639a10.502 10.502 0 0 1-4.293 5.774" />
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9.88 9.88A3 3 0 0 0 14.12 14.12" />
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3 3l18 18" />
+        </svg>
+    `;
+
     function toggleSenha(inputId, iconeId) {
         const input = document.getElementById(inputId);
         const icone = document.getElementById(iconeId);
 
-        if (!input) return;
+        if (!input || !icone) return;
 
         if (input.type === 'password') {
             input.type = 'text';
-            if (icone) icone.innerText = '🙈';
+            icone.innerHTML = iconeOlhoFechado;
         } else {
             input.type = 'password';
-            if (icone) icone.innerText = '👁️';
+            icone.innerHTML = iconeOlhoAberto;
         }
     }
 
