@@ -454,9 +454,9 @@
 
         aviso.classList.add('hidden');
 
-        const btn = document.getElementById('btnEnviar');
-        btn.disabled = true;
-        btn.innerText = 'Enviando código...';
+        // const btn = document.getElementById('btnEnviar');
+        // btn.disabled = true;
+        // btn.innerText = 'Enviando código...';
     });
 </script>
 
