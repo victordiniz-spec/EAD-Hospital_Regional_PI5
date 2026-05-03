@@ -124,9 +124,14 @@
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                {{ request()->routeIs('dashboard.aluno') ? 'bg-green-600 text-white shadow' : 'hover:bg-gray-200' }}">
 
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
-                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="w-5 h-5"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.5"
                           d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75"/>
                 </svg>
 
@@ -140,9 +145,14 @@
                     ? 'bg-green-600 text-white shadow'
                     : 'hover:bg-gray-200' }}">
 
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
-                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="w-5 h-5"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.5"
                           d="M5.25 5.653c0-1.427 1.54-2.33 2.79-1.637l9.54 5.347c1.26.707 1.26 2.567 0 3.274l-9.54 5.347c-1.25.693-2.79-.21-2.79-1.637V5.653z"/>
                 </svg>
 
@@ -171,17 +181,22 @@
                 <span>Prova Final</span>
             </button>
 
-            <!-- CERTIFICADO -->
-            <a href="{{ route('certificado.gerar', 1) }}"
+            <!-- CERTIFICADO NOVO -->
+            <a href="{{ route('certificado.aluno') }}"
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-               {{ request()->routeIs('certificado.gerar') || request()->routeIs('certificado.*')
+               {{ request()->routeIs('certificado.aluno')
                     ? 'bg-green-600 text-white shadow'
                     : 'hover:bg-gray-200' }}">
 
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
-                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                          d="M9 12l2 2 4-4m5-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="w-5 h-5"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.5"
+                          d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
                 </svg>
 
                 <span>Certificado</span>

@@ -193,6 +193,11 @@ Route::middleware('auth')->group(function () {
         return back()->with('success', 'Certificado salvo com sucesso!');
     })->name('certificados.store');
 
+    // Certificado do aluno
+    Route::get('/meu-certificado', [CertificadoController::class, 'aluno'])
+        ->name('certificado.aluno');
+
+    // Gerar certificado antigo/individual
     Route::get('/certificado/gerar/{id}', [CertificadoController::class, 'gerar'])
         ->name('certificado.gerar');
 

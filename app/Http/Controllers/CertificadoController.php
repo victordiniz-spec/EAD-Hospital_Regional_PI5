@@ -8,6 +8,17 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class CertificadoController extends Controller
 {
+    // =========================
+    // TELA DO CERTIFICADO DO ALUNO
+    // =========================
+    public function aluno()
+    {
+        return view('aluno.certificado');
+    }
+
+    // =========================
+    // GERAR PDF DO CERTIFICADO
+    // =========================
     public function gerar($id)
     {
         // 🔎 Buscar modelo do certificado
