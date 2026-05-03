@@ -7,28 +7,26 @@
 @section('headline', 'Acesso negado')
 
 @section('message')
-Você não tem permissão para acessar esta área do sistema.
-Se acredita que isso é um erro, entre em contato com o administrador ou aguarde a liberação de acesso.
+O médico até tentou abrir essa sala, mas a porta está trancada.
+Você não tem permissão para acessar esta área do sistema ou seu acesso ainda não foi liberado.
 @endsection
 
-@section('illustration')
-<div class="absolute inset-0 flex items-center justify-center">
-    <div class="relative w-72 h-72">
+@section('doctor_phrase')
+Essa sala é restrita!
+@endsection
 
-        <div class="absolute inset-0 rounded-full bg-red-100 shadow-inner"></div>
+@section('monitor_text')
+Acesso bloqueado
+@endsection
 
-        <div class="absolute inset-8 rounded-full bg-white shadow-xl border border-red-100 flex items-center justify-center">
-            <div class="text-center">
-                <div class="text-7xl mb-3">🔒</div>
-                <div class="text-xl font-bold text-slate-700">Acesso restrito</div>
-                <div class="text-sm text-slate-500">Você não possui autorização</div>
-            </div>
-        </div>
+@section('accent_color', '#DC2626')
+@section('code_color', 'text-red-600')
+@section('dot_color', 'bg-red-600')
 
-        <div class="absolute -top-3 left-10 w-6 h-6 bg-red-300 rounded-full pulseSoft"></div>
-        <div class="absolute top-12 -right-2 w-4 h-4 bg-orange-300 rounded-full pulseSoft"></div>
-        <div class="absolute bottom-8 -left-2 w-5 h-5 bg-red-200 rounded-full pulseSoft"></div>
-        <div class="absolute bottom-0 right-12 w-3 h-3 bg-orange-400 rounded-full pulseSoft"></div>
-    </div>
-</div>
+@section('mouth_svg')
+<path d="M450 216 Q468 226 486 216"
+      fill="none"
+      stroke="#263F38"
+      stroke-width="5"
+      stroke-linecap="round"/>
 @endsection

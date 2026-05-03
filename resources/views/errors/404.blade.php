@@ -7,28 +7,26 @@
 @section('headline', 'Página não encontrada')
 
 @section('message')
-A página que você tentou acessar não existe, foi movida ou o endereço digitado está incorreto.
-Mas fique tranquilo: você pode voltar ao início e continuar navegando normalmente.
+O médico procurou em todos os prontuários, conferiu o monitor, olhou embaixo da maca... mas essa página realmente não foi encontrada.
+Talvez o endereço esteja errado ou essa área tenha sido removida.
 @endsection
 
-@section('illustration')
-<div class="absolute inset-0 flex items-center justify-center">
-    <div class="relative w-72 h-72">
+@section('doctor_phrase')
+Doutor, essa página sumiu!
+@endsection
 
-        <div class="absolute inset-0 rounded-full bg-emerald-100 shadow-inner"></div>
+@section('monitor_text')
+Página não encontrada
+@endsection
 
-        <div class="absolute inset-8 rounded-full bg-white shadow-xl border border-emerald-100 flex items-center justify-center">
-            <div class="text-center">
-                <div class="text-7xl mb-3">🔍</div>
-                <div class="text-xl font-bold text-slate-700">Oops!</div>
-                <div class="text-sm text-slate-500">Não encontramos essa página</div>
-            </div>
-        </div>
+@section('accent_color', '#00A63E')
+@section('code_color', 'text-[#004D3A]')
+@section('dot_color', 'bg-green-600')
 
-        <div class="absolute -top-3 left-10 w-6 h-6 bg-emerald-300 rounded-full pulseSoft"></div>
-        <div class="absolute top-12 -right-2 w-4 h-4 bg-cyan-300 rounded-full pulseSoft"></div>
-        <div class="absolute bottom-8 -left-2 w-5 h-5 bg-teal-300 rounded-full pulseSoft"></div>
-        <div class="absolute bottom-0 right-12 w-3 h-3 bg-emerald-400 rounded-full pulseSoft"></div>
-    </div>
-</div>
+@section('mouth_svg')
+<path d="M448 214 Q468 204 488 214"
+      fill="none"
+      stroke="#263F38"
+      stroke-width="5"
+      stroke-linecap="round"/>
 @endsection

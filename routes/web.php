@@ -262,3 +262,25 @@ Route::middleware('auth')->group(function () {
     });
 
 });
+
+
+/*
+|--------------------------------------------------------------------------
+| ROTAS DE TESTE DAS TELAS DE ERRO
+|--------------------------------------------------------------------------
+| Use apenas para testar as páginas criativas de erro.
+| Antes de entregar o sistema em produção final, pode remover essas rotas.
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/teste-404', function () {
+    abort(404);
+});
+
+Route::get('/teste-403', function () {
+    abort(403);
+});
+
+Route::get('/teste-500', function () {
+    abort(500);
+});
