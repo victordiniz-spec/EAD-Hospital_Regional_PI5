@@ -95,4 +95,35 @@ git add .
 git commit -m "feat: o que você fez"
 git push
 
+---------------------------------
+
+📌 Email para mandar pdf se verificação e criação de conta 
+
+
+Email : integrarresaude@gmail.com
+Senha : Integraresaudepi5
+
+
+---------------------------------
+
+
+📌 Servido online do Laravel Cloud 
+
+
+https://id.laravel.com/?client_id=client_01JEA0SC3F6WDA3R7B10F0T2XS&redirect_uri=https%3A%2F%2Fcloud.laravel.com%2Fauthenticate&state=fzZtfoSkItmAuekU4Yc7ZAWqF7Q7XWCR4OHfgwA8&authorization_session_id=01KQQRG5ACSZCVQ953RCPQ41B0&organization_id=org_01KQJBKTXJRXX0NDYH0P1M05D0
+
+
+
+---------------------------------
+📌 Link do Nosso site 
+
+
+
+https://ead-hospital-regional-pi5-main-sxr3ep.free.laravel.cloud/
+
+
+
+---------------------------------
+
+
 ===============================

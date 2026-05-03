@@ -1,32 +1,20 @@
 @extends('errors.layout')
 
 @section('title', '404 - Página não encontrada')
-
 @section('code', '404')
-
 @section('headline', 'Página não encontrada')
-
 @section('message')
-O médico procurou em todos os prontuários, conferiu o monitor, olhou embaixo da maca... mas essa página realmente não foi encontrada.
-Talvez o endereço esteja errado ou essa área tenha sido removida.
+O gato enfermeiro saiu correndo com o cabo de rede para salvar a conexão, mas no meio da correria essa página acabou se perdendo no corredor.
+O cachorro enfermeiro ainda está atrás tentando pegar internet, mas essa rota realmente não foi encontrada.
 @endsection
 
-@section('doctor_phrase')
-Doutor, essa página sumiu!
-@endsection
+@section('scene_tag', 'Gato sumiu com a rota')
+@section('cat_phrase', 'Miau! A página evaporou!')
+@section('dog_phrase', 'Me devolve o Wi‑Fi!')
+@section('monitor_text', 'Rota não encontrada')
+@section('monitor_color', '#16A34A')
+@section('code_color', '#004D3A')
+@section('dot_color', '#16A34A')
 
-@section('monitor_text')
-Página não encontrada
-@endsection
-
-@section('accent_color', '#00A63E')
-@section('code_color', 'text-[#004D3A]')
-@section('dot_color', 'bg-green-600')
-
-@section('mouth_svg')
-<path d="M448 214 Q468 204 488 214"
-      fill="none"
-      stroke="#263F38"
-      stroke-width="5"
-      stroke-linecap="round"/>
-@endsection
+@section('caption_title', 'Episódio 404 — o sumiço da página')
+@section('caption_text', 'O gato enfermeiro fugiu com o cabo, o cachorro correu atrás, e no fim ninguém achou a página. Talvez o endereço esteja errado ou essa tela foi removida.')
