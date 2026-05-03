@@ -58,36 +58,42 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('cadastro.verificar.codigo') }}" class="space-y-4">
+        <form method="POST" action="{{ route('cadastro.verificar.codigo') }}" class="space-y-4" id="formVerificarCodigo">
             @csrf
 
             <div>
                 <label class="text-sm text-gray-600 font-medium">Código de verificação</label>
+
                 <input type="text"
                        name="codigo"
+                       id="codigo"
                        maxlength="6"
+                       inputmode="numeric"
+                       autocomplete="one-time-code"
                        placeholder="Digite o código de 6 dígitos"
                        class="w-full border border-gray-300 p-3 rounded-lg text-gray-800 mt-1 text-center text-xl font-bold tracking-[0.4em] focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
                        required>
             </div>
 
             <button type="submit"
-                    class="w-full bg-green-700 text-white p-3 rounded-lg font-semibold hover:bg-green-800 transition">
+                    id="btnVerificarCodigo"
+                    class="w-full bg-green-700 text-white p-3 rounded-lg font-semibold hover:bg-green-800 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
                 Verificar e criar conta
             </button>
         </form>
 
-        <form method="POST" action="{{ route('cadastro.reenviar.codigo') }}" class="mt-3">
+        <form method="POST" action="{{ route('cadastro.reenviar.codigo') }}" class="mt-3" id="formReenviarCodigo">
             @csrf
 
             <button type="submit"
-                    class="w-full bg-gray-100 text-gray-700 p-3 rounded-lg font-semibold hover:bg-gray-200 transition">
+                    id="btnReenviarCodigo"
+                    class="w-full bg-gray-100 text-gray-700 p-3 rounded-lg font-semibold hover:bg-gray-200 transition disabled:bg-gray-300 disabled:cursor-not-allowed">
                 Reenviar código
             </button>
         </form>
 
         <p class="text-center text-sm mt-4 text-gray-500">
-            <a href="{{ route('cadastro') }}" class="text-green-600 font-semibold hover:underline">
+            <a href="{{ route('cadastro.aluno') }}" class="text-green-600 font-semibold hover:underline">
                 Voltar ao cadastro
             </a>
         </p>
@@ -95,5 +101,41 @@
     </div>
 
 </div>
+
+<script>
+    const inputCodigo = document.getElementById('codigo');
+
+    if (inputCodigo) {
+        inputCodigo.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '').slice(0, 6);
+        });
+    }
+
+    const formVerificarCodigo = document.getElementById('formVerificarCodigo');
+
+    if (formVerificarCodigo) {
+        formVerificarCodigo.addEventListener('submit', function () {
+            const btn = document.getElementById('btnVerificarCodigo');
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Verificando...';
+            }
+        });
+    }
+
+    const formReenviarCodigo = document.getElementById('formReenviarCodigo');
+
+    if (formReenviarCodigo) {
+        formReenviarCodigo.addEventListener('submit', function () {
+            const btn = document.getElementById('btnReenviarCodigo');
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Reenviando...';
+            }
+        });
+    }
+</script>
 
 @endsection
