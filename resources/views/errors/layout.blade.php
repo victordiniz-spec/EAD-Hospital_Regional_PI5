@@ -9,186 +9,210 @@
 
     <style>
         :root{
-            --brand:#004D3A;
-            --brand-2:#0C7B59;
-            --bg:#F3F7F3;
-            --soft:#EAF5EF;
-            --line:#D9E7DE;
-            --text:#14342B;
-            --muted:#678077;
-            --white:#ffffff;
-            --danger:#DC2626;
-            --warn:#F59E0B;
-            --ok:#16A34A;
+            --bg-1:#03130E;
+            --bg-2:#071F18;
+            --panel:#0C211A;
+            --panel-2:#102A22;
+            --line:#1E4F40;
+            --line-soft:rgba(58, 129, 108, .25);
+            --text:#E7FFF6;
+            --muted:#9AC7B8;
+            --brand:#15D087;
+            --brand-soft:rgba(21,208,135,.14);
+            --red:#FF5F73;
+            --yellow:#FFC857;
+            --shadow:0 24px 60px rgba(0,0,0,.35);
         }
 
-        *{
-            box-sizing:border-box;
-        }
+        *{ box-sizing:border-box; }
 
-        body{
+        html,body{
             margin:0;
+            min-height:100%;
             background:
-                radial-gradient(circle at 20% 20%, rgba(22,163,74,.08), transparent 28%),
-                radial-gradient(circle at 85% 15%, rgba(12,123,89,.10), transparent 25%),
-                radial-gradient(circle at 80% 80%, rgba(245,158,11,.08), transparent 25%),
-                linear-gradient(135deg, #f4faf6 0%, #eef6f1 45%, #f8fbf9 100%);
+                radial-gradient(circle at 20% 10%, rgba(21,208,135,.12), transparent 25%),
+                radial-gradient(circle at 85% 15%, rgba(0,196,255,.09), transparent 18%),
+                radial-gradient(circle at 80% 80%, rgba(255,200,87,.10), transparent 18%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-2));
             color:var(--text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             overflow-x:hidden;
         }
 
-        .grid-bg{
+        .tech-grid{
             position:fixed;
             inset:0;
             background-image:
-                linear-gradient(rgba(0,77,58,.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,77,58,.04) 1px, transparent 1px);
+                linear-gradient(rgba(39,120,96,.10) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(39,120,96,.10) 1px, transparent 1px);
             background-size:32px 32px;
+            mask-image: radial-gradient(circle at center, black 45%, transparent 100%);
+            pointer-events:none;
+            opacity:.45;
+        }
+
+        .noise{
+            position:fixed;
+            inset:0;
+            background-image:
+                radial-gradient(circle, rgba(255,255,255,.035) 1px, transparent 1px);
+            background-size:14px 14px;
+            opacity:.18;
             pointer-events:none;
         }
 
-        .main-wrap{
+        .page{
             min-height:100vh;
             display:flex;
             align-items:center;
             justify-content:center;
-            padding:24px;
+            padding:28px;
             position:relative;
         }
 
-        .content-grid{
+        .shell{
             width:100%;
-            max-width:1400px;
+            max-width:1450px;
             display:grid;
-            grid-template-columns: 1.02fr .98fr;
-            gap:28px;
+            grid-template-columns: 1.05fr .95fr;
+            gap:26px;
             align-items:center;
         }
 
         .panel{
-            background:rgba(255,255,255,.82);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border:1px solid rgba(255,255,255,.7);
-            border-radius:32px;
-            box-shadow:
-                0 20px 40px rgba(0,0,0,.08),
-                inset 0 1px 0 rgba(255,255,255,.65);
-        }
-
-        .left-panel{
-            padding:34px;
             position:relative;
+            border:1px solid rgba(56,142,114,.26);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01)),
+                rgba(10, 26, 21, .76);
+            box-shadow: var(--shadow);
+            border-radius:34px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             overflow:hidden;
         }
 
-        .left-panel::before{
+        .panel::before{
             content:"";
             position:absolute;
-            right:-120px;
-            top:-120px;
-            width:260px;
-            height:260px;
-            background:radial-gradient(circle, rgba(12,123,89,.12), transparent 65%);
-            border-radius:50%;
+            inset:0;
+            background:
+                linear-gradient(120deg, transparent 0%, rgba(255,255,255,.04) 20%, transparent 42%);
+            transform:translateX(-100%);
+            animation:panelSweep 8s linear infinite;
+            pointer-events:none;
+        }
+
+        @keyframes panelSweep{
+            to{ transform:translateX(100%); }
+        }
+
+        .left{
+            padding:34px;
         }
 
         .badge{
             display:inline-flex;
             align-items:center;
             gap:10px;
-            background:var(--soft);
-            color:var(--brand);
             padding:10px 16px;
             border-radius:999px;
-            font-size:13px;
+            border:1px solid rgba(21,208,135,.25);
+            background:rgba(21,208,135,.08);
+            color:#CFFFF0;
+            font-size:12px;
             font-weight:800;
-            letter-spacing:.04em;
+            letter-spacing:.08em;
+            text-transform:uppercase;
         }
 
-        .badge .dot{
+        .badge-dot{
             width:10px;
             height:10px;
             border-radius:50%;
-            background:@yield('dot_color', #16A34A);
-            box-shadow:0 0 0 0 rgba(22,163,74,.4);
-            animation:dotPulse 1.8s infinite;
+            background:@yield('accent', #15D087);
+            box-shadow:0 0 0 0 rgba(21,208,135,.45);
+            animation:pingDot 1.8s infinite;
         }
 
-        @keyframes dotPulse{
-            0%{ box-shadow:0 0 0 0 rgba(22,163,74,.35);}
-            70%{ box-shadow:0 0 0 10px rgba(22,163,74,0);}
-            100%{ box-shadow:0 0 0 0 rgba(22,163,74,0);}
+        @keyframes pingDot{
+            0%{ box-shadow:0 0 0 0 rgba(21,208,135,.4); }
+            70%{ box-shadow:0 0 0 12px rgba(21,208,135,0); }
+            100%{ box-shadow:0 0 0 0 rgba(21,208,135,0); }
         }
 
-        .overline{
+        .eyebrow{
             margin-top:24px;
+            color:#79B8A3;
             font-size:12px;
-            letter-spacing:.35em;
             text-transform:uppercase;
-            color:#7C948A;
+            letter-spacing:.35em;
             font-weight:800;
         }
 
-        .error-code{
-            margin:8px 0 0;
-            font-size:clamp(72px, 10vw, 120px);
-            line-height:.95;
-            letter-spacing:-.05em;
+        .code{
+            margin:10px 0 0;
+            font-size:clamp(82px, 11vw, 132px);
+            line-height:.9;
             font-weight:900;
-            color:@yield('code_color', #004D3A);
+            letter-spacing:-.05em;
+            color:@yield('accent', #15D087);
+            text-shadow:0 0 26px rgba(21,208,135,.18);
         }
 
         .title{
-            margin:16px 0 0;
-            font-size:clamp(28px, 4vw, 42px);
-            line-height:1.06;
+            margin-top:14px;
+            font-size:clamp(30px, 4vw, 46px);
+            line-height:1.04;
             font-weight:900;
-            color:var(--text);
+            color:#F3FFF9;
         }
 
         .desc{
-            margin-top:16px;
+            margin-top:18px;
             font-size:17px;
-            line-height:1.8;
+            line-height:1.85;
             color:var(--muted);
-            max-width:700px;
+            max-width:760px;
         }
 
-        .tips-box{
+        .info-card{
             margin-top:26px;
             padding:20px;
             border-radius:24px;
-            background:rgba(255,255,255,.9);
-            border:1px solid var(--line);
+            border:1px solid rgba(69,160,129,.22);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)),
+                rgba(7, 27, 21, .85);
             display:flex;
             gap:14px;
             align-items:flex-start;
         }
 
-        .tips-icon{
-            width:48px;
-            height:48px;
-            border-radius:16px;
-            background:var(--soft);
-            color:var(--brand);
+        .info-icon{
+            width:50px;
+            height:50px;
+            border-radius:18px;
             display:flex;
             align-items:center;
             justify-content:center;
+            background:rgba(21,208,135,.09);
+            color:@yield('accent', #15D087);
+            border:1px solid rgba(21,208,135,.18);
             flex-shrink:0;
         }
 
-        .tips-title{
+        .info-title{
             font-size:16px;
             font-weight:800;
-            color:var(--text);
+            color:#F2FFF9;
         }
 
-        .tips-text{
+        .info-text{
+            margin-top:4px;
+            color:var(--muted);
             font-size:14px;
             line-height:1.7;
-            color:var(--muted);
-            margin-top:4px;
         }
 
         .actions{
@@ -198,632 +222,578 @@
             margin-top:28px;
         }
 
-        .btn-main{
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-            gap:10px;
-            background:var(--brand);
-            color:#fff;
-            padding:15px 24px;
-            border-radius:18px;
+        .btn-primary,
+        .btn-secondary{
+            border:none;
             text-decoration:none;
-            font-weight:800;
-            box-shadow:0 10px 24px rgba(0,77,58,.18);
-            transition:.25s ease;
-        }
-
-        .btn-main:hover{
-            transform:translateY(-2px);
-            background:#003A2C;
-        }
-
-        .btn-soft{
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-            gap:10px;
-            background:#fff;
-            color:var(--brand);
-            padding:15px 24px;
-            border-radius:18px;
-            border:1px solid var(--line);
-            text-decoration:none;
-            font-weight:800;
-            transition:.25s ease;
             cursor:pointer;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            gap:10px;
+            padding:15px 24px;
+            border-radius:18px;
+            font-weight:800;
+            transition:.25s ease;
         }
 
-        .btn-soft:hover{
+        .btn-primary{
+            background:@yield('accent', #15D087);
+            color:#071A14;
+            box-shadow:0 16px 34px rgba(21,208,135,.22);
+        }
+
+        .btn-primary:hover{
+            transform:translateY(-2px) scale(1.01);
+            filter:brightness(1.05);
+        }
+
+        .btn-secondary{
+            color:#DDFCF1;
+            background:rgba(255,255,255,.04);
+            border:1px solid rgba(86,158,132,.26);
+        }
+
+        .btn-secondary:hover{
             transform:translateY(-2px);
-            background:#F9FCFA;
+            background:rgba(255,255,255,.07);
         }
 
-        .foot-note{
+        .footer-note{
             margin-top:24px;
             font-size:13px;
-            color:#8AA095;
+            color:#7AA692;
+            line-height:1.7;
         }
 
-        .scene-wrap{
+        /* CENA */
+        .scene{
+            min-height:700px;
             position:relative;
-            min-height:620px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-        }
-
-        .scene-card{
-            position:relative;
-            width:100%;
-            max-width:680px;
-            min-height:620px;
-            border-radius:34px;
             overflow:hidden;
-            background:
-                linear-gradient(180deg, #ffffff 0%, #f6fbf8 68%, #ecf6ef 100%);
-            border:1px solid rgba(255,255,255,.85);
-            box-shadow:
-                0 25px 50px rgba(0,0,0,.08),
-                inset 0 1px 0 rgba(255,255,255,.8);
         }
 
-        .scene-header{
+        .scene-topbar{
             position:absolute;
             top:18px;
             left:18px;
             right:18px;
+            z-index:10;
             display:flex;
             justify-content:space-between;
-            align-items:center;
-            z-index:10;
+            gap:12px;
+            flex-wrap:wrap;
         }
 
-        .scene-chip{
-            background:#fff;
-            border:1px solid var(--line);
-            border-radius:999px;
+        .chip{
             padding:10px 14px;
-            font-size:13px;
-            font-weight:800;
-            color:var(--brand);
-            box-shadow:0 6px 18px rgba(0,0,0,.05);
-        }
-
-        .speech{
-            position:absolute;
-            max-width:200px;
-            background:#fff;
-            border:1px solid var(--line);
-            border-radius:24px;
-            padding:14px 16px;
-            box-shadow:0 12px 24px rgba(0,0,0,.06);
-            z-index:9;
-            animation:floatBubble 3.4s ease-in-out infinite;
-        }
-
-        .speech strong{
-            display:block;
-            font-size:14px;
-            color:var(--text);
-            line-height:1.4;
-        }
-
-        .speech small{
-            display:block;
-            margin-top:4px;
-            color:var(--muted);
+            border-radius:999px;
             font-size:12px;
-            line-height:1.5;
+            font-weight:800;
+            letter-spacing:.04em;
+            color:#D9FFF1;
+            background:rgba(255,255,255,.04);
+            border:1px solid rgba(94,178,148,.2);
+            backdrop-filter: blur(8px);
         }
 
-        .speech::after{
-            content:"";
+        .scene-bg{
             position:absolute;
-            width:18px;
-            height:18px;
-            background:#fff;
-            border-left:1px solid var(--line);
-            border-bottom:1px solid var(--line);
-            transform:rotate(-45deg);
-        }
-
-        .speech-cat{
-            left:28px;
-            top:82px;
-        }
-
-        .speech-cat::after{
-            bottom:-8px;
-            left:28px;
-        }
-
-        .speech-dog{
-            right:28px;
-            top:130px;
-            animation-delay:.7s;
-        }
-
-        .speech-dog::after{
-            bottom:-8px;
-            right:30px;
-        }
-
-        @keyframes floatBubble{
-            0%,100%{ transform:translateY(0);}
-            50%{ transform:translateY(-8px);}
-        }
-
-        .corridor{
-            position:absolute;
-            inset:auto 0 0 0;
-            height:170px;
+            inset:0;
             background:
-                linear-gradient(180deg, transparent 0%, transparent 25%, rgba(0,77,58,.04) 25%, rgba(0,77,58,.04) 28%, transparent 28%, transparent 100%),
-                linear-gradient(180deg, #E8F2EB 0%, #DDEAE1 100%);
-            border-top:1px solid #D5E3DA;
+                radial-gradient(circle at 50% 8%, rgba(21,208,135,.10), transparent 22%),
+                linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
         }
 
-        .corridor::before{
-            content:"";
+        .light-beam{
             position:absolute;
-            left:0;
-            right:0;
-            top:28px;
-            height:8px;
-            background:repeating-linear-gradient(
-                90deg,
-                #C6D7CC 0 40px,
-                transparent 40px 72px
-            );
-            opacity:.75;
+            top:-20%;
+            width:180px;
+            height:140%;
+            background:linear-gradient(180deg, rgba(255,255,255,.13), transparent);
+            filter:blur(30px);
+            opacity:.09;
+            transform:rotate(18deg);
+            animation:beamMove 9s ease-in-out infinite;
+        }
+
+        .light-1{ left:10%; animation-delay:0s; }
+        .light-2{ right:10%; animation-delay:2s; }
+
+        @keyframes beamMove{
+            0%,100%{ transform:translateY(-10px) rotate(16deg); opacity:.06; }
+            50%{ transform:translateY(10px) rotate(20deg); opacity:.12; }
+        }
+
+        .alarm-ring{
+            position:absolute;
+            inset:auto auto 180px 50%;
+            transform:translateX(-50%);
+            width:340px;
+            height:340px;
+            border-radius:50%;
+            border:1px solid rgba(21,208,135,.15);
+            box-shadow:
+                0 0 0 24px rgba(21,208,135,.03),
+                0 0 0 56px rgba(21,208,135,.02);
+            animation:ringPulse 2.4s ease-in-out infinite;
+        }
+
+        @keyframes ringPulse{
+            0%,100%{ transform:translateX(-50%) scale(1); opacity:.9; }
+            50%{ transform:translateX(-50%) scale(1.05); opacity:.55; }
         }
 
         .monitor{
             position:absolute;
             left:50%;
             transform:translateX(-50%);
-            bottom:170px;
-            width:280px;
-            height:220px;
-            border-radius:30px;
-            background:#fff;
-            border:8px solid #D2E3D8;
-            box-shadow:0 20px 32px rgba(0,0,0,.08);
+            top:118px;
+            width:300px;
+            height:242px;
+            border-radius:28px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
+                #0D231C;
+            border:1px solid rgba(83,166,136,.28);
+            box-shadow:
+                0 18px 40px rgba(0,0,0,.28),
+                inset 0 0 0 1px rgba(255,255,255,.02);
             overflow:hidden;
-            animation:monitorBlink 2.4s ease-in-out infinite;
+            z-index:6;
         }
 
-        @keyframes monitorBlink{
-            0%,100%{ transform:translateX(-50%) scale(1);}
-            50%{ transform:translateX(-50%) scale(1.01);}
+        .monitor::before{
+            content:"";
+            position:absolute;
+            inset:0;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,.06), transparent 36%);
+            pointer-events:none;
         }
 
         .monitor-screen{
             position:absolute;
-            inset:18px 18px 52px 18px;
-            border-radius:20px;
+            inset:16px 16px 52px;
+            border-radius:18px;
             background:
-                radial-gradient(circle at 25% 22%, rgba(255,255,255,.1), transparent 25%),
-                linear-gradient(135deg, #083B31 0%, #052E27 100%);
+                radial-gradient(circle at 30% 20%, rgba(255,255,255,.08), transparent 24%),
+                linear-gradient(180deg, #061A14, #08251D);
             display:flex;
             flex-direction:column;
-            align-items:center;
             justify-content:center;
+            align-items:center;
             overflow:hidden;
         }
 
-        .monitor-glow{
+        .screen-scan{
             position:absolute;
-            inset:auto;
-            width:180px;
-            height:180px;
-            border-radius:50%;
-            background:radial-gradient(circle, rgba(255,255,255,.08), transparent 70%);
-            animation:monitorGlow 3.2s ease-in-out infinite;
+            inset:0;
+            background:linear-gradient(180deg, transparent 0%, rgba(21,208,135,.11) 50%, transparent 100%);
+            transform:translateY(-100%);
+            animation:scanMove 2.8s linear infinite;
         }
 
-        @keyframes monitorGlow{
-            0%,100%{ transform:scale(1); opacity:.6;}
-            50%{ transform:scale(1.14); opacity:.9;}
+        @keyframes scanMove{
+            to{ transform:translateY(100%); }
         }
 
         .monitor-code{
             position:relative;
             z-index:2;
-            font-size:64px;
+            font-size:70px;
             font-weight:900;
             letter-spacing:-.04em;
-            color:@yield('monitor_color', #22C55E);
-            line-height:1;
+            color:@yield('accent', #15D087);
+            text-shadow:0 0 20px rgba(21,208,135,.20);
         }
 
         .monitor-label{
             position:relative;
             z-index:2;
             margin-top:10px;
+            color:#D9FFF0;
             font-size:15px;
             font-weight:800;
-            color:#E2F3EB;
             text-align:center;
-            padding:0 18px;
+            padding:0 16px;
         }
 
-        .monitor-wave{
+        .screen-lines{
             position:absolute;
-            left:18px;
-            right:18px;
-            bottom:18px;
-            height:58px;
+            inset:auto 16px 16px 16px;
+            height:52px;
         }
 
-        .monitor-wave svg{
+        .screen-lines svg{
             width:100%;
             height:100%;
         }
 
-        .wave-path{
+        .ekg{
             fill:none;
-            stroke:@yield('monitor_color', #22C55E);
-            stroke-width:6;
+            stroke:@yield('accent', #15D087);
+            stroke-width:5;
             stroke-linecap:round;
             stroke-linejoin:round;
-            stroke-dasharray:220;
-            animation:dashRun 2.2s linear infinite;
+            stroke-dasharray:260;
+            animation:ekgDash 2.1s linear infinite;
         }
 
-        @keyframes dashRun{
-            from{ stroke-dashoffset:220; }
+        @keyframes ekgDash{
+            from{ stroke-dashoffset:260; }
             to{ stroke-dashoffset:0; }
         }
 
-        .monitor-base{
+        .monitor-stand{
             position:absolute;
+            bottom:18px;
             left:50%;
             transform:translateX(-50%);
-            bottom:18px;
             width:120px;
-            height:22px;
-            background:#A9BDB1;
+            height:16px;
+            background:#46675C;
             border-radius:999px;
         }
 
-        .server-box{
+        .speed-trails{
             position:absolute;
-            left:50%;
-            transform:translateX(-50%);
-            bottom:110px;
-            width:120px;
-            height:70px;
-            background:#fff;
-            border:5px solid #D2E3D8;
-            border-radius:22px;
-            box-shadow:0 10px 20px rgba(0,0,0,.05);
+            inset:0;
+            pointer-events:none;
+            z-index:1;
         }
 
-        .server-led{
+        .trail{
             position:absolute;
-            width:10px;
-            height:10px;
-            border-radius:50%;
-            background:#22C55E;
-            top:18px;
-            right:16px;
-            animation:ledBlink 1.5s infinite;
+            height:8px;
+            border-radius:999px;
+            opacity:.22;
+            filter:blur(.2px);
+            background:linear-gradient(90deg, transparent, rgba(21,208,135,.15), rgba(21,208,135,.55));
+            animation:trailMove 1s linear infinite;
         }
 
-        .server-led:nth-child(2){
-            right:34px;
-            animation-delay:.4s;
-            background:#F59E0B;
+        .trail.left{ left:30px; }
+        .trail.right{
+            right:30px;
+            background:linear-gradient(270deg, transparent, rgba(21,208,135,.15), rgba(21,208,135,.55));
         }
 
-        .server-led:nth-child(3){
-            right:52px;
-            animation-delay:.8s;
-            background:#22C55E;
+        .trail.t1{ top:290px; width:70px; animation-delay:0s; }
+        .trail.t2{ top:320px; width:52px; animation-delay:.15s; }
+        .trail.t3{ top:350px; width:84px; animation-delay:.3s; }
+        .trail.t4{ top:410px; width:62px; animation-delay:.45s; }
+
+        @keyframes trailMove{
+            0%{ transform:translateX(0); opacity:.12; }
+            50%{ opacity:.36; }
+            100%{ transform:translateX(14px); opacity:.12; }
         }
 
-        @keyframes ledBlink{
-            0%,100%{ opacity:1; transform:scale(1);}
-            50%{ opacity:.3; transform:scale(.8);}
+        .floor{
+            position:absolute;
+            left:0;
+            right:0;
+            bottom:0;
+            height:190px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)),
+                linear-gradient(180deg, #10251E, #0A1914);
+            border-top:1px solid rgba(67,145,117,.16);
+        }
+
+        .floor::before{
+            content:"";
+            position:absolute;
+            inset:24px 0 auto 0;
+            height:8px;
+            background:repeating-linear-gradient(
+                90deg,
+                rgba(97,180,149,.22) 0 44px,
+                transparent 44px 80px
+            );
+            opacity:.6;
+        }
+
+        /* CABO */
+        .cable-wrap{
+            position:absolute;
+            left:155px;
+            top:335px;
+            width:270px;
+            height:140px;
+            z-index:5;
+            animation:cableFloat 2s ease-in-out infinite;
+        }
+
+        @keyframes cableFloat{
+            0%,100%{ transform:rotate(0deg) translateY(0); }
+            50%{ transform:rotate(-4deg) translateY(-4px); }
+        }
+
+        .plug-glow{
+            filter:drop-shadow(0 0 10px rgba(255,200,87,.35));
+            animation:plugBounce 1.1s ease-in-out infinite;
+            transform-origin:center;
+        }
+
+        @keyframes plugBounce{
+            0%,100%{ transform:rotate(6deg); }
+            50%{ transform:rotate(-8deg); }
+        }
+
+        /* PERSONAGENS */
+        .char{
+            position:absolute;
+            z-index:4;
         }
 
         .cat{
-            position:absolute;
-            left:70px;
-            bottom:118px;
-            width:190px;
-            height:270px;
-            animation:catRun 3.2s ease-in-out infinite;
-            z-index:8;
-        }
-
-        @keyframes catRun{
-            0%,100%{ transform:translateX(0) translateY(0);}
-            25%{ transform:translateX(12px) translateY(-4px);}
-            50%{ transform:translateX(24px) translateY(0);}
-            75%{ transform:translateX(12px) translateY(-5px);}
+            left:55px;
+            bottom:104px;
+            width:220px;
+            height:300px;
+            animation:catRun 2.4s ease-in-out infinite;
         }
 
         .dog{
-            position:absolute;
-            right:70px;
-            bottom:114px;
-            width:200px;
-            height:280px;
-            animation:dogRun 3.2s ease-in-out infinite;
-            z-index:7;
+            right:55px;
+            bottom:104px;
+            width:230px;
+            height:308px;
+            animation:dogRun 2.4s ease-in-out infinite;
+        }
+
+        @keyframes catRun{
+            0%,100%{ transform:translateX(0) translateY(0) skewX(-1deg); }
+            25%{ transform:translateX(10px) translateY(-5px) skewX(-1deg); }
+            50%{ transform:translateX(20px) translateY(0) skewX(0deg); }
+            75%{ transform:translateX(10px) translateY(-6px) skewX(1deg); }
         }
 
         @keyframes dogRun{
-            0%,100%{ transform:translateX(0) translateY(0);}
-            25%{ transform:translateX(-8px) translateY(-3px);}
-            50%{ transform:translateX(-18px) translateY(0);}
-            75%{ transform:translateX(-8px) translateY(-4px);}
+            0%,100%{ transform:translateX(0) translateY(0) skewX(1deg); }
+            25%{ transform:translateX(-8px) translateY(-4px) skewX(1deg); }
+            50%{ transform:translateX(-16px) translateY(0) skewX(0deg); }
+            75%{ transform:translateX(-8px) translateY(-5px) skewX(-1deg); }
         }
 
-        .leg-a{ animation:legA .55s ease-in-out infinite; transform-origin:top center; }
-        .leg-b{ animation:legB .55s ease-in-out infinite; transform-origin:top center; }
+        .limb-a{ animation:limbA .45s ease-in-out infinite; transform-origin:top center; }
+        .limb-b{ animation:limbB .45s ease-in-out infinite; transform-origin:top center; }
+        .tail-a{ animation:tailA .8s ease-in-out infinite; transform-origin:left center; }
+        .tail-b{ animation:tailB .45s ease-in-out infinite; transform-origin:left center; }
 
-        @keyframes legA{
-            0%,100%{ transform:rotate(12deg);}
-            50%{ transform:rotate(-14deg);}
+        @keyframes limbA{
+            0%,100%{ transform:rotate(12deg); }
+            50%{ transform:rotate(-14deg); }
         }
 
-        @keyframes legB{
-            0%,100%{ transform:rotate(-14deg);}
-            50%{ transform:rotate(12deg);}
+        @keyframes limbB{
+            0%,100%{ transform:rotate(-14deg); }
+            50%{ transform:rotate(12deg); }
         }
 
-        .tail-cat{ animation:tailCat .9s ease-in-out infinite; transform-origin:left center; }
-        .tail-dog{ animation:tailDog .5s ease-in-out infinite; transform-origin:left center; }
-
-        @keyframes tailCat{
-            0%,100%{ transform:rotate(12deg);}
-            50%{ transform:rotate(-8deg);}
+        @keyframes tailA{
+            0%,100%{ transform:rotate(10deg); }
+            50%{ transform:rotate(-10deg); }
         }
 
-        @keyframes tailDog{
-            0%,100%{ transform:rotate(20deg);}
-            50%{ transform:rotate(-18deg);}
+        @keyframes tailB{
+            0%,100%{ transform:rotate(18deg); }
+            50%{ transform:rotate(-18deg); }
         }
 
-        .cable{
+        .speech{
             position:absolute;
-            left:200px;
-            bottom:240px;
-            width:230px;
-            height:120px;
-            z-index:6;
-            animation:cableMove 2.2s ease-in-out infinite;
-        }
-
-        @keyframes cableMove{
-            0%,100%{ transform:rotate(0deg) translateY(0);}
-            50%{ transform:rotate(-4deg) translateY(-3px);}
-        }
-
-        .rj45{
-            animation:rjSwing 1s ease-in-out infinite;
-            transform-origin:center;
-        }
-
-        @keyframes rjSwing{
-            0%,100%{ transform:rotate(8deg);}
-            50%{ transform:rotate(-8deg);}
-        }
-
-        .wifi-rings circle{
-            fill:none;
-            stroke:@yield('monitor_color', #22C55E);
-            stroke-width:5;
-            stroke-linecap:round;
-            opacity:0;
-            transform-origin:center;
-            animation:wifiPulse 1.8s infinite;
-        }
-
-        .wifi-rings circle:nth-child(2){ animation-delay:.35s; }
-        .wifi-rings circle:nth-child(3){ animation-delay:.7s; }
-
-        @keyframes wifiPulse{
-            0%{ opacity:0; transform:scale(.72);}
-            35%{ opacity:1; }
-            100%{ opacity:0; transform:scale(1.18);}
-        }
-
-        .speed-lines-left,
-        .speed-lines-right{
-            position:absolute;
-            top:260px;
-            width:90px;
-            height:120px;
-            opacity:.45;
-        }
-
-        .speed-lines-left{ left:12px; }
-        .speed-lines-right{ right:12px; }
-
-        .speed-lines-left span,
-        .speed-lines-right span{
-            display:block;
-            height:8px;
-            border-radius:999px;
-            background:linear-gradient(90deg, transparent, rgba(0,77,58,.2), rgba(0,77,58,.55));
-            margin:16px 0;
-            animation:lineSpeed 1s linear infinite;
-        }
-
-        .speed-lines-right span{
-            background:linear-gradient(270deg, transparent, rgba(0,77,58,.2), rgba(0,77,58,.55));
-        }
-
-        .speed-lines-left span:nth-child(2),
-        .speed-lines-right span:nth-child(2){ width:70px; animation-delay:.2s; }
-        .speed-lines-left span:nth-child(1),
-        .speed-lines-right span:nth-child(1){ width:56px; }
-        .speed-lines-left span:nth-child(3),
-        .speed-lines-right span:nth-child(3){ width:82px; animation-delay:.35s; }
-
-        @keyframes lineSpeed{
-            0%{ transform:translateX(0); opacity:.2;}
-            50%{ opacity:.7;}
-            100%{ transform:translateX(8px); opacity:.2;}
-        }
-
-        .scene-caption{
-            position:absolute;
-            left:50%;
-            transform:translateX(-50%);
-            bottom:28px;
-            width:calc(100% - 36px);
-            text-align:center;
-            background:rgba(255,255,255,.9);
-            border:1px solid var(--line);
-            border-radius:22px;
+            z-index:8;
+            max-width:220px;
             padding:14px 16px;
-            box-shadow:0 10px 20px rgba(0,0,0,.05);
-            z-index:10;
+            border-radius:22px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03)),
+                rgba(8, 25, 20, .92);
+            border:1px solid rgba(71,157,126,.24);
+            box-shadow:0 16px 28px rgba(0,0,0,.18);
+            animation:speechFloat 3.2s ease-in-out infinite;
         }
 
-        .scene-caption strong{
+        .speech strong{
             display:block;
+            font-size:14px;
+            color:#F1FFF9;
+            line-height:1.45;
+        }
+
+        .speech small{
+            display:block;
+            margin-top:4px;
+            color:#95C5B4;
+            line-height:1.5;
+            font-size:12px;
+        }
+
+        .speech::after{
+            content:"";
+            position:absolute;
+            width:14px;
+            height:14px;
+            background:rgba(8,25,20,.95);
+            border-left:1px solid rgba(71,157,126,.24);
+            border-bottom:1px solid rgba(71,157,126,.24);
+            transform:rotate(-45deg);
+        }
+
+        .speech-cat{
+            left:28px;
+            top:88px;
+        }
+
+        .speech-cat::after{
+            bottom:-8px;
+            left:26px;
+        }
+
+        .speech-dog{
+            right:28px;
+            top:136px;
+            animation-delay:.7s;
+        }
+
+        .speech-dog::after{
+            bottom:-8px;
+            right:26px;
+        }
+
+        @keyframes speechFloat{
+            0%,100%{ transform:translateY(0); }
+            50%{ transform:translateY(-7px); }
+        }
+
+        .subtitle-box{
+            position:absolute;
+            left:20px;
+            right:20px;
+            bottom:22px;
+            z-index:9;
+            padding:16px 18px;
+            border-radius:22px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)),
+                rgba(8, 25, 20, .92);
+            border:1px solid rgba(70,151,121,.24);
+            box-shadow:0 16px 28px rgba(0,0,0,.20);
+            text-align:center;
+        }
+
+        .subtitle-box strong{
+            display:block;
+            color:#F1FFF9;
             font-size:15px;
-            color:var(--text);
             font-weight:900;
         }
 
-        .scene-caption span{
+        .subtitle-box span{
             display:block;
             margin-top:4px;
+            color:#9CC9BA;
             font-size:13px;
-            color:var(--muted);
-            line-height:1.55;
+            line-height:1.6;
         }
 
-        .dust{
+        .particles span{
             position:absolute;
-            bottom:120px;
-            width:10px;
-            height:10px;
-            border-radius:50%;
-            background:rgba(0,77,58,.12);
-            filter:blur(1px);
-            animation:dustFloat 1.5s ease-in-out infinite;
+            width:8px;
+            height:8px;
+            border-radius:999px;
+            background:rgba(21,208,135,.18);
+            filter:blur(.2px);
+            animation:particleUp 2.2s ease-in-out infinite;
         }
 
-        .dust.d1{ left:240px; animation-delay:0s; }
-        .dust.d2{ left:262px; animation-delay:.3s; }
-        .dust.d3{ right:245px; animation-delay:.6s; }
-        .dust.d4{ right:272px; animation-delay:.9s; }
+        .particles span:nth-child(1){ left:250px; bottom:140px; animation-delay:0s; }
+        .particles span:nth-child(2){ left:280px; bottom:160px; animation-delay:.4s; }
+        .particles span:nth-child(3){ right:250px; bottom:146px; animation-delay:.8s; }
+        .particles span:nth-child(4){ right:280px; bottom:166px; animation-delay:1.2s; }
 
-        @keyframes dustFloat{
-            0%,100%{ transform:translateY(0) scale(1); opacity:.2;}
-            50%{ transform:translateY(-10px) scale(1.2); opacity:.55;}
+        @keyframes particleUp{
+            0%,100%{ transform:translateY(0) scale(1); opacity:.2; }
+            50%{ transform:translateY(-12px) scale(1.25); opacity:.6; }
         }
 
-        @media (max-width: 1100px){
-            .content-grid{
+        @media (max-width: 1150px){
+            .shell{
                 grid-template-columns:1fr;
             }
-
-            .scene-wrap{
-                min-height:560px;
-            }
-
-            .scene-card{
-                min-height:560px;
+            .scene{
+                min-height:650px;
             }
         }
 
-        @media (max-width: 640px){
-            .main-wrap{
-                padding:14px;
+        @media (max-width: 700px){
+            .page{ padding:14px; }
+            .left{ padding:24px; }
+            .scene{ min-height:590px; }
+            .monitor{
+                width:240px;
+                height:210px;
+                top:115px;
             }
-
-            .left-panel{
-                padding:24px;
-                border-radius:26px;
-            }
-
-            .scene-card{
-                border-radius:28px;
-                min-height:520px;
-            }
-
-            .scene-wrap{
-                min-height:520px;
-            }
-
+            .monitor-code{ font-size:56px; }
             .cat{
-                left:24px;
-                transform:scale(.82);
+                left:10px;
+                width:180px;
                 transform-origin:bottom left;
             }
-
             .dog{
-                right:18px;
-                transform:scale(.82);
+                right:10px;
+                width:190px;
                 transform-origin:bottom right;
             }
-
-            .monitor{
+            .cable-wrap{
+                left:84px;
+                top:314px;
                 width:220px;
-                height:190px;
-                bottom:160px;
             }
-
-            .monitor-code{
-                font-size:52px;
-            }
-
             .speech-cat{
-                left:14px;
-                top:76px;
-                max-width:160px;
+                left:12px;
+                top:74px;
+                max-width:170px;
             }
-
             .speech-dog{
-                right:14px;
-                top:126px;
-                max-width:160px;
-            }
-
-            .cable{
-                left:110px;
-                bottom:226px;
-                width:180px;
+                right:12px;
+                top:124px;
+                max-width:170px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="grid-bg"></div>
 
-    <main class="main-wrap">
-        <div class="content-grid">
+    <div class="tech-grid"></div>
+    <div class="noise"></div>
 
-            <!-- COLUNA ESQUERDA -->
-            <section class="panel left-panel">
+    <main class="page">
+        <section class="shell">
 
+            <!-- ESQUERDA -->
+            <div class="panel left">
                 <div class="badge">
-                    <span class="dot"></span>
-                    Integrar ReSaúde — Tela de Erro Criativa
+                    <span class="badge-dot"></span>
+                    Integrar ReSaúde • Tela de Erro Futurista
                 </div>
 
-                <div class="overline">Diagnóstico do Sistema</div>
+                <div class="eyebrow">Status do sistema</div>
 
-                <h1 class="error-code">@yield('code')</h1>
+                <div class="code">@yield('code')</div>
 
-                <h2 class="title">@yield('headline')</h2>
+                <div class="title">@yield('headline')</div>
 
-                <p class="desc">
+                <div class="desc">
                     @yield('message')
-                </p>
+                </div>
 
-                <div class="tips-box">
-                    <div class="tips-icon">
+                <div class="info-card">
+                    <div class="info-icon">
                         <svg xmlns="http://www.w3.org/2000/svg"
                              width="24"
                              height="24"
@@ -831,22 +801,22 @@
                              viewBox="0 0 24 24"
                              stroke="currentColor"
                              stroke-width="1.8">
-                            <path stroke-linecap="round" stroke-linejoin="round"
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
                                   d="M11.25 3.75h1.5M12 7.5v4.5m0 0v3m0-3h3m-3 0H9m10.5 0a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z"/>
                         </svg>
                     </div>
-
                     <div>
-                        <div class="tips-title">O que você pode fazer agora?</div>
-                        <div class="tips-text">
-                            Tente voltar para a página inicial, retornar para a tela anterior
+                        <div class="info-title">O que fazer agora?</div>
+                        <div class="info-text">
+                            Você pode voltar à tela inicial, retornar para a página anterior
                             ou avisar o time de desenvolvimento caso o problema continue.
                         </div>
                     </div>
                 </div>
 
                 <div class="actions">
-                    <a href="{{ url('/') }}" class="btn-main">
+                    <a href="{{ url('/') }}" class="btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg"
                              width="20"
                              height="20"
@@ -854,13 +824,14 @@
                              viewBox="0 0 24 24"
                              stroke="currentColor"
                              stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
                                   d="M3 10.5 12 3l9 7.5M5.25 9.75V20.25a.75.75 0 0 0 .75.75h3.75v-5.25A.75.75 0 0 1 10.5 15h3a.75.75 0 0 1 .75.75V21H18a.75.75 0 0 0 .75-.75V9.75"/>
                         </svg>
                         Voltar ao início
                     </a>
 
-                    <button class="btn-soft" onclick="history.back()">
+                    <button type="button" onclick="history.back()" class="btn-secondary">
                         <svg xmlns="http://www.w3.org/2000/svg"
                              width="20"
                              height="20"
@@ -868,236 +839,221 @@
                              viewBox="0 0 24 24"
                              stroke="currentColor"
                              stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
                                   d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/>
                         </svg>
                         Voltar
                     </button>
                 </div>
 
-                <div class="foot-note">
-                    Dica: para a tela <strong>500</strong> aparecer bonitinha no ambiente local,
-                    deixe temporariamente <strong>APP_DEBUG=false</strong> e rode
+                <div class="footer-note">
+                    Dica técnica: para exibir a página <strong>500</strong> personalizada localmente,
+                    use temporariamente <strong>APP_DEBUG=false</strong> e rode
                     <strong>php artisan optimize:clear</strong>.
                 </div>
+            </div>
 
-            </section>
+            <!-- DIREITA -->
+            <div class="panel scene">
+                <div class="scene-bg"></div>
+                <div class="light-beam light-1"></div>
+                <div class="light-beam light-2"></div>
 
-            <!-- COLUNA DIREITA -->
-            <section class="scene-wrap">
-                <div class="scene-card">
-
-                    <div class="scene-header">
-                        <div class="scene-chip">🎬 Mini filme do plantão digital</div>
-                        <div class="scene-chip">@yield('scene_tag', 'Correria no corredor')</div>
-                    </div>
-
-                    <div class="speech speech-cat">
-                        <strong>@yield('cat_phrase', 'Corre! O cabo é nosso!')</strong>
-                        <small>Gato enfermeiro em modo emergência.</small>
-                    </div>
-
-                    <div class="speech speech-dog">
-                        <strong>@yield('dog_phrase', 'Ei! Eu só quero internet!')</strong>
-                        <small>Cachorro enfermeiro desesperado pelo Wi‑Fi.</small>
-                    </div>
-
-                    <div class="speed-lines-left">
-                        <span></span><span></span><span></span>
-                    </div>
-
-                    <div class="speed-lines-right">
-                        <span></span><span></span><span></span>
-                    </div>
-
-                    <div class="monitor">
-                        <div class="monitor-screen">
-                            <div class="monitor-glow"></div>
-                            <div class="monitor-code">@yield('code')</div>
-                            <div class="monitor-label">@yield('monitor_text', 'Sistema em observação')</div>
-
-                            <div class="monitor-wave">
-                                <svg viewBox="0 0 220 58" xmlns="http://www.w3.org/2000/svg">
-                                    <path class="wave-path"
-                                          d="M4 36 H28 L40 18 L56 44 L72 28 H100 L115 12 L132 46 L150 26 H182 L196 34 H216"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="monitor-base"></div>
-                    </div>
-
-                    <div class="server-box">
-                        <span class="server-led"></span>
-                        <span class="server-led"></span>
-                        <span class="server-led"></span>
-                    </div>
-
-                    <!-- CABO -->
-                    <div class="cable">
-                        <svg viewBox="0 0 240 120" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16 86 C60 12, 120 6, 194 46"
-                                  fill="none"
-                                  stroke="#28433C"
-                                  stroke-width="12"
-                                  stroke-linecap="round"/>
-                            <g class="rj45" transform="translate(186 35)">
-                                <rect width="42" height="26" rx="8" fill="#F59E0B"/>
-                                <rect x="6" y="3" width="30" height="10" rx="3" fill="#FFE6A8"/>
-                                <path d="M8 16v7M14 16v7M20 16v7M26 16v7M32 16v7"
-                                      stroke="#8B5E00"
-                                      stroke-width="2"
-                                      stroke-linecap="round"/>
-                            </g>
-                        </svg>
-                    </div>
-
-                    <!-- GATO -->
-                    <div class="cat">
-                        <svg viewBox="0 0 190 270" xmlns="http://www.w3.org/2000/svg">
-                            <!-- sombra -->
-                            <ellipse cx="92" cy="252" rx="56" ry="12" fill="rgba(0,0,0,.08)"/>
-
-                            <!-- pernas -->
-                            <g>
-                                <rect class="leg-a" x="62" y="176" width="18" height="58" rx="9" fill="#FDBA74"/>
-                                <rect class="leg-b" x="98" y="176" width="18" height="58" rx="9" fill="#FDBA74"/>
-                                <ellipse cx="70" cy="238" rx="16" ry="8" fill="#D97706"/>
-                                <ellipse cx="106" cy="238" rx="16" ry="8" fill="#D97706"/>
-                            </g>
-
-                            <!-- corpo -->
-                            <rect x="42" y="78" width="82" height="106" rx="34" fill="#F59E0B"/>
-                            <rect x="52" y="96" width="62" height="74" rx="28" fill="#FFF7ED"/>
-
-                            <!-- roupa enfermeiro -->
-                            <path d="M34 86 C44 70, 120 70, 132 86 L132 174 C110 186, 60 186, 34 174 Z"
-                                  fill="#FFFFFF" stroke="#D8E5DD" stroke-width="3"/>
-                            <path d="M74 84 H92 V158 H74 Z" fill="#ECFDF5"/>
-                            <rect x="97" y="106" width="22" height="8" rx="4" fill="#16A34A"/>
-                            <rect x="104" y="99" width="8" height="22" rx="4" fill="#16A34A"/>
-
-                            <!-- braços -->
-                            <rect x="20" y="104" width="22" height="68" rx="11" fill="#FFFFFF" stroke="#D8E5DD" stroke-width="3" transform="rotate(18 20 104)"/>
-                            <rect x="120" y="102" width="22" height="70" rx="11" fill="#FFFFFF" stroke="#D8E5DD" stroke-width="3" transform="rotate(-18 120 102)"/>
-
-                            <!-- mão -->
-                            <circle cx="149" cy="146" r="12" fill="#FDBA74"/>
-                            <circle cx="34" cy="153" r="12" fill="#FDBA74"/>
-
-                            <!-- cabeça -->
-                            <circle cx="84" cy="54" r="42" fill="#F59E0B"/>
-                            <path d="M52 28 L64 6 L76 30 Z" fill="#F59E0B"/>
-                            <path d="M92 30 L104 6 L116 28 Z" fill="#F59E0B"/>
-                            <path d="M58 28 L65 14 L71 28 Z" fill="#FFEDD5"/>
-                            <path d="M97 28 L104 14 L110 28 Z" fill="#FFEDD5"/>
-
-                            <!-- rosto -->
-                            <ellipse cx="84" cy="64" rx="24" ry="18" fill="#FFF7ED"/>
-                            <circle cx="72" cy="52" r="4" fill="#1F2937"/>
-                            <circle cx="96" cy="52" r="4" fill="#1F2937"/>
-                            <path d="M80 60 L88 60 L84 65 Z" fill="#FB7185"/>
-                            <path d="M76 70 Q84 76 92 70" stroke="#7C2D12" stroke-width="3" fill="none" stroke-linecap="round"/>
-
-                            <!-- bigodes -->
-                            <path d="M59 60 H42M59 66 H38M109 60 H126M109 66 H130" stroke="#8B5E34" stroke-width="2.6" stroke-linecap="round"/>
-
-                            <!-- touca -->
-                            <rect x="58" y="14" width="52" height="18" rx="9" fill="#FFFFFF" stroke="#D8E5DD" stroke-width="2"/>
-                            <rect x="79" y="12" width="10" height="24" rx="4" fill="#16A34A"/>
-                            <rect x="72" y="19" width="24" height="10" rx="4" fill="#16A34A"/>
-
-                            <!-- cauda -->
-                            <path class="tail-cat" d="M124 120 C150 100, 158 74, 148 42"
-                                  stroke="#D97706"
-                                  stroke-width="14"
-                                  fill="none"
-                                  stroke-linecap="round"/>
-
-                            <!-- estetoscópio -->
-                            <path d="M56 110 C56 138, 112 138, 112 110"
-                                  stroke="#26453E"
-                                  stroke-width="4"
-                                  fill="none"
-                                  stroke-linecap="round"/>
-                            <circle cx="84" cy="146" r="10" fill="#26453E"/>
-                            <circle cx="84" cy="146" r="4" fill="#EAF5EF"/>
-                        </svg>
-                    </div>
-
-                    <!-- CACHORRO -->
-                    <div class="dog">
-                        <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg">
-                            <!-- sombra -->
-                            <ellipse cx="102" cy="260" rx="60" ry="12" fill="rgba(0,0,0,.08)"/>
-
-                            <!-- pernas -->
-                            <rect class="leg-b" x="68" y="186" width="20" height="60" rx="10" fill="#D6A56D"/>
-                            <rect class="leg-a" x="110" y="186" width="20" height="60" rx="10" fill="#D6A56D"/>
-                            <ellipse cx="78" cy="248" rx="17" ry="8" fill="#7C4A24"/>
-                            <ellipse cx="120" cy="248" rx="17" ry="8" fill="#7C4A24"/>
-
-                            <!-- corpo -->
-                            <rect x="48" y="82" width="92" height="112" rx="38" fill="#C58A55"/>
-                            <path d="M52 90 C72 72, 120 72, 138 90 L138 178 C116 192, 78 194, 52 178 Z"
-                                  fill="#FFFFFF" stroke="#D8E5DD" stroke-width="3"/>
-                            <rect x="88" y="112" width="10" height="24" rx="4" fill="#16A34A"/>
-                            <rect x="81" y="119" width="24" height="10" rx="4" fill="#16A34A"/>
-
-                            <!-- braços -->
-                            <rect x="24" y="112" width="22" height="64" rx="11" fill="#FFFFFF" stroke="#D8E5DD" stroke-width="3" transform="rotate(20 24 112)"/>
-                            <rect x="138" y="112" width="22" height="64" rx="11" fill="#FFFFFF" stroke="#D8E5DD" stroke-width="3" transform="rotate(-20 138 112)"/>
-                            <circle cx="28" cy="164" r="12" fill="#D6A56D"/>
-                            <circle cx="160" cy="162" r="12" fill="#D6A56D"/>
-
-                            <!-- cabeça -->
-                            <circle cx="96" cy="58" r="44" fill="#C58A55"/>
-                            <ellipse cx="58" cy="44" rx="16" ry="24" fill="#8B5A2B" transform="rotate(-22 58 44)"/>
-                            <ellipse cx="136" cy="44" rx="16" ry="24" fill="#8B5A2B" transform="rotate(22 136 44)"/>
-
-                            <!-- rosto -->
-                            <ellipse cx="96" cy="68" rx="26" ry="20" fill="#FAE3C8"/>
-                            <circle cx="84" cy="55" r="4" fill="#1F2937"/>
-                            <circle cx="108" cy="55" r="4" fill="#1F2937"/>
-                            <ellipse cx="96" cy="66" rx="7" ry="5" fill="#1F2937"/>
-                            <path d="M88 76 Q96 86 104 76" stroke="#7C2D12" stroke-width="3" fill="none" stroke-linecap="round"/>
-
-                            <!-- touca -->
-                            <rect x="68" y="16" width="56" height="18" rx="9" fill="#FFFFFF" stroke="#D8E5DD" stroke-width="2"/>
-                            <rect x="91" y="14" width="10" height="24" rx="4" fill="#16A34A"/>
-                            <rect x="84" y="21" width="24" height="10" rx="4" fill="#16A34A"/>
-
-                            <!-- rabo -->
-                            <path class="tail-dog" d="M142 126 C168 112, 180 118, 188 144"
-                                  stroke="#8B5A2B"
-                                  stroke-width="14"
-                                  fill="none"
-                                  stroke-linecap="round"/>
-
-                            <!-- wi-fi -->
-                            <g class="wifi-rings" transform="translate(154 78)">
-                                <circle cx="0" cy="0" r="10"/>
-                                <circle cx="0" cy="0" r="20"/>
-                                <circle cx="0" cy="0" r="30"/>
-                            </g>
-                        </svg>
-                    </div>
-
-                    <span class="dust d1"></span>
-                    <span class="dust d2"></span>
-                    <span class="dust d3"></span>
-                    <span class="dust d4"></span>
-
-                    <div class="corridor"></div>
-
-                    <div class="scene-caption">
-                        <strong>@yield('caption_title', 'Cena do plantão digital')</strong>
-                        <span>@yield('caption_text', 'Quando alguma parte do sistema falha, até o gato enfermeiro entra em corrida para salvar a internet do hospital.')</span>
-                    </div>
-
+                <div class="scene-topbar">
+                    <div class="chip">CENA CINEMATOGRÁFICA • MODO ANIME ORIGINAL</div>
+                    <div class="chip">@yield('scene_tag', 'Plantão digital')</div>
                 </div>
-            </section>
 
-        </div>
+                <div class="speech speech-cat">
+                    <strong>@yield('cat_phrase', 'Preciso salvar a rede agora!')</strong>
+                    <small>Gato enfermeiro em corrida máxima.</small>
+                </div>
+
+                <div class="speech speech-dog">
+                    <strong>@yield('dog_phrase', 'Ei! Eu quero internet!')</strong>
+                    <small>Cachorro enfermeiro em perseguição.</small>
+                </div>
+
+                <div class="alarm-ring"></div>
+
+                <div class="speed-trails">
+                    <span class="trail left t1"></span>
+                    <span class="trail left t2"></span>
+                    <span class="trail left t3"></span>
+                    <span class="trail right t2"></span>
+                    <span class="trail right t3"></span>
+                    <span class="trail right t4"></span>
+                </div>
+
+                <div class="monitor">
+                    <div class="monitor-screen">
+                        <div class="screen-scan"></div>
+                        <div class="monitor-code">@yield('code')</div>
+                        <div class="monitor-label">@yield('monitor_text', 'Sistema em observação')</div>
+
+                        <div class="screen-lines">
+                            <svg viewBox="0 0 260 52" xmlns="http://www.w3.org/2000/svg">
+                                <path class="ekg"
+                                      d="M4 34 H28 L42 18 L58 42 L76 27 H104 L118 10 L136 44 L154 24 H190 L210 34 H256"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="monitor-stand"></div>
+                </div>
+
+                <!-- CABO DE REDE -->
+                <div class="cable-wrap">
+                    <svg viewBox="0 0 270 140" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 90 C62 24, 118 10, 212 52"
+                              fill="none"
+                              stroke="#27463C"
+                              stroke-width="12"
+                              stroke-linecap="round"/>
+                        <g class="plug-glow" transform="translate(205 40)">
+                            <rect width="44" height="28" rx="8" fill="#FFC857"/>
+                            <rect x="6" y="3" width="32" height="10" rx="3" fill="#FFF1BE"/>
+                            <path d="M10 16v8M16 16v8M22 16v8M28 16v8M34 16v8"
+                                  stroke="#9E6C00"
+                                  stroke-width="2"
+                                  stroke-linecap="round"/>
+                        </g>
+                    </svg>
+                </div>
+
+                <!-- GATO -->
+                <div class="char cat">
+                    <svg viewBox="0 0 220 300" xmlns="http://www.w3.org/2000/svg">
+                        <ellipse cx="104" cy="276" rx="62" ry="12" fill="rgba(0,0,0,.14)"/>
+
+                        <!-- pernas -->
+                        <rect class="limb-a" x="78" y="190" width="20" height="64" rx="10" fill="#F9B56A"/>
+                        <rect class="limb-b" x="118" y="190" width="20" height="64" rx="10" fill="#F9B56A"/>
+                        <ellipse cx="88" cy="260" rx="18" ry="9" fill="#D97706"/>
+                        <ellipse cx="128" cy="260" rx="18" ry="9" fill="#D97706"/>
+
+                        <!-- corpo -->
+                        <path d="M54 92 C64 78, 154 78, 166 96 L162 190 C140 208, 86 208, 58 192 Z"
+                              fill="#FFFFFF" stroke="#1F4A3E" stroke-width="3"/>
+                        <path d="M75 102 C88 94, 132 94, 146 104 L146 180 C128 192, 92 192, 75 180 Z"
+                              fill="#F0FFF8"/>
+
+                        <!-- cruz -->
+                        <rect x="128" y="118" width="24" height="8" rx="4" fill="#15D087"/>
+                        <rect x="136" y="110" width="8" height="24" rx="4" fill="#15D087"/>
+
+                        <!-- braço esquerdo -->
+                        <rect x="40" y="120" width="22" height="70" rx="11" fill="#FFFFFF" stroke="#1F4A3E" stroke-width="3" transform="rotate(20 40 120)"/>
+                        <circle cx="42" cy="178" r="12" fill="#F9B56A"/>
+
+                        <!-- braço direito -->
+                        <rect x="156" y="114" width="22" height="74" rx="11" fill="#FFFFFF" stroke="#1F4A3E" stroke-width="3" transform="rotate(-22 156 114)"/>
+                        <circle cx="178" cy="166" r="12" fill="#F9B56A"/>
+
+                        <!-- cabeça -->
+                        <circle cx="110" cy="64" r="46" fill="#F59E0B"/>
+                        <path d="M74 36 L88 8 L101 38 Z" fill="#F59E0B"/>
+                        <path d="M119 38 L132 8 L146 36 Z" fill="#F59E0B"/>
+                        <path d="M81 34 L89 18 L97 34 Z" fill="#FFEDD5"/>
+                        <path d="M124 34 L132 18 L139 34 Z" fill="#FFEDD5"/>
+
+                        <!-- rosto -->
+                        <ellipse cx="110" cy="75" rx="28" ry="21" fill="#FFF2DF"/>
+                        <circle cx="96" cy="62" r="4" fill="#172A24"/>
+                        <circle cx="124" cy="62" r="4" fill="#172A24"/>
+                        <path d="M104 70 L116 70 L110 76 Z" fill="#FB7185"/>
+                        <path d="M101 82 Q110 90 119 82" stroke="#7C2D12" stroke-width="3" fill="none" stroke-linecap="round"/>
+                        <path d="M82 70 H60M83 78 H54M138 70 H160M137 78 H166"
+                              stroke="#8B5E34" stroke-width="2.5" stroke-linecap="round"/>
+
+                        <!-- touca -->
+                        <rect x="80" y="18" width="60" height="20" rx="10" fill="#FFFFFF" stroke="#1F4A3E" stroke-width="2"/>
+                        <rect x="105" y="16" width="10" height="24" rx="4" fill="#15D087"/>
+                        <rect x="98" y="23" width="24" height="10" rx="4" fill="#15D087"/>
+
+                        <!-- cauda -->
+                        <path class="tail-a" d="M165 122 C194 104, 201 80, 190 50"
+                              stroke="#D97706" stroke-width="15" fill="none" stroke-linecap="round"/>
+
+                        <!-- estetoscópio -->
+                        <path d="M86 124 C86 152, 134 152, 134 124"
+                              stroke="#26453E" stroke-width="4" fill="none" stroke-linecap="round"/>
+                        <circle cx="110" cy="158" r="10" fill="#26453E"/>
+                        <circle cx="110" cy="158" r="4" fill="#E8FFF5"/>
+                    </svg>
+                </div>
+
+                <!-- CACHORRO -->
+                <div class="char dog">
+                    <svg viewBox="0 0 230 308" xmlns="http://www.w3.org/2000/svg">
+                        <ellipse cx="114" cy="284" rx="64" ry="12" fill="rgba(0,0,0,.14)"/>
+
+                        <!-- pernas -->
+                        <rect class="limb-b" x="82" y="200" width="22" height="66" rx="11" fill="#DDB081"/>
+                        <rect class="limb-a" x="126" y="200" width="22" height="66" rx="11" fill="#DDB081"/>
+                        <ellipse cx="93" cy="272" rx="19" ry="9" fill="#7C4A24"/>
+                        <ellipse cx="137" cy="272" rx="19" ry="9" fill="#7C4A24"/>
+
+                        <!-- corpo -->
+                        <path d="M58 98 C72 82, 162 82, 176 100 L172 198 C148 214, 92 214, 62 198 Z"
+                              fill="#FFFFFF" stroke="#1F4A3E" stroke-width="3"/>
+                        <path d="M76 108 C90 100, 142 100, 158 110 L158 186 C140 198, 96 198, 76 186 Z"
+                              fill="#F2FFF9"/>
+
+                        <!-- cruz -->
+                        <rect x="136" y="124" width="24" height="8" rx="4" fill="#15D087"/>
+                        <rect x="144" y="116" width="8" height="24" rx="4" fill="#15D087"/>
+
+                        <!-- braço -->
+                        <rect x="40" y="128" width="22" height="72" rx="11" fill="#FFFFFF" stroke="#1F4A3E" stroke-width="3" transform="rotate(18 40 128)"/>
+                        <rect x="170" y="122" width="22" height="72" rx="11" fill="#FFFFFF" stroke="#1F4A3E" stroke-width="3" transform="rotate(-18 170 122)"/>
+                        <circle cx="38" cy="188" r="12" fill="#DDB081"/>
+                        <circle cx="191" cy="178" r="12" fill="#DDB081"/>
+
+                        <!-- cabeça -->
+                        <circle cx="116" cy="70" r="48" fill="#C78A57"/>
+                        <ellipse cx="74" cy="53" rx="17" ry="27" fill="#8B5A2B" transform="rotate(-22 74 53)"/>
+                        <ellipse cx="158" cy="53" rx="17" ry="27" fill="#8B5A2B" transform="rotate(22 158 53)"/>
+
+                        <!-- rosto -->
+                        <ellipse cx="116" cy="84" rx="30" ry="23" fill="#FCE7CF"/>
+                        <circle cx="102" cy="69" r="4" fill="#172A24"/>
+                        <circle cx="130" cy="69" r="4" fill="#172A24"/>
+                        <ellipse cx="116" cy="81" rx="8" ry="5" fill="#172A24"/>
+                        <path d="M107 92 Q116 102 125 92" stroke="#7C2D12" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+                        <!-- touca -->
+                        <rect x="86" y="22" width="62" height="20" rx="10" fill="#FFFFFF" stroke="#1F4A3E" stroke-width="2"/>
+                        <rect x="112" y="20" width="10" height="24" rx="4" fill="#15D087"/>
+                        <rect x="105" y="27" width="24" height="10" rx="4" fill="#15D087"/>
+
+                        <!-- rabo -->
+                        <path class="tail-b" d="M178 132 C204 116, 215 122, 222 150"
+                              stroke="#8B5A2B" stroke-width="15" fill="none" stroke-linecap="round"/>
+
+                        <!-- wifi -->
+                        <g transform="translate(184 88)">
+                            <path d="M0 22 C10 12, 26 12, 36 22" fill="none" stroke="@yield('accent', #15D087)" stroke-width="4" stroke-linecap="round"/>
+                            <path d="M6 30 C14 22, 22 22, 30 30" fill="none" stroke="@yield('accent', #15D087)" stroke-width="4" stroke-linecap="round"/>
+                            <circle cx="18" cy="36" r="4" fill="@yield('accent', #15D087)"/>
+                        </g>
+                    </svg>
+                </div>
+
+                <div class="particles">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+
+                <div class="floor"></div>
+
+                <div class="subtitle-box">
+                    <strong>@yield('caption_title', 'Cena do plantão digital')</strong>
+                    <span>@yield('caption_text', 'Quando o sistema entra em estado crítico, o gato enfermeiro corre com o cabo de rede enquanto o cachorro enfermeiro persegue a conexão.')</span>
+                </div>
+            </div>
+
+        </section>
     </main>
+
 </body>
 </html>
