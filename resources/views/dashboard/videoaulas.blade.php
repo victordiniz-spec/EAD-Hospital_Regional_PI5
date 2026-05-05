@@ -64,7 +64,7 @@
                     </div>
 
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight">
-                        Gerenciamento de Videoaulas
+                        Gerenciamento de Videoaulas alskdhçaklsjdhçalsdjkhçl
                     </h1>
 
                     <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
