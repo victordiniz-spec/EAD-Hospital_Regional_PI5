@@ -54,18 +54,11 @@
     $totalAvisos = isset($avisosRecentes) ? $avisosRecentes->count() : 0;
     $totalPendentes = isset($usuariosPendentes) ? $usuariosPendentes->count() : 0;
 
-    /*
-    |--------------------------------------------------------------------------
-    | HISTÓRICO DE ACESSOS APROVADOS
-    |--------------------------------------------------------------------------
-    | Como seu método aprovar() altera status para aprovado e salva o usuário,
-    | usamos updated_at como a data da aprovação.
-    */
     $usuariosAprovadosRecentes = DB::table('users')
         ->where('status', 'aprovado')
         ->whereIn('tipo', ['residente', 'preceptor'])
         ->orderByDesc('updated_at')
-        ->limit(5)
+        ->limit(6)
         ->get();
 
     $totalAprovadosHistorico = $usuariosAprovadosRecentes->count();
@@ -84,6 +77,28 @@
         background: #F3F7F3 !important;
         min-height: 100vh;
         width: 100%;
+    }
+
+    .historico-cascata {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(-8px);
+        transition: all 0.35s ease;
+    }
+
+    .historico-cascata.aberto {
+        max-height: 900px;
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .icone-seta-historico {
+        transition: transform 0.25s ease;
+    }
+
+    .icone-seta-historico.aberto {
+        transform: rotate(180deg);
     }
 </style>
 
@@ -602,7 +617,7 @@
                     </div>
                 </div>
 
-                <!-- SOLICITAÇÕES PENDENTES + HISTÓRICO -->
+                <!-- SOLICITAÇÕES PENDENTES -->
                 <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-[#E3EBE4]">
 
                     <div class="flex items-center justify-between mb-5">
@@ -696,104 +711,139 @@
                         </div>
                     @endif
 
-                    <!-- HISTÓRICO DE APROVADOS -->
-                    <div class="mt-6 pt-6 border-t border-[#E3EBE4]">
+                    <!-- BOTÃO DO HISTÓRICO -->
+                    <button onclick="toggleHistoricoAprovados()"
+                            id="btnHistoricoAprovados"
+                            class="mt-5 w-full bg-[#F8FBF8] border border-[#DCE7DE] text-[#004D3A] rounded-2xl py-3 text-sm font-bold hover:bg-[#F1F6F2] transition flex items-center justify-center gap-2">
 
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 class="font-extrabold text-[#003C2F] text-lg">
-                                    Últimos Aprovados
-                                </h3>
-                                <p class="text-xs text-[#60756B]">
-                                    Histórico recente de acessos liberados.
-                                </p>
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="w-5 h-5 text-[#00A63E]"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="1.8"
+                                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                        </svg>
+
+                        <span id="textoBtnHistorico">Ver histórico de aprovados</span>
+
+                        <svg id="setaHistorico"
+                             xmlns="http://www.w3.org/2000/svg"
+                             class="w-4 h-4 icone-seta-historico"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+                        </svg>
+                    </button>
+
+                    <!-- HISTÓRICO EM CASCATA -->
+                    <div id="historicoAprovados" class="historico-cascata">
+
+                        <div class="mt-4 bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4">
+
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="font-extrabold text-[#003C2F] text-base">
+                                        Últimos Aprovados
+                                    </h3>
+                                    <p class="text-xs text-[#60756B]">
+                                        Histórico recente de acessos liberados.
+                                    </p>
+                                </div>
+
+                                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
+                                    {{ $totalAprovadosHistorico }}
+                                </span>
                             </div>
 
-                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
-                                {{ $totalAprovadosHistorico }}
-                            </span>
-                        </div>
+                            @if($usuariosAprovadosRecentes->count() > 0)
 
-                        @if($usuariosAprovadosRecentes->count() > 0)
+                                <div class="space-y-3">
 
-                            <div class="space-y-3">
+                                    @foreach($usuariosAprovadosRecentes as $aprovado)
+                                        <div class="bg-white border border-[#E3EBE4] rounded-2xl p-3 hover:bg-[#F8FBF8] transition">
 
-                                @foreach($usuariosAprovadosRecentes as $aprovado)
-                                    <div class="bg-white border border-[#E3EBE4] rounded-2xl p-3 hover:bg-[#F8FBF8] transition">
+                                            <div class="flex items-start gap-3">
 
-                                        <div class="flex items-start gap-3">
+                                                <div class="w-10 h-10 rounded-xl bg-green-600 text-white flex items-center justify-center font-bold shrink-0">
+                                                    {{ strtoupper(substr($aprovado->name, 0, 1)) }}
+                                                </div>
 
-                                            <div class="w-10 h-10 rounded-xl bg-green-600 text-white flex items-center justify-center font-bold shrink-0">
-                                                {{ strtoupper(substr($aprovado->name, 0, 1)) }}
-                                            </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="flex items-start justify-between gap-2">
+                                                        <div class="min-w-0">
+                                                            <p class="font-bold text-[#003C2F] text-sm break-words">
+                                                                {{ $aprovado->name }}
+                                                            </p>
 
-                                            <div class="min-w-0 flex-1">
-                                                <div class="flex items-start justify-between gap-2">
-                                                    <div class="min-w-0">
-                                                        <p class="font-bold text-[#003C2F] text-sm break-words">
-                                                            {{ $aprovado->name }}
-                                                        </p>
+                                                            <p class="text-xs text-[#60756B] break-words">
+                                                                {{ $aprovado->email }}
+                                                            </p>
+                                                        </div>
 
-                                                        <p class="text-xs text-[#60756B] break-words">
-                                                            {{ $aprovado->email }}
-                                                        </p>
+                                                        <span class="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-[10px] font-bold whitespace-nowrap">
+                                                            <span class="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+                                                            OK
+                                                        </span>
                                                     </div>
 
-                                                    <span class="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-[10px] font-bold whitespace-nowrap">
-                                                        <span class="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
-                                                        APROVADO
-                                                    </span>
+                                                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                                                        <span class="inline-flex bg-[#EAF5EF] text-[#004D3A] px-2.5 py-1 rounded-full text-[10px] font-bold uppercase">
+                                                            {{ $aprovado->tipo ?? 'usuário' }}
+                                                        </span>
+
+                                                        <span class="text-[11px] text-[#8A9B92]">
+                                                            {{ $aprovado->updated_at ? \Carbon\Carbon::parse($aprovado->updated_at)->diffForHumans() : '-' }}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
-                                                <div class="mt-2 flex flex-wrap items-center gap-2">
-                                                    <span class="inline-flex bg-[#EAF5EF] text-[#004D3A] px-2.5 py-1 rounded-full text-[10px] font-bold uppercase">
-                                                        {{ $aprovado->tipo ?? 'usuário' }}
-                                                    </span>
-
-                                                    <span class="text-[11px] text-[#8A9B92]">
-                                                        Aprovado {{ $aprovado->updated_at ? \Carbon\Carbon::parse($aprovado->updated_at)->diffForHumans() : '-' }}
-                                                    </span>
-                                                </div>
                                             </div>
 
                                         </div>
+                                    @endforeach
 
-                                    </div>
-                                @endforeach
-
-                            </div>
-
-                            <a href="{{ route('controle.usuarios') }}"
-                               class="mt-4 w-full inline-flex items-center justify-center gap-2 border border-[#AFC5B5] text-[#004D3A] rounded-2xl py-3 text-sm font-bold hover:bg-[#F1F6F2] transition">
-                                Ver todos os usuários
-                            </a>
-
-                        @else
-
-                            <div class="text-center bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-5">
-                                <div class="w-12 h-12 rounded-full bg-[#EAF5EF] flex items-center justify-center mx-auto mb-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         class="w-6 h-6 text-[#004D3A]"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              stroke-width="1.8"
-                                              d="M18 18.72a8.94 8.94 0 0 0-6-2.22 8.94 8.94 0 0 0-6 2.22M15 11.25a3 3 0 1 0-6 0 3 3 0 0 0 6 0z"/>
-                                    </svg>
                                 </div>
 
-                                <h3 class="font-bold text-[#003C2F]">
-                                    Nenhum acesso aprovado ainda
-                                </h3>
+                                <a href="{{ route('controle.usuarios') }}"
+                                   class="mt-4 w-full inline-flex items-center justify-center gap-2 border border-[#AFC5B5] text-[#004D3A] rounded-2xl py-3 text-sm font-bold hover:bg-white transition">
+                                    Ver todos os usuários
+                                </a>
 
-                                <p class="text-sm text-[#60756B] mt-1">
-                                    Quando o administrador aprovar usuários, eles aparecerão aqui.
-                                </p>
-                            </div>
+                            @else
 
-                        @endif
+                                <div class="text-center bg-white border border-[#E3EBE4] rounded-2xl p-5">
+                                    <div class="w-12 h-12 rounded-full bg-[#EAF5EF] flex items-center justify-center mx-auto mb-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="w-6 h-6 text-[#004D3A]"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round"
+                                                  stroke-linejoin="round"
+                                                  stroke-width="1.8"
+                                                  d="M18 18.72a8.94 8.94 0 0 0-6-2.22 8.94 8.94 0 0 0-6 2.22M15 11.25a3 3 0 1 0-6 0 3 3 0 0 0 6 0z"/>
+                                        </svg>
+                                    </div>
+
+                                    <h3 class="font-bold text-[#003C2F]">
+                                        Nenhum acesso aprovado ainda
+                                    </h3>
+
+                                    <p class="text-sm text-[#60756B] mt-1">
+                                        Quando o administrador aprovar usuários, eles aparecerão aqui.
+                                    </p>
+                                </div>
+
+                            @endif
+
+                        </div>
 
                     </div>
 
@@ -1038,6 +1088,26 @@
         });
 
         btn.innerText = existeOculto ? 'Ver menos' : 'Ver mais';
+    }
+
+    function toggleHistoricoAprovados() {
+        const historico = document.getElementById('historicoAprovados');
+        const seta = document.getElementById('setaHistorico');
+        const texto = document.getElementById('textoBtnHistorico');
+
+        if (!historico) return;
+
+        const vaiAbrir = !historico.classList.contains('aberto');
+
+        historico.classList.toggle('aberto');
+
+        if (seta) {
+            seta.classList.toggle('aberto');
+        }
+
+        if (texto) {
+            texto.innerText = vaiAbrir ? 'Ocultar histórico de aprovados' : 'Ver histórico de aprovados';
+        }
     }
 
     function abrirModalAviso() {
