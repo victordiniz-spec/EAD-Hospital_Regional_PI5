@@ -54,18 +54,12 @@
                 <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
 
                     <div>
-                        <div class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest text-[#60756B] mb-2">
-                            <span>Home</span>
-                            <span>›</span>
-                            <span class="text-[#004D3A]">Gerenciamento de Usuários</span>
-                        </div>
-
                         <h1 class="text-3xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight">
                             Controle de Usuários
                         </h1>
 
                         <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
-                            Administre acessos, perfis e permissões da instituição.
+                            Administre acessos, perfis, datas de cadastro, aprovações e permissões da instituição.
                         </p>
                     </div>
 
@@ -182,7 +176,7 @@
                 </div>
 
                 <p class="font-extrabold text-[#003C2F]">Nenhum usuário encontrado</p>
-                <p class="text-sm mt-1">Tente pesquisar por outro nome, CPF, e-mail, tipo ou status.</p>
+                <p class="text-sm mt-1">Tente pesquisar por outro nome, CPF, e-mail, tipo, status ou período.</p>
             </div>
 
             <!-- TABELA DESKTOP -->
@@ -199,6 +193,8 @@
                                 <th class="py-5 px-6">CPF</th>
                                 <th class="py-5 px-6">Tipo</th>
                                 <th class="py-5 px-6">Status</th>
+                                <th class="py-5 px-6">Cadastro</th>
+                                <th class="py-5 px-6">Aceito em</th>
                                 <th class="py-5 px-6 text-right">Ações</th>
                             </tr>
                         </thead>
@@ -217,12 +213,24 @@
 
                                     $tipoUser = strtolower($user->tipo ?? '');
                                     $statusAtivo = $user->status === 'aprovado';
+
+                                    $dataCadastro = $user->created_at ? \Carbon\Carbon::parse($user->created_at) : null;
+
+                                    /*
+                                     * Se você ainda não tem uma coluna approved_at, usamos updated_at
+                                     * como referência da aprovação.
+                                     */
+                                    $dataAceito = $statusAtivo && $user->updated_at
+                                        ? \Carbon\Carbon::parse($user->updated_at)
+                                        : null;
                                 @endphp
 
                                 <tr class="usuario-item hover:bg-[#F8FBF8] transition"
                                     data-tipo="{{ $tipoUser }}"
                                     data-status="{{ $statusAtivo ? 'ativo' : 'inativo' }}"
-                                    data-search="{{ strtolower($user->name . ' ' . $user->email . ' ' . $user->cpf . ' ' . $user->tipo . ' ' . $user->status) }}">
+                                    data-cadastro="{{ $dataCadastro ? $dataCadastro->format('Y-m-d') : '' }}"
+                                    data-aceito="{{ $dataAceito ? $dataAceito->format('Y-m-d') : '' }}"
+                                    data-search="{{ strtolower($user->name . ' ' . $user->email . ' ' . $user->cpf . ' ' . $user->tipo . ' ' . $user->status . ' ' . ($dataCadastro ? $dataCadastro->format('d/m/Y') : '') . ' ' . ($dataAceito ? $dataAceito->format('d/m/Y') : '')) }}">
 
                                     <td class="py-6 px-6">
                                         <div class="flex items-center gap-4">
@@ -267,8 +275,22 @@
                                         @else
                                             <span class="inline-flex items-center gap-2 text-[#8A9B92] font-extrabold text-xs whitespace-nowrap">
                                                 <span class="w-2 h-2 rounded-full bg-[#AAB7AF]"></span>
-                                                INATIVO
+                                                PENDENTE
                                             </span>
+                                        @endif
+                                    </td>
+
+                                    <td class="px-6 text-[#4B5C52] whitespace-nowrap">
+                                        {{ $dataCadastro ? $dataCadastro->format('d/m/Y H:i') : '-' }}
+                                    </td>
+
+                                    <td class="px-6 text-[#4B5C52] whitespace-nowrap">
+                                        @if($dataAceito)
+                                            <span class="font-bold text-green-700">
+                                                {{ $dataAceito->format('d/m/Y H:i') }}
+                                            </span>
+                                        @else
+                                            <span class="text-[#8A9B92]">Ainda não aceito</span>
                                         @endif
                                     </td>
 
@@ -298,9 +320,13 @@
                                             </button>
 
                                             <button type="button"
-                                                    onclick="abrirMenuAcoes(this)"
-                                                    class="w-10 h-10 rounded-xl hover:bg-[#EAF5EF] text-[#60756B] transition inline-flex items-center justify-center"
-                                                    title="Mais ações">
+                                                    onclick='abrirModalExcluir(
+                                                        @json($user->id),
+                                                        @json($user->name),
+                                                        @json($user->email)
+                                                    )'
+                                                    class="w-10 h-10 rounded-xl hover:bg-red-50 text-red-600 transition inline-flex items-center justify-center"
+                                                    title="Excluir usuário">
                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                      class="w-5 h-5"
                                                      fill="none"
@@ -308,8 +334,8 @@
                                                      stroke="currentColor">
                                                     <path stroke-linecap="round"
                                                           stroke-linejoin="round"
-                                                          stroke-width="2"
-                                                          d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z"/>
+                                                          stroke-width="1.8"
+                                                          d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166M19.228 5.79 18.16 19.673A2.25 2.25 0 0 1 15.916 21.75H8.084A2.25 2.25 0 0 1 5.84 19.673L4.772 5.79M19.228 5.79a48.108 48.108 0 0 0-3.478-.397M4.772 5.79c1.148-.175 2.32-.302 3.478-.397m7.5 0V4.875C15.75 3.839 14.911 3 13.875 3h-3.75C9.089 3 8.25 3.839 8.25 4.875v.518m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
                                                 </svg>
                                             </button>
 
@@ -361,12 +387,20 @@
 
                         $tipoUserMobile = strtolower($user->tipo ?? '');
                         $statusAtivoMobile = $user->status === 'aprovado';
+
+                        $dataCadastroMobile = $user->created_at ? \Carbon\Carbon::parse($user->created_at) : null;
+
+                        $dataAceitoMobile = $statusAtivoMobile && $user->updated_at
+                            ? \Carbon\Carbon::parse($user->updated_at)
+                            : null;
                     @endphp
 
                     <div class="usuario-item bg-white border border-[#E3EBE4] rounded-3xl p-5 shadow-sm"
                          data-tipo="{{ $tipoUserMobile }}"
                          data-status="{{ $statusAtivoMobile ? 'ativo' : 'inativo' }}"
-                         data-search="{{ strtolower($user->name . ' ' . $user->email . ' ' . $user->cpf . ' ' . $user->tipo . ' ' . $user->status) }}">
+                         data-cadastro="{{ $dataCadastroMobile ? $dataCadastroMobile->format('Y-m-d') : '' }}"
+                         data-aceito="{{ $dataAceitoMobile ? $dataAceitoMobile->format('Y-m-d') : '' }}"
+                         data-search="{{ strtolower($user->name . ' ' . $user->email . ' ' . $user->cpf . ' ' . $user->tipo . ' ' . $user->status . ' ' . ($dataCadastroMobile ? $dataCadastroMobile->format('d/m/Y') : '') . ' ' . ($dataAceitoMobile ? $dataAceitoMobile->format('d/m/Y') : '')) }}">
 
                         <div class="flex items-start gap-4">
 
@@ -397,6 +431,27 @@
                                 <span class="text-[#003C2F] font-bold">{{ $user->cpf }}</span>
                             </div>
 
+                            <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl px-4 py-3">
+                                <span class="text-[#60756B] font-semibold">Cadastro:</span>
+                                <span class="text-[#003C2F] font-bold">
+                                    {{ $dataCadastroMobile ? $dataCadastroMobile->format('d/m/Y H:i') : '-' }}
+                                </span>
+                            </div>
+
+                            <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl px-4 py-3">
+                                <span class="text-[#60756B] font-semibold">Aceito em:</span>
+
+                                @if($dataAceitoMobile)
+                                    <span class="text-green-700 font-bold">
+                                        {{ $dataAceitoMobile->format('d/m/Y H:i') }}
+                                    </span>
+                                @else
+                                    <span class="text-[#8A9B92] font-bold">
+                                        Ainda não aceito
+                                    </span>
+                                @endif
+                            </div>
+
                             <div class="flex flex-wrap gap-2 mt-3">
 
                                 <span class="inline-flex items-center bg-green-100 text-green-700 px-3 py-1 rounded-full text-[11px] font-extrabold">
@@ -411,7 +466,7 @@
                                 @else
                                     <span class="inline-flex items-center gap-1 text-[#8A9B92] px-3 py-1 rounded-full text-[11px] font-extrabold">
                                         <span class="w-2 h-2 bg-[#AAB7AF] rounded-full"></span>
-                                        INATIVO
+                                        PENDENTE
                                     </span>
                                 @endif
 
@@ -419,7 +474,7 @@
 
                         </div>
 
-                        <div class="mt-5">
+                        <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <button
                                 onclick='abrirModalEditar(@json($user->id), @json($user->name), @json($user->email), @json($user->cpf))'
                                 class="w-full bg-[#004D3A] hover:bg-[#003C2F] text-white px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2 shadow-sm">
@@ -435,7 +490,25 @@
                                           d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931z"/>
                                 </svg>
 
-                                Editar usuário
+                                Editar
+                            </button>
+
+                            <button
+                                onclick='abrirModalExcluir(@json($user->id), @json($user->name), @json($user->email))'
+                                class="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2">
+
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="w-4 h-4"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="1.8"
+                                          d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166M19.228 5.79 18.16 19.673A2.25 2.25 0 0 1 15.916 21.75H8.084A2.25 2.25 0 0 1 5.84 19.673L4.772 5.79"/>
+                                </svg>
+
+                                Excluir
                             </button>
                         </div>
 
@@ -701,6 +774,64 @@
 
 </div>
 
+<!-- MODAL EXCLUIR -->
+<div id="modalExcluir" class="fixed inset-0 hidden items-center justify-center bg-black/50 backdrop-blur-sm z-[90] px-4">
+
+    <div class="bg-white w-full max-w-md p-6 rounded-3xl border border-red-100 shadow-2xl">
+
+        <div class="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-5">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="w-8 h-8 text-red-600"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="1.8"
+                      d="M12 9v3.75m0 3.75h.008v.008H12V16.5zm9-4.5a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+            </svg>
+        </div>
+
+        <h2 class="text-2xl font-extrabold text-[#003C2F] text-center">
+            Excluir usuário?
+        </h2>
+
+        <p class="text-sm text-[#60756B] mt-3 text-center leading-relaxed">
+            Tem certeza que deseja excluir este usuário? Essa ação não poderá ser desfeita.
+        </p>
+
+        <div class="mt-5 bg-red-50 border border-red-100 rounded-2xl p-4">
+            <p class="text-sm font-extrabold text-red-700" id="nomeExcluirUsuario">
+                Usuário
+            </p>
+
+            <p class="text-xs text-red-600 mt-1 break-words" id="emailExcluirUsuario">
+                email
+            </p>
+        </div>
+
+        <form id="formExcluir" method="POST" class="mt-6">
+            @csrf
+            @method('DELETE')
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button type="button"
+                        onclick="fecharModalExcluir()"
+                        class="px-5 py-3 rounded-2xl bg-[#F1F6F2] text-[#60756B] font-bold hover:bg-[#E6EFE8] transition">
+                    Cancelar
+                </button>
+
+                <button type="submit"
+                        class="px-5 py-3 rounded-2xl bg-red-600 text-white font-bold hover:bg-red-700 transition shadow-sm">
+                    Excluir usuário
+                </button>
+            </div>
+        </form>
+
+    </div>
+
+</div>
+
 <!-- MODAL FILTROS -->
 <div id="modalFiltros" class="fixed inset-0 hidden items-center justify-center bg-black/50 backdrop-blur-sm z-[75] px-4">
 
@@ -713,7 +844,7 @@
                 </h2>
 
                 <p class="text-sm text-[#60756B] mt-1">
-                    Refine a visualização dos usuários.
+                    Refine a visualização dos usuários por tipo, status e período de cadastro.
                 </p>
             </div>
 
@@ -745,7 +876,7 @@
                         onchange="filtrarUsuarios()"
                         class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] focus:outline-none focus:ring-2 focus:ring-[#00A63E]">
                     <option value="">Todos</option>
-                    <option value="administrador">Administrador</option>
+                    <option value="admin">Administrador</option>
                     <option value="preceptor">Preceptor</option>
                     <option value="residente">Residente</option>
                     <option value="aluno">Aluno</option>
@@ -762,8 +893,32 @@
                         class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] focus:outline-none focus:ring-2 focus:ring-[#00A63E]">
                     <option value="">Todos</option>
                     <option value="ativo">Ativos</option>
-                    <option value="inativo">Inativos / Pendentes</option>
+                    <option value="inativo">Pendentes</option>
                 </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-[#60756B] font-extrabold mb-2">
+                        Cadastro de
+                    </label>
+
+                    <input type="date"
+                           id="dataInicioCadastro"
+                           onchange="filtrarUsuarios()"
+                           class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] focus:outline-none focus:ring-2 focus:ring-[#00A63E]">
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-[#60756B] font-extrabold mb-2">
+                        Cadastro até
+                    </label>
+
+                    <input type="date"
+                           id="dataFimCadastro"
+                           onchange="filtrarUsuarios()"
+                           class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] focus:outline-none focus:ring-2 focus:ring-[#00A63E]">
+                </div>
             </div>
 
         </div>
@@ -807,6 +962,24 @@
         modal.classList.remove('flex');
     }
 
+    function abrirModalExcluir(id, nome, email) {
+        const modal = document.getElementById('modalExcluir');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        document.getElementById('nomeExcluirUsuario').innerText = nome ?? 'Usuário';
+        document.getElementById('emailExcluirUsuario').innerText = email ?? '';
+        document.getElementById('formExcluir').action = "/usuarios/" + id;
+    }
+
+    function fecharModalExcluir() {
+        const modal = document.getElementById('modalExcluir');
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
     function abrirModalFiltros() {
         const modal = document.getElementById('modalFiltros');
 
@@ -825,10 +998,14 @@
         const pesquisaInput = document.getElementById('pesquisaUsuarios');
         const filtroTipoInput = document.getElementById('filtroTipo');
         const filtroStatusInput = document.getElementById('filtroStatus');
+        const dataInicioInput = document.getElementById('dataInicioCadastro');
+        const dataFimInput = document.getElementById('dataFimCadastro');
 
         const termo = pesquisaInput ? pesquisaInput.value.toLowerCase().trim() : '';
         const tipoFiltro = filtroTipoInput ? filtroTipoInput.value.toLowerCase().trim() : '';
         const statusFiltro = filtroStatusInput ? filtroStatusInput.value.toLowerCase().trim() : '';
+        const dataInicio = dataInicioInput ? dataInicioInput.value : '';
+        const dataFim = dataFimInput ? dataFimInput.value : '';
 
         const itens = document.querySelectorAll('.usuario-item');
         const semResultados = document.getElementById('semResultados');
@@ -840,12 +1017,27 @@
             const texto = item.dataset.search || '';
             const tipo = item.dataset.tipo || '';
             const status = item.dataset.status || '';
+            const dataCadastro = item.dataset.cadastro || '';
 
             const batePesquisa = texto.includes(termo);
             const bateTipo = !tipoFiltro || tipo === tipoFiltro;
             const bateStatus = !statusFiltro || status === statusFiltro;
 
-            if (batePesquisa && bateTipo && bateStatus) {
+            let bateData = true;
+
+            if (dataInicio && dataCadastro) {
+                bateData = bateData && dataCadastro >= dataInicio;
+            }
+
+            if (dataFim && dataCadastro) {
+                bateData = bateData && dataCadastro <= dataFim;
+            }
+
+            if ((dataInicio || dataFim) && !dataCadastro) {
+                bateData = false;
+            }
+
+            if (batePesquisa && bateTipo && bateStatus && bateData) {
                 item.classList.remove('hidden');
                 encontrados++;
             } else {
@@ -883,24 +1075,33 @@
     function limparFiltros() {
         const filtroTipo = document.getElementById('filtroTipo');
         const filtroStatus = document.getElementById('filtroStatus');
+        const dataInicio = document.getElementById('dataInicioCadastro');
+        const dataFim = document.getElementById('dataFimCadastro');
 
         if (filtroTipo) filtroTipo.value = '';
         if (filtroStatus) filtroStatus.value = '';
+        if (dataInicio) dataInicio.value = '';
+        if (dataFim) dataFim.value = '';
 
         filtrarUsuarios();
     }
 
-    function abrirMenuAcoes(btn) {
-        alert('Mais ações podem ser adicionadas aqui depois, como ativar, bloquear ou excluir usuário.');
-    }
-
     const modalEditar = document.getElementById('modalEditar');
+    const modalExcluir = document.getElementById('modalExcluir');
     const modalFiltros = document.getElementById('modalFiltros');
 
     if (modalEditar) {
         modalEditar.addEventListener('click', function(e) {
             if (e.target === this) {
                 fecharModal();
+            }
+        });
+    }
+
+    if (modalExcluir) {
+        modalExcluir.addEventListener('click', function(e) {
+            if (e.target === this) {
+                fecharModalExcluir();
             }
         });
     }
@@ -916,6 +1117,7 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             fecharModal();
+            fecharModalExcluir();
             fecharModalFiltros();
         }
     });

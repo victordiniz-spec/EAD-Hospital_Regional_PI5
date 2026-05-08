@@ -108,8 +108,20 @@ Route::middleware('auth')->group(function () {
             'cpf' => $cpf,
         ]);
 
-        return back()->with('success', 'Usuário atualizado!');
+        return back()->with('success', 'Usuário atualizado com sucesso!');
     })->name('usuarios.update');
+
+    Route::delete('/usuarios/{id}', function ($id) {
+        $user = \App\Models\User::findOrFail($id);
+
+        if (auth()->id() == $user->id) {
+            return back()->with('error', 'Você não pode excluir o próprio usuário logado.');
+        }
+
+        $user->delete();
+
+        return back()->with('success', 'Usuário excluído com sucesso!');
+    })->name('usuarios.destroy');
 
 
     // =========================
@@ -193,7 +205,6 @@ Route::middleware('auth')->group(function () {
     // =========================
     // 🎓 CERTIFICADOS
     // =========================
-
     Route::get('/certificados/criar', function () {
         return view('dashboard.certificados.criar');
     })->name('certificados.criar');
@@ -212,11 +223,9 @@ Route::middleware('auth')->group(function () {
         return back()->with('success', 'Certificado salvo com sucesso!');
     })->name('certificados.store');
 
-    // Certificado do aluno
     Route::get('/meu-certificado', [CertificadoController::class, 'aluno'])
         ->name('certificado.aluno');
 
-    // Gerar certificado antigo/individual
     Route::get('/certificado/gerar/{id}', [CertificadoController::class, 'gerar'])
         ->name('certificado.gerar');
 
