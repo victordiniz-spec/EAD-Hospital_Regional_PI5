@@ -17,6 +17,23 @@
     $totalAulasGeral = isset($totalAulas) ? $totalAulas : 0;
     $testesPendentesGeral = isset($testesPendentes) ? $testesPendentes : 0;
     $mediaGeral = isset($media) ? $media : 0;
+
+    /*
+    |--------------------------------------------------------------------------
+    | AVISO URGENTE PARA POPUP
+    |--------------------------------------------------------------------------
+    | O DashboardController já manda apenas avisos ativos e ordenados.
+    | Aqui pegamos o primeiro urgente para abrir em popup ao aluno entrar.
+    */
+    $avisoUrgentePopup = null;
+
+    if (isset($avisosRecentes)) {
+        $avisoUrgentePopup = $avisosRecentes
+            ->filter(function ($aviso) {
+                return strtolower($aviso->categoria ?? $aviso->tipo ?? '') === 'urgente';
+            })
+            ->first();
+    }
 @endphp
 
 <style>
@@ -625,7 +642,7 @@
                                 </h2>
 
                                 <p class="text-xs text-[#60756B] mt-1">
-                                    Comunicados recentes.
+                                    Comunicados ativos da plataforma.
                                 </p>
                             </div>
 
@@ -642,7 +659,9 @@
                                 @foreach($avisosRecentes as $aviso)
 
                                     @php
-                                        $urgente = strtolower($aviso->categoria ?? '') === 'urgente';
+                                        $categoriaAviso = strtolower($aviso->categoria ?? $aviso->tipo ?? 'importante');
+                                        $urgente = $categoriaAviso === 'urgente';
+                                        $mensagemAviso = $aviso->mensagem ?? $aviso->descricao ?? '';
                                     @endphp
 
                                     <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-4 border-l-4 {{ $urgente ? 'border-l-red-500' : 'border-l-[#004D3A]' }}">
@@ -650,7 +669,7 @@
                                         <div class="flex items-center gap-2 mb-2">
                                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold
                                                 {{ $urgente ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
-                                                {{ $urgente ? 'URGENTE' : 'INFORMATIVO' }}
+                                                {{ $urgente ? 'URGENTE' : 'IMPORTANTE' }}
                                             </span>
                                         </div>
 
@@ -659,8 +678,14 @@
                                         </p>
 
                                         <p class="text-sm text-[#60756B] mt-2 leading-relaxed">
-                                            {{ $aviso->mensagem ?? $aviso->descricao ?? '' }}
+                                            {{ $mensagemAviso }}
                                         </p>
+
+                                        @if(isset($aviso->expires_at) && $aviso->expires_at)
+                                            <p class="text-[11px] text-[#8A9B92] mt-3 font-semibold">
+                                                Disponível até {{ \Carbon\Carbon::parse($aviso->expires_at)->format('d/m/Y H:i') }}
+                                            </p>
+                                        @endif
 
                                     </div>
 
@@ -718,6 +743,75 @@
     </main>
 
 </div>
+
+<!-- MODAL AVISO URGENTE -->
+@if($avisoUrgentePopup)
+    <div id="modalAvisoUrgente"
+         class="fixed inset-0 hidden items-center justify-center bg-black/60 backdrop-blur-sm z-[95] px-4">
+
+        <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-red-100 overflow-hidden">
+
+            <div class="bg-red-600 text-white p-6 relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-36 h-36 rounded-full border-[24px] border-white/10"></div>
+                <div class="absolute right-16 bottom-4 w-16 h-16 rounded-full bg-white/10"></div>
+
+                <div class="relative z-10 flex items-start gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="w-8 h-8"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="1.8"
+                                  d="M12 9v3.75m0 3.75h.008v.008H12V16.5zm9-4.5a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <p class="text-xs uppercase tracking-widest font-extrabold text-white/80">
+                            Aviso urgente
+                        </p>
+
+                        <h2 class="text-2xl font-extrabold mt-1 leading-tight">
+                            {{ $avisoUrgentePopup->titulo }}
+                        </h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <p class="text-[#60756B] leading-relaxed">
+                    {{ $avisoUrgentePopup->mensagem ?? $avisoUrgentePopup->descricao ?? '' }}
+                </p>
+
+                @if(isset($avisoUrgentePopup->expires_at) && $avisoUrgentePopup->expires_at)
+                    <div class="mt-5 bg-red-50 border border-red-100 text-red-700 rounded-2xl p-4 text-sm">
+                        Este aviso ficará disponível até
+                        <strong>{{ \Carbon\Carbon::parse($avisoUrgentePopup->expires_at)->format('d/m/Y H:i') }}</strong>.
+                    </div>
+                @endif
+
+                <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                    <button type="button"
+                            onclick="fecharAvisoUrgente()"
+                            class="w-full bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-2xl font-extrabold transition">
+                        Entendi
+                    </button>
+
+                    <button type="button"
+                            onclick="fecharAvisoUrgenteHoje()"
+                            class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-3 rounded-2xl font-bold transition">
+                        Não mostrar novamente
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+@endif
 
 <!-- MODAL VIDEO -->
 <div id="modalVideo"
@@ -782,6 +876,57 @@
 let aulaIdAtual = null;
 let avaliacaoIdAtual = null;
 
+/*
+|--------------------------------------------------------------------------
+| POPUP DE AVISO URGENTE
+|--------------------------------------------------------------------------
+*/
+document.addEventListener('DOMContentLoaded', function () {
+    const modalAviso = document.getElementById('modalAvisoUrgente');
+
+    if (!modalAviso) return;
+
+    const avisoId = "{{ $avisoUrgentePopup->id ?? '' }}";
+    const alunoId = "{{ auth()->id() }}";
+    const chave = 'aviso_urgente_lido_' + alunoId + '_' + avisoId;
+
+    if (!localStorage.getItem(chave)) {
+        setTimeout(() => {
+            modalAviso.classList.remove('hidden');
+            modalAviso.classList.add('flex');
+        }, 500);
+    }
+});
+
+function fecharAvisoUrgente() {
+    const modalAviso = document.getElementById('modalAvisoUrgente');
+
+    if (!modalAviso) return;
+
+    modalAviso.classList.add('hidden');
+    modalAviso.classList.remove('flex');
+}
+
+function fecharAvisoUrgenteHoje() {
+    const modalAviso = document.getElementById('modalAvisoUrgente');
+
+    if (!modalAviso) return;
+
+    const avisoId = "{{ $avisoUrgentePopup->id ?? '' }}";
+    const alunoId = "{{ auth()->id() }}";
+    const chave = 'aviso_urgente_lido_' + alunoId + '_' + avisoId;
+
+    localStorage.setItem(chave, '1');
+
+    modalAviso.classList.add('hidden');
+    modalAviso.classList.remove('flex');
+}
+
+/*
+|--------------------------------------------------------------------------
+| VIDEOAULAS E PÓS-TESTE
+|--------------------------------------------------------------------------
+*/
 function normalizarUrlYoutube(url) {
     if (!url) return '';
 

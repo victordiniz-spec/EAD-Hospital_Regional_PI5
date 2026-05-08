@@ -45,7 +45,7 @@
                     </h1>
 
                     <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
-                        Crie, edite e acompanhe os comunicados exibidos para os usuários da plataforma.
+                        Crie avisos com tempo de exibição. Avisos urgentes aparecem em destaque para o aluno ao entrar na plataforma.
                     </p>
                 </div>
 
@@ -114,7 +114,7 @@
                                 </h2>
 
                                 <p class="text-xs text-[#60756B] mt-1">
-                                    Publique um comunicado para a plataforma.
+                                    Defina categoria, mensagem e tempo de exibição.
                                 </p>
                             </div>
 
@@ -125,6 +125,7 @@
 
                             <div class="space-y-5">
 
+                                <!-- TÍTULO -->
                                 <div>
                                     <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
                                         Título
@@ -138,6 +139,7 @@
                                            required>
                                 </div>
 
+                                <!-- CATEGORIA -->
                                 <div>
                                     <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
                                         Categoria
@@ -150,12 +152,53 @@
                                             Urgente
                                         </option>
 
-                                        <option value="informativo" {{ old('categoria') === 'informativo' ? 'selected' : '' }}>
-                                            Informativo
+                                        <option value="importante" {{ old('categoria', 'importante') === 'importante' ? 'selected' : '' }}>
+                                            Importante
                                         </option>
                                     </select>
+
+                                    <p class="text-xs text-[#60756B] mt-2">
+                                        Aviso urgente aparece primeiro e abre em popup na dashboard do aluno.
+                                    </p>
                                 </div>
 
+                                <!-- TEMPO DE EXIBIÇÃO -->
+                                <div>
+                                    <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
+                                        Tempo visível na dashboard do aluno
+                                    </label>
+
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <input type="number"
+                                               name="tempo_exibicao"
+                                               min="1"
+                                               value="{{ old('tempo_exibicao', 24) }}"
+                                               class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
+                                               required>
+
+                                        <select name="unidade_tempo"
+                                                class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
+                                                required>
+                                            <option value="minutos" {{ old('unidade_tempo') === 'minutos' ? 'selected' : '' }}>
+                                                Minutos
+                                            </option>
+
+                                            <option value="horas" {{ old('unidade_tempo', 'horas') === 'horas' ? 'selected' : '' }}>
+                                                Horas
+                                            </option>
+
+                                            <option value="dias" {{ old('unidade_tempo') === 'dias' ? 'selected' : '' }}>
+                                                Dias
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <p class="text-xs text-[#60756B] mt-2">
+                                        Depois desse prazo, o aviso não aparecerá mais para o aluno.
+                                    </p>
+                                </div>
+
+                                <!-- MENSAGEM -->
                                 <div>
                                     <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
                                         Mensagem
@@ -168,6 +211,26 @@
                                               required>{{ old('mensagem') }}</textarea>
                                 </div>
 
+                                <!-- PUBLICAR -->
+                                <div class="flex items-center gap-3">
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="publicar_agora" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-200 rounded-full peer
+                                            peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#00A63E]
+                                            peer-checked:bg-[#00A63E]
+                                            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                                            after:bg-white after:border after:border-gray-300 after:rounded-full
+                                            after:h-5 after:w-5 after:transition-all
+                                            peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                        </div>
+                                    </label>
+
+                                    <span class="text-sm font-bold text-[#003C2F]">
+                                        Publicar agora
+                                    </span>
+                                </div>
+
+                                <!-- BOTÃO -->
                                 <button type="submit"
                                         class="w-full bg-[#004D3A] hover:bg-[#003C2F] text-white px-6 py-4 rounded-2xl font-extrabold transition shadow-lg flex items-center justify-center gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg"
@@ -219,7 +282,7 @@
                                     </h2>
 
                                     <p class="text-xs text-[#60756B] mt-1">
-                                        Últimos comunicados cadastrados.
+                                        Urgentes aparecem primeiro. Avisos expirados não aparecem para o aluno.
                                     </p>
                                 </div>
                             </div>
@@ -237,11 +300,14 @@
                                 @forelse($avisos as $aviso)
 
                                     @php
-                                        $categoria = strtolower($aviso->categoria ?? 'informativo');
+                                        $categoria = strtolower($aviso->categoria ?? $aviso->tipo ?? 'importante');
                                         $urgente = $categoria === 'urgente';
+                                        $expirado = isset($aviso->expires_at) && $aviso->expires_at && \Carbon\Carbon::parse($aviso->expires_at)->isPast();
+                                        $mensagemAviso = $aviso->mensagem ?? $aviso->descricao ?? '';
                                     @endphp
 
-                                    <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5 hover:shadow-md transition">
+                                    <div class="bg-[#F8FBF8] border rounded-3xl p-5 hover:shadow-md transition
+                                        {{ $expirado ? 'border-gray-200 opacity-70' : 'border-[#E3EBE4]' }}">
 
                                         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
 
@@ -254,11 +320,21 @@
 
                                                         <span class="w-2 h-2 rounded-full {{ $urgente ? 'bg-red-600' : 'bg-green-600' }}"></span>
 
-                                                        {{ $urgente ? 'URGENTE' : 'INFORMATIVO' }}
+                                                        {{ $urgente ? 'URGENTE' : 'IMPORTANTE' }}
                                                     </span>
 
+                                                    @if($expirado)
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-extrabold bg-gray-200 text-gray-600">
+                                                            EXPIRADO
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-extrabold bg-blue-50 text-blue-700">
+                                                            ATIVO
+                                                        </span>
+                                                    @endif
+
                                                     <span class="text-xs text-[#8A9B92] font-semibold">
-                                                        {{ \Carbon\Carbon::parse($aviso->created_at)->format('d/m/Y H:i') }}
+                                                        Criado em {{ \Carbon\Carbon::parse($aviso->created_at)->format('d/m/Y H:i') }}
                                                     </span>
 
                                                 </div>
@@ -268,8 +344,34 @@
                                                 </h3>
 
                                                 <p class="text-sm text-[#60756B] mt-2 leading-relaxed break-words">
-                                                    {{ $aviso->mensagem }}
+                                                    {{ $mensagemAviso }}
                                                 </p>
+
+                                                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div class="bg-white border border-[#E3EBE4] rounded-2xl px-4 py-3">
+                                                        <p class="text-[10px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                                            Expiração
+                                                        </p>
+
+                                                        <p class="text-xs text-[#003C2F] font-bold mt-1">
+                                                            {{ $aviso->expires_at ? \Carbon\Carbon::parse($aviso->expires_at)->format('d/m/Y H:i') : 'Sem expiração' }}
+                                                        </p>
+                                                    </div>
+
+                                                    <div class="bg-white border border-[#E3EBE4] rounded-2xl px-4 py-3">
+                                                        <p class="text-[10px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                                            Tempo restante
+                                                        </p>
+
+                                                        <p class="text-xs font-bold mt-1 {{ $expirado ? 'text-gray-500' : 'text-[#004D3A]' }}">
+                                                            @if($aviso->expires_at)
+                                                                {{ $expirado ? 'Expirado' : \Carbon\Carbon::parse($aviso->expires_at)->diffForHumans() }}
+                                                            @else
+                                                                Indefinido
+                                                            @endif
+                                                        </p>
+                                                    </div>
+                                                </div>
 
                                             </div>
 
@@ -280,8 +382,8 @@
                                                         onclick='abrirModalEditarAviso(
                                                             @json($aviso->id),
                                                             @json($aviso->titulo),
-                                                            @json($aviso->mensagem),
-                                                            @json($aviso->categoria)
+                                                            @json($mensagemAviso),
+                                                            @json($categoria)
                                                         )'
                                                         class="w-10 h-10 rounded-xl bg-white border border-[#DCE7DE] hover:bg-[#EAF5EF] text-[#004D3A] transition flex items-center justify-center"
                                                         title="Editar aviso">
@@ -389,7 +491,7 @@
                 </h2>
 
                 <p class="text-sm text-[#60756B] mt-1">
-                    Atualize as informações do comunicado.
+                    Atualize as informações e redefina o tempo de exibição.
                 </p>
             </div>
 
@@ -439,8 +541,33 @@
                             class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
                             required>
                         <option value="urgente">Urgente</option>
-                        <option value="informativo">Informativo</option>
+                        <option value="importante">Importante</option>
                     </select>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
+                        Novo tempo de exibição
+                    </label>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="number"
+                               name="tempo_exibicao"
+                               min="1"
+                               value="24"
+                               class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+
+                        <select name="unidade_tempo"
+                                class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                            <option value="minutos">Minutos</option>
+                            <option value="horas" selected>Horas</option>
+                            <option value="dias">Dias</option>
+                        </select>
+                    </div>
+
+                    <p class="text-xs text-[#60756B] mt-2">
+                        Ao salvar, o tempo será renovado a partir de agora.
+                    </p>
                 </div>
 
                 <div>
@@ -453,6 +580,24 @@
                               rows="5"
                               class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none"
                               required></textarea>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="publicar_agora" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer
+                            peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#00A63E]
+                            peer-checked:bg-[#00A63E]
+                            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                            after:bg-white after:border after:border-gray-300 after:rounded-full
+                            after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full peer-checked:after:border-white">
+                        </div>
+                    </label>
+
+                    <span class="text-sm font-bold text-[#003C2F]">
+                        Publicar agora
+                    </span>
                 </div>
 
             </div>
@@ -532,7 +677,9 @@
 
         document.getElementById('editarTituloAviso').value = titulo ?? '';
         document.getElementById('editarMensagemAviso').value = mensagem ?? '';
-        document.getElementById('editarCategoriaAviso').value = categoria ?? 'informativo';
+
+        const categoriaFinal = categoria === 'informativo' ? 'importante' : (categoria ?? 'importante');
+        document.getElementById('editarCategoriaAviso').value = categoriaFinal;
 
         form.action = "/avisos/" + id;
 

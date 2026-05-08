@@ -19,7 +19,7 @@ class DashboardController extends Controller
     {
         $totalAulas = Aula::count();
 
-        // 🔥 TOTAL DE USUÁRIOS
+        // TOTAL DE USUÁRIOS APROVADOS
         $totalAlunos = User::where('status', 'aprovado')->count();
 
         $totalProvas = Avaliacao::count();
@@ -29,13 +29,22 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        // 🔥 USUÁRIOS PENDENTES
+        // USUÁRIOS PENDENTES
         $usuariosPendentes = User::where('status', 'pendente')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // 🔥 AVISOS RECENTES
-        $avisosRecentes = Aviso::orderBy('created_at', 'desc')
+        // AVISOS RECENTES PARA DASHBOARD DO PROFESSOR
+        // Urgentes aparecem primeiro, depois importantes/informativos.
+        $avisosRecentes = Aviso::query()
+            ->orderByRaw("
+                CASE
+                    WHEN categoria = 'urgente' THEN 0
+                    WHEN tipo = 'urgente' THEN 0
+                    ELSE 1
+                END
+            ")
+            ->orderByDesc('created_at')
             ->take(5)
             ->get();
 
@@ -72,7 +81,7 @@ class DashboardController extends Controller
     }
 
     // =========================
-    // 🔥 NOVO: CONTROLE DE USUÁRIOS
+    // CONTROLE DE USUÁRIOS
     // =========================
     public function controleUsuarios()
     {
@@ -90,10 +99,10 @@ class DashboardController extends Controller
     {
         $alunoId = auth()->id();
 
-        // 🔥 MÓDULOS COM AULAS (ESSENCIAL PRA FUNCIONAR NO BLADE)
+        // MÓDULOS COM AULAS
         $modulos = Modulo::with('aulas')->get();
 
-        // TOTAL DE AULAS
+        // TOTAL DE AULAS DO ALUNO
         $totalAulas = DB::table('aulas')
             ->join('cursos', 'aulas.curso_id', '=', 'cursos.id')
             ->join('matriculas', 'cursos.id', '=', 'matriculas.curso_id')
@@ -103,6 +112,7 @@ class DashboardController extends Controller
         // AULAS ASSISTIDAS
         $aulasAssistidas = DB::table('aulas_assistidas')
             ->where('aluno_id', $alunoId)
+            ->where('assistido', true)
             ->count();
 
         // PROGRESSO
@@ -114,8 +124,8 @@ class DashboardController extends Controller
         $testesPendentes = DB::table('avaliacoes')
             ->whereNotIn('id', function ($query) use ($alunoId) {
                 $query->select('avaliacao_id')
-                      ->from('notas')
-                      ->where('aluno_id', $alunoId);
+                    ->from('notas')
+                    ->where('aluno_id', $alunoId);
             })
             ->count();
 
@@ -128,40 +138,61 @@ class DashboardController extends Controller
         $proximasAulas = DB::table('aulas')
             ->whereNotIn('id', function ($query) use ($alunoId) {
                 $query->select('aula_id')
-                      ->from('aulas_assistidas')
-                      ->where('aluno_id', $alunoId);
+                    ->from('aulas_assistidas')
+                    ->where('aluno_id', $alunoId)
+                    ->where('assistido', true);
             })
             ->limit(3)
             ->get();
 
-        // AULAS ASSISTIDAS (lista)
+        // AULAS ASSISTIDAS LISTA
         $aulasAssistidasLista = DB::table('aulas')
             ->join('aulas_assistidas', 'aulas.id', '=', 'aulas_assistidas.aula_id')
             ->where('aulas_assistidas.aluno_id', $alunoId)
+            ->where('aulas_assistidas.assistido', true)
             ->select('aulas.*')
             ->limit(3)
             ->get();
 
-        // TESTES
+        // TESTES DISPONÍVEIS/PENDENTES
         $listaTestes = DB::table('avaliacoes')
             ->leftJoin('aulas_assistidas', function ($join) use ($alunoId) {
                 $join->on('avaliacoes.aula_id', '=', 'aulas_assistidas.aula_id')
-                     ->where('aulas_assistidas.aluno_id', $alunoId);
+                    ->where('aulas_assistidas.aluno_id', $alunoId);
             })
             ->whereNotIn('avaliacoes.id', function ($query) use ($alunoId) {
                 $query->select('avaliacao_id')
-                      ->from('notas')
-                      ->where('aluno_id', $alunoId);
+                    ->from('notas')
+                    ->where('aluno_id', $alunoId);
             })
             ->select(
-            'avaliacoes.*',
-            DB::raw('CASE WHEN aulas_assistidas.assistido = true THEN true ELSE false END as assistido')
+                'avaliacoes.*',
+                DB::raw('CASE WHEN aulas_assistidas.assistido = true THEN true ELSE false END as assistido')
             )
             ->limit(3)
             ->get();
 
-        // 🔥 AVISOS
-        $avisosRecentes = Aviso::orderBy('created_at', 'desc')
+        // AVISOS ATIVOS PARA O ALUNO
+        // 1. Só mostra aviso que ainda não venceu.
+        // 2. Urgente aparece primeiro.
+        // 3. Depois mostra os mais recentes.
+        $avisosRecentes = Aviso::query()
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('status')
+                    ->orWhere('status', 'publicado');
+            })
+            ->orderByRaw("
+                CASE
+                    WHEN categoria = 'urgente' THEN 0
+                    WHEN tipo = 'urgente' THEN 0
+                    ELSE 1
+                END
+            ")
+            ->orderByDesc('created_at')
             ->take(5)
             ->get();
 
