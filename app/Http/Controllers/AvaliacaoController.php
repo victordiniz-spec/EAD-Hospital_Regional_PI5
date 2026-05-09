@@ -8,37 +8,133 @@ use Illuminate\Support\Facades\DB;
 class AvaliacaoController extends Controller
 {
     // =========================
-    // CRIAR AVALIAÇÃO NORMAL
+    // CRIAR / EDITAR AVALIAÇÃO NORMAL
     // =========================
     public function create($aula)
     {
-        return view('avaliacoes.create', compact('aula'));
+        try {
+            $aulaDados = DB::table('aulas')
+                ->where('id', $aula)
+                ->first();
+
+            if (!$aulaDados) {
+                return redirect()
+                    ->route('videoaulas')
+                    ->with('error', 'Aula não encontrada para criar ou editar o pós-teste.');
+            }
+
+            $avaliacao = DB::table('avaliacoes')
+                ->where('aula_id', $aula)
+                ->where(function ($query) {
+                    $query->where('tipo', 'normal')
+                          ->orWhereNull('tipo');
+                })
+                ->first();
+
+            $perguntas = collect();
+
+            if ($avaliacao) {
+                $perguntas = DB::table('perguntas')
+                    ->where('avaliacao_id', $avaliacao->id)
+                    ->orderBy('id')
+                    ->get();
+
+                foreach ($perguntas as $pergunta) {
+                    $pergunta->respostas = DB::table('respostas')
+                        ->where('pergunta_id', $pergunta->id)
+                        ->orderBy('id')
+                        ->get();
+                }
+            }
+
+            return view('avaliacoes.create', [
+                'aula' => $aula,
+                'aulaDados' => $aulaDados,
+                'avaliacao' => $avaliacao,
+                'perguntas' => $perguntas,
+            ]);
+
+        } catch (\Throwable $e) {
+            return redirect()
+                ->route('videoaulas')
+                ->with('error',
+                    'Erro ao abrir pós-teste: ' . $e->getMessage() .
+                    ' | Arquivo: ' . $e->getFile() .
+                    ' | Linha: ' . $e->getLine()
+                );
+        }
     }
 
     // =========================
-    // SALVAR AVALIAÇÃO NORMAL
+    // SALVAR / ATUALIZAR AVALIAÇÃO NORMAL
     // =========================
     public function store(Request $request)
     {
         $request->validate([
             'avaliacao.titulo' => 'required|string|max:255',
             'avaliacao.tempo_limite' => 'nullable|integer|min:1',
-            'aula_id' => 'nullable|integer',
-            'perguntas' => 'required|array',
+            'aula_id' => 'required|integer',
+            'perguntas' => 'required|array|min:1',
         ]);
 
         DB::beginTransaction();
 
         try {
-            $avaliacaoId = DB::table('avaliacoes')->insertGetId([
-                'titulo' => $request->avaliacao['titulo'],
-                'aula_id' => $request->aula_id ?? null,
-                'tempo_limite' => $request->avaliacao['tempo_limite'] ?? null,
-                'qtd_perguntas' => count($request->perguntas ?? []),
-                'tipo' => 'normal',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $aulaId = $request->aula_id;
+
+            $avaliacaoExistente = DB::table('avaliacoes')
+                ->where('aula_id', $aulaId)
+                ->where(function ($query) {
+                    $query->where('tipo', 'normal')
+                          ->orWhereNull('tipo');
+                })
+                ->first();
+
+            if ($avaliacaoExistente) {
+                $avaliacaoId = $avaliacaoExistente->id;
+
+                DB::table('avaliacoes')
+                    ->where('id', $avaliacaoId)
+                    ->update([
+                        'titulo' => $request->avaliacao['titulo'],
+                        'tempo_limite' => $request->avaliacao['tempo_limite'] ?? null,
+                        'qtd_perguntas' => count($request->perguntas ?? []),
+                        'tipo' => 'normal',
+                        'updated_at' => now(),
+                    ]);
+
+                $perguntasAntigas = DB::table('perguntas')
+                    ->where('avaliacao_id', $avaliacaoId)
+                    ->pluck('id')
+                    ->toArray();
+
+                if (!empty($perguntasAntigas)) {
+                    DB::table('respostas')
+                        ->whereIn('pergunta_id', $perguntasAntigas)
+                        ->delete();
+
+                    if (DB::getSchemaBuilder()->hasTable('respostas_alunos')) {
+                        DB::table('respostas_alunos')
+                            ->whereIn('pergunta_id', $perguntasAntigas)
+                            ->delete();
+                    }
+
+                    DB::table('perguntas')
+                        ->where('avaliacao_id', $avaliacaoId)
+                        ->delete();
+                }
+
+            } else {
+                $avaliacaoId = DB::table('avaliacoes')->insertGetId([
+                    'titulo' => $request->avaliacao['titulo'],
+                    'aula_id' => $aulaId,
+                    'tempo_limite' => $request->avaliacao['tempo_limite'] ?? null,
+                    'qtd_perguntas' => count($request->perguntas ?? []),
+                    'tipo' => 'normal',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
 
             foreach ($request->perguntas as $pergunta) {
                 if (empty($pergunta['pergunta'])) {
@@ -72,14 +168,20 @@ class AvaliacaoController extends Controller
 
             DB::commit();
 
-            return back()->with('success', 'Avaliação criada com sucesso!');
+            return redirect()
+                ->route('videoaulas', ['curso_id' => $request->curso_id])
+                ->with('success', 'Pós-teste salvo com sucesso!');
 
         } catch (\Throwable $e) {
             DB::rollBack();
 
             return back()
                 ->withInput()
-                ->with('error', 'Erro ao criar avaliação: ' . $e->getMessage());
+                ->with('error',
+                    'Erro ao salvar pós-teste: ' . $e->getMessage() .
+                    ' | Arquivo: ' . $e->getFile() .
+                    ' | Linha: ' . $e->getLine()
+                );
         }
     }
 
@@ -225,7 +327,6 @@ class AvaliacaoController extends Controller
 
         $nota = ($acertos / $perguntas->count()) * 10;
 
-        // Salva ou atualiza nota do aluno
         if (DB::getSchemaBuilder()->hasTable('notas')) {
             $notaExistente = DB::table('notas')
                 ->where('aluno_id', $alunoId)
@@ -250,7 +351,6 @@ class AvaliacaoController extends Controller
             }
         }
 
-        // Salva as respostas escolhidas pelo aluno
         if (DB::getSchemaBuilder()->hasTable('respostas_alunos')) {
             foreach ($perguntas as $pergunta) {
                 if (isset($request->respostas[$pergunta->id])) {

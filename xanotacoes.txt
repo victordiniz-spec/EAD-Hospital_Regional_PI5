@@ -34,6 +34,10 @@ git commit -m "descrição da alteração"
 3. Enviar para o GitHub:
 git push origin main
 
+git add .
+git commit -m "descrição da alteração"
+git push origin main
+
 ---------------------------------
 
 📌 BAIXAR ATUALIZAÇÕES DO GITHUB
