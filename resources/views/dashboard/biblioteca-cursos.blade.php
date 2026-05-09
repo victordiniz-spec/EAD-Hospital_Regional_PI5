@@ -407,14 +407,13 @@
                                     </button>
                                 </form>
 
-                                <form id="formExcluirCurso{{ $curso->id }}"
-                                      method="POST"
-                                      action="{{ route('biblioteca.cursos.excluir', $curso->id) }}">
+                                <form method="POST"
+                                    action="{{ route('biblioteca.cursos.excluir', $curso->id) }}"
+                                    onsubmit="return confirm('Tem certeza que deseja excluir este curso? Isso também removerá módulos, aulas, pós-testes, perguntas e respostas vinculadas.');">
                                     @csrf
                                     @method('DELETE')
 
-                                    <button type="button"
-                                            onclick="confirmarExcluirCurso({{ $curso->id }}, @json($curso->nome))"
+                                    <button type="submit"
                                             class="w-full bg-red-50 border border-red-100 hover:bg-red-100 text-red-600 px-5 py-4 rounded-2xl font-extrabold transition flex items-center justify-center gap-2">
                                         Excluir curso/cópia
                                     </button>
