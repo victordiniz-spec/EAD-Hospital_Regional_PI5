@@ -408,8 +408,9 @@
                                 </form>
 
                                 <form method="POST"
-                                    action="{{ route('biblioteca.cursos.excluir', $curso->id) }}"
-                                    onsubmit="return confirm('Tem certeza que deseja excluir este curso? Isso também removerá módulos, aulas, pós-testes, perguntas e respostas vinculadas.');">
+                                      action="{{ route('biblioteca.cursos.excluir', $curso->id) }}"
+                                      class="form-excluir-curso"
+                                      data-nome="{{ $curso->nome }}">
                                     @csrf
                                     @method('DELETE')
 
@@ -551,51 +552,6 @@
         modal.classList.remove('flex');
     }
 
-    function confirmarExcluirCurso(id, nome) {
-        const form = document.getElementById('formExcluirCurso' + id);
-
-        if (!form) {
-            alert('Formulário de exclusão não encontrado.');
-            return;
-        }
-
-        if (typeof Swal === 'undefined') {
-            const confirmar = confirm(
-                'Tem certeza que deseja excluir o curso "' + (nome ?? 'selecionado') + '"?\n\n' +
-                'Isso também remove módulos, aulas, pós-testes, perguntas e respostas desse curso.'
-            );
-
-            if (confirmar) {
-                form.submit();
-            }
-
-            return;
-        }
-
-        Swal.fire({
-            title: 'Excluir curso?',
-            html: `
-                <p style="color:#475569;margin-bottom:10px;">Você está prestes a excluir:</p>
-                <strong style="color:#003C2F;font-size:16px;">${nome ?? 'este curso'}</strong>
-                <p style="color:#ef4444;margin-top:14px;font-size:14px;">
-                    Isso também remove módulos, aulas, pós-testes, perguntas e respostas desse curso.
-                </p>
-            `,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sim, excluir',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#dc2626',
-            cancelButtonColor: '#64748b',
-            background: '#ffffff',
-            color: '#003C2F'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
-        });
-    }
-
     function normalizarPesquisa(texto) {
         return (texto || '')
             .toString()
@@ -676,6 +632,63 @@
 
         pesquisarBibliotecaAoVivo();
     }
+
+    document.querySelectorAll('.form-excluir-curso').forEach((form) => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const nome = this.dataset.nome || 'este curso';
+
+            if (typeof Swal === 'undefined') {
+                const confirmar = confirm(
+                    'Tem certeza que deseja excluir o curso "' + nome + '"?\n\n' +
+                    'Isso também removerá módulos, aulas, pós-testes, perguntas e respostas vinculadas.'
+                );
+
+                if (confirmar) {
+                    this.submit();
+                }
+
+                return;
+            }
+
+            Swal.fire({
+                title: 'Excluir curso?',
+                html: `
+                    <div style="text-align:center;">
+                        <p style="color:#64748b; font-size:15px; margin-bottom:10px;">
+                            Você está prestes a excluir:
+                        </p>
+
+                        <strong style="color:#003C2F; font-size:18px;">
+                            ${nome}
+                        </strong>
+
+                        <p style="color:#dc2626; margin-top:16px; font-size:14px; line-height:1.5;">
+                            Essa ação removerá o curso, módulos, aulas, pós-testes, perguntas e respostas vinculadas.
+                        </p>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sim, excluir',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#64748b',
+                background: '#ffffff',
+                color: '#003C2F',
+                customClass: {
+                    popup: 'rounded-3xl',
+                    confirmButton: 'rounded-xl',
+                    cancelButton: 'rounded-xl'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.submit();
+                }
+            });
+        });
+    });
 
     const modalImportarModulo = document.getElementById('modalImportarModulo');
 
