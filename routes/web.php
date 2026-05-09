@@ -158,6 +158,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/biblioteca-cursos/{id}/duplicar', [AulaController::class, 'duplicarCurso'])
         ->name('biblioteca.cursos.duplicar');
 
+    Route::delete('/biblioteca-cursos/{id}', [AulaController::class, 'excluirCurso'])
+        ->name('biblioteca.cursos.excluir');
+
+    Route::post('/biblioteca-modulos/{id}/duplicar', [AulaController::class, 'duplicarModulo'])
+        ->name('biblioteca.modulos.duplicar');
+
+    Route::get('/banco-perguntas', [AulaController::class, 'bancoPerguntas'])
+        ->name('banco.perguntas');
+
 
     // =========================
     // 🎬 VIDEOAULAS (ALUNO)

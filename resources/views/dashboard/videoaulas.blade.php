@@ -19,9 +19,7 @@
         ? DB::table('avaliacoes')->whereIn('aula_id', $idsAulas)->count()
         : 0;
 
-    $provaFinal = DB::table('avaliacoes')
-        ->where('tipo', 'final')
-        ->first();
+    $provaFinal = DB::table('avaliacoes')->where('tipo', 'final')->first();
 
     $tempoProvaFinal = $provaFinal->tempo_limite ?? 60;
     $notaMinima = 70;
@@ -77,40 +75,14 @@
 
                 <div class="flex flex-col sm:flex-row gap-3">
 
-                    <a
-                        href="{{ route('biblioteca.cursos') }}"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-[#004D3A] border border-[#DCE7DE] px-5 py-3 rounded-2xl shadow-sm hover:bg-[#F8FBF8] transition text-sm font-bold"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             class="w-5 h-5"
-                             fill="none"
-                             viewBox="0 0 24 24"
-                             stroke="currentColor">
-                            <path stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="1.8"
-                                  d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25A8.966 8.966 0 0 1 18 3.75c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.966 8.966 0 0 0-6 2.292m0-14.25v14.25"/>
-                        </svg>
-
+                    <a href="{{ route('biblioteca.cursos') }}"
+                       class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-[#004D3A] border border-[#DCE7DE] px-5 py-3 rounded-2xl shadow-sm hover:bg-[#F8FBF8] transition text-sm font-bold">
                         Biblioteca de Cursos
                     </a>
 
-                    <button
-                        type="button"
-                        onclick="abrirModalAula()"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#004D3A] text-white px-5 py-3 rounded-2xl shadow-sm hover:bg-[#003C2F] transition text-sm font-bold"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             class="w-5 h-5"
-                             fill="none"
-                             viewBox="0 0 24 24"
-                             stroke="currentColor">
-                            <path stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="1.8"
-                                  d="M12 4.5v15m7.5-7.5h-15"/>
-                        </svg>
-
+                    <button type="button"
+                            onclick="abrirModalAula()"
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#004D3A] text-white px-5 py-3 rounded-2xl shadow-sm hover:bg-[#003C2F] transition text-sm font-bold">
                         Nova Aula
                     </button>
 
@@ -142,11 +114,9 @@
                             Trocar curso
                         </label>
 
-                        <select
-                            name="curso_id"
-                            onchange="this.form.submit()"
-                            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer"
-                        >
+                        <select name="curso_id"
+                                onchange="this.form.submit()"
+                                class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer">
                             @forelse($cursos as $curso)
                                 <option value="{{ $curso->id }}" {{ $cursoAtualId == $curso->id ? 'selected' : '' }}>
                                     {{ $curso->nome }}
@@ -208,10 +178,8 @@
                         <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm overflow-hidden">
 
                             <!-- CABEÇALHO DO MÓDULO -->
-                            <div
-                                onclick="toggleModulo({{ $modulo->id }})"
-                                class="cursor-pointer p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hover:bg-[#F8FBF8] transition"
-                            >
+                            <div onclick="toggleModulo({{ $modulo->id }})"
+                                 class="cursor-pointer p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hover:bg-[#F8FBF8] transition">
 
                                 <div class="flex items-start gap-4">
 
@@ -237,20 +205,8 @@
                                         {{ $totalAulasModulo > 0 ? 'PUBLICADO' : 'VAZIO' }}
                                     </span>
 
-                                    <span
-                                        id="icon-{{ $modulo->id }}"
-                                        class="text-[#60756B] transition-transform duration-300"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="w-5 h-5"
-                                             fill="none"
-                                             viewBox="0 0 24 24"
-                                             stroke="currentColor">
-                                            <path stroke-linecap="round"
-                                                  stroke-linejoin="round"
-                                                  stroke-width="2"
-                                                  d="M19 9l-7 7-7-7"/>
-                                        </svg>
+                                    <span id="icon-{{ $modulo->id }}" class="text-[#60756B] transition-transform duration-300">
+                                        ▼
                                     </span>
 
                                 </div>
@@ -263,10 +219,7 @@
                                 @forelse ($aulasDoModulo as $aulaIndex => $aula)
 
                                     @php
-                                        $avaliacaoAula = DB::table('avaliacoes')
-                                            ->where('aula_id', $aula->id)
-                                            ->first();
-
+                                        $avaliacaoAula = DB::table('avaliacoes')->where('aula_id', $aula->id)->first();
                                         $temMiniTeste = $avaliacaoAula ? true : false;
                                     @endphp
 
@@ -276,18 +229,13 @@
 
                                             <!-- THUMB -->
                                             <div class="w-full lg:w-40 h-28 rounded-2xl overflow-hidden bg-[#111827] shrink-0 relative flex items-center justify-center">
-
                                                 <div class="absolute inset-0 bg-gradient-to-br from-black via-[#1F2937] to-black opacity-90"></div>
 
                                                 <div class="relative w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur">
-                                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                                         class="w-6 h-6 text-white"
-                                                         fill="currentColor"
-                                                         viewBox="0 0 24 24">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                                                         <path d="M8 5v14l11-7z"/>
                                                     </svg>
                                                 </div>
-
                                             </div>
 
                                             <!-- INFO -->
@@ -334,81 +282,37 @@
                                             <!-- AÇÕES -->
                                             <div class="w-full lg:w-auto flex flex-col sm:flex-row lg:flex-col gap-2 shrink-0">
 
-                                                <!-- EDITAR CONTEÚDO -->
-                                                <button
-                                                    type="button"
-                                                    onclick='abrirModalEditarAula(
-                                                        @json($aula->id),
-                                                        @json($aula->titulo),
-                                                        @json($aula->descricao),
-                                                        @json($aula->video_url),
-                                                        @json($aula->modulo_id)
-                                                    )'
-                                                    class="inline-flex items-center justify-center gap-2 bg-white text-[#004D3A] border border-[#DCE7DE] px-4 py-3 rounded-2xl text-sm font-bold hover:bg-[#EAF5EF] hover:border-[#00A63E]/40 transition"
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                                         class="w-4 h-4"
-                                                         fill="none"
-                                                         viewBox="0 0 24 24"
-                                                         stroke="currentColor">
-                                                        <path stroke-linecap="round"
-                                                              stroke-linejoin="round"
-                                                              stroke-width="1.8"
-                                                              d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931z"/>
-                                                    </svg>
-
+                                                <button type="button"
+                                                        onclick='abrirModalEditarAula(
+                                                            @json($aula->id),
+                                                            @json($aula->titulo),
+                                                            @json($aula->descricao),
+                                                            @json($aula->video_url),
+                                                            @json($aula->modulo_id)
+                                                        )'
+                                                        class="inline-flex items-center justify-center gap-2 bg-white text-[#004D3A] border border-[#DCE7DE] px-4 py-3 rounded-2xl text-sm font-bold hover:bg-[#EAF5EF] hover:border-[#00A63E]/40 transition">
                                                     Editar Conteúdo
                                                 </button>
 
-                                                <!-- MINI TESTE -->
-                                                <a
-                                                    href="{{ route('avaliacoes.criar', $aula->id) }}"
-                                                    class="inline-flex items-center justify-center gap-2
+                                                <a href="{{ route('avaliacoes.criar', $aula->id) }}"
+                                                   class="inline-flex items-center justify-center gap-2
                                                         {{ $temMiniTeste
                                                             ? 'bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100'
                                                             : 'bg-[#EAF5EF] text-[#004D3A] border border-[#DCE7DE] hover:bg-[#DCE7DE]'
                                                         }}
-                                                        px-4 py-3 rounded-2xl text-sm font-bold transition"
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                                         class="w-4 h-4"
-                                                         fill="none"
-                                                         viewBox="0 0 24 24"
-                                                         stroke="currentColor">
-                                                        <path stroke-linecap="round"
-                                                              stroke-linejoin="round"
-                                                              stroke-width="1.8"
-                                                              d="M9 12h6m-6 4h6M9 8h6M5 4h14v16H5z"/>
-                                                    </svg>
-
+                                                        px-4 py-3 rounded-2xl text-sm font-bold transition">
                                                     {{ $temMiniTeste ? 'Editar Mini Teste' : 'Criar Mini Teste' }}
                                                 </a>
 
-                                                <!-- EXCLUIR -->
-                                                <form
-                                                    action="{{ route('aulas.destroy', $aula->id) }}"
-                                                    method="POST"
-                                                    class="w-full form-excluir-aula"
-                                                >
+                                                <form action="{{ route('aulas.destroy', $aula->id) }}"
+                                                      method="POST"
+                                                      class="w-full form-excluir-aula">
                                                     @csrf
                                                     @method('DELETE')
 
-                                                    <button
-                                                        type="button"
-                                                        onclick='confirmarExclusaoAula(this, @json($aula->titulo))'
-                                                        class="w-full inline-flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-100 px-4 py-3 rounded-2xl text-sm font-bold hover:bg-red-100 transition"
-                                                    >
-                                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                                             class="w-4 h-4"
-                                                             fill="none"
-                                                             viewBox="0 0 24 24"
-                                                             stroke="currentColor">
-                                                            <path stroke-linecap="round"
-                                                                  stroke-linejoin="round"
-                                                                  stroke-width="1.8"
-                                                                  d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/>
-                                                        </svg>
-
+                                                    <button type="button"
+                                                            onclick='confirmarExclusaoAula(this, @json($aula->titulo))'
+                                                            class="w-full inline-flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-100 px-4 py-3 rounded-2xl text-sm font-bold hover:bg-red-100 transition">
                                                         Excluir
                                                     </button>
                                                 </form>
@@ -422,18 +326,8 @@
                                 @empty
 
                                     <div class="bg-[#F8FBF8] border border-dashed border-[#AFC5B5] rounded-3xl p-8 text-center">
-
                                         <div class="w-14 h-14 rounded-full bg-[#EAF5EF] mx-auto mb-4 flex items-center justify-center text-[#004D3A]">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 class="w-7 h-7"
-                                                 fill="none"
-                                                 viewBox="0 0 24 24"
-                                                 stroke="currentColor">
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      stroke-width="1.8"
-                                                      d="M12 4.5v15m7.5-7.5h-15"/>
-                                            </svg>
+                                            +
                                         </div>
 
                                         <h3 class="font-extrabold text-[#003C2F]">
@@ -443,28 +337,13 @@
                                         <p class="text-sm text-[#60756B] mt-1">
                                             Adicione uma aula para começar a organizar este módulo.
                                         </p>
-
                                     </div>
 
                                 @endforelse
 
-                                <!-- ADICIONAR AULA -->
-                                <button
-                                    type="button"
-                                    onclick="abrirModalAula()"
-                                    class="w-full border border-dashed border-[#AFC5B5] text-[#004D3A] rounded-3xl py-4 text-sm font-extrabold hover:bg-[#F8FBF8] transition flex items-center justify-center gap-2"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         class="w-5 h-5"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              stroke-width="1.8"
-                                              d="M12 4.5v15m7.5-7.5h-15"/>
-                                    </svg>
-
+                                <button type="button"
+                                        onclick="abrirModalAula()"
+                                        class="w-full border border-dashed border-[#AFC5B5] text-[#004D3A] rounded-3xl py-4 text-sm font-extrabold hover:bg-[#F8FBF8] transition flex items-center justify-center gap-2">
                                     Adicionar Nova Aula ao Módulo
                                 </button>
 
@@ -475,18 +354,8 @@
                     @empty
 
                         <div class="bg-white rounded-3xl border border-[#E3EBE4] shadow-sm p-8 text-center">
-
                             <div class="w-16 h-16 rounded-full bg-[#EAF5EF] mx-auto mb-4 flex items-center justify-center text-[#004D3A]">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="w-8 h-8"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round"
-                                          stroke-linejoin="round"
-                                          stroke-width="1.8"
-                                          d="M12 4.5v15m7.5-7.5h-15"/>
-                                </svg>
+                                +
                             </div>
 
                             <h3 class="font-extrabold text-xl text-[#003C2F] mb-2">
@@ -497,14 +366,11 @@
                                 Clique em <strong>Nova Aula</strong> e preencha o campo “Novo módulo”.
                             </p>
 
-                            <button
-                                type="button"
-                                onclick="abrirModalAula()"
-                                class="bg-[#004D3A] text-white px-5 py-3 rounded-2xl hover:bg-[#003C2F] transition text-sm font-bold"
-                            >
+                            <button type="button"
+                                    onclick="abrirModalAula()"
+                                    class="bg-[#004D3A] text-white px-5 py-3 rounded-2xl hover:bg-[#003C2F] transition text-sm font-bold">
                                 Criar primeira aula
                             </button>
-
                         </div>
 
                     @endforelse
@@ -514,26 +380,13 @@
                 <!-- PAINEL DIREITO -->
                 <aside class="xl:col-span-4 space-y-5">
 
-                    <!-- CONFIGURAÇÃO PROVA FINAL -->
                     <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm overflow-hidden">
-
                         <div class="h-1.5 bg-[#004D3A]"></div>
 
                         <div class="p-5 sm:p-6">
-
                             <div class="flex items-start gap-3 mb-6">
-
                                 <div class="w-11 h-11 rounded-2xl bg-[#EAF5EF] text-[#004D3A] flex items-center justify-center shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         class="w-6 h-6"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              stroke-width="1.8"
-                                              d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
-                                    </svg>
+                                    ✓
                                 </div>
 
                                 <div>
@@ -545,7 +398,6 @@
                                         Parâmetros gerais da avaliação final.
                                     </p>
                                 </div>
-
                             </div>
 
                             <div class="mb-6">
@@ -564,51 +416,12 @@
                                 </div>
                             </div>
 
-                            <div class="mb-6">
-                                <p class="text-[11px] font-bold uppercase tracking-widest text-[#60756B] mb-3">
-                                    Tentativas permitidas
-                                </p>
-
-                                <div class="grid grid-cols-4 gap-2">
-                                    <span class="bg-[#F1F6F2] text-[#60756B] rounded-xl py-2 text-center text-sm font-extrabold">
-                                        01
-                                    </span>
-
-                                    <span class="bg-[#F1F6F2] text-[#60756B] rounded-xl py-2 text-center text-sm font-extrabold">
-                                        02
-                                    </span>
-
-                                    <span class="bg-[#004D3A] text-white rounded-xl py-2 text-center text-sm font-extrabold">
-                                        03
-                                    </span>
-
-                                    <span class="bg-[#F1F6F2] text-[#60756B] rounded-xl py-2 text-center text-sm font-extrabold">
-                                        ∞
-                                    </span>
-                                </div>
-                            </div>
-
                             <div class="space-y-3 mb-6">
 
                                 <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 flex items-center justify-between gap-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-[#004D3A]">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 class="w-5 h-5"
-                                                 fill="none"
-                                                 viewBox="0 0 24 24"
-                                                 stroke="currentColor">
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      stroke-width="1.8"
-                                                      d="M12 6v6h4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
-                                            </svg>
-                                        </div>
-
-                                        <p class="text-sm font-bold text-[#60756B]">
-                                            Tempo limite
-                                        </p>
-                                    </div>
+                                    <p class="text-sm font-bold text-[#60756B]">
+                                        Tempo limite
+                                    </p>
 
                                     <p class="text-lg font-extrabold text-[#004D3A]">
                                         {{ $tempoProvaFinal }} min
@@ -616,24 +429,9 @@
                                 </div>
 
                                 <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 flex items-center justify-between gap-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-[#004D3A]">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 class="w-5 h-5"
-                                                 fill="none"
-                                                 viewBox="0 0 24 24"
-                                                 stroke="currentColor">
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      stroke-width="1.8"
-                                                      d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5M16.5 3 21 7.5m0 0L16.5 12M21 7.5H7.5"/>
-                                            </svg>
-                                        </div>
-
-                                        <p class="text-sm font-bold text-[#60756B]">
-                                            Questões aleatórias
-                                        </p>
-                                    </div>
+                                    <p class="text-sm font-bold text-[#60756B]">
+                                        Questões aleatórias
+                                    </p>
 
                                     <div class="w-12 h-7 rounded-full bg-[#00A63E] p-1 flex justify-end">
                                         <span class="w-5 h-5 rounded-full bg-white shadow"></span>
@@ -642,31 +440,14 @@
 
                             </div>
 
-                            <a
-                                href="{{ route('prova.final.criar') }}"
-                                class="w-full inline-flex items-center justify-center gap-2 bg-[#004D3A] text-white rounded-2xl px-4 py-3 text-sm font-extrabold hover:bg-[#003C2F] transition"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="w-5 h-5"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round"
-                                          stroke-linejoin="round"
-                                          stroke-width="1.8"
-                                          d="M9 12h6m-6 4h6M9 8h6M5 4h14v16H5z"/>
-                                </svg>
-
+                            <a href="{{ route('prova.final.criar') }}"
+                               class="w-full inline-flex items-center justify-center gap-2 bg-[#004D3A] text-white rounded-2xl px-4 py-3 text-sm font-extrabold hover:bg-[#003C2F] transition">
                                 Editar Banco de Questões
                             </a>
-
                         </div>
-
                     </div>
 
-                    <!-- CARDS PEQUENOS -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
-
                         <div class="bg-[#004D3A] text-white rounded-3xl p-5 shadow-sm">
                             <p class="text-[11px] uppercase tracking-widest font-bold text-white/70">
                                 Total de aulas
@@ -694,24 +475,12 @@
                                 {{ $totalAulasComTeste }} aula(s) com teste.
                             </p>
                         </div>
-
                     </div>
 
-                    <!-- CARD BIBLIOTECA -->
                     <div class="bg-white border border-[#E3EBE4] rounded-3xl p-5 shadow-sm">
-
                         <div class="flex items-start gap-3 mb-4">
                             <div class="w-11 h-11 rounded-2xl bg-[#EAF5EF] text-[#004D3A] flex items-center justify-center shrink-0">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="w-6 h-6"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round"
-                                          stroke-linejoin="round"
-                                          stroke-width="1.8"
-                                          d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25A8.966 8.966 0 0 1 18 3.75c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.966 8.966 0 0 0-6 2.292m0-14.25v14.25"/>
-                                </svg>
+                                📚
                             </div>
 
                             <div>
@@ -729,70 +498,42 @@
                            class="w-full inline-flex items-center justify-center bg-[#EAF5EF] text-[#004D3A] rounded-2xl px-4 py-3 text-sm font-extrabold hover:bg-[#DCE7DE] transition">
                             Abrir biblioteca de cursos
                         </a>
-
                     </div>
-
                 </aside>
-
             </div>
-
         </section>
-
     </main>
-
 </div>
 
-<!-- BOTÃO FLUTUANTE -->
-<button
-    type="button"
-    onclick="abrirModalAula()"
-    class="fixed right-5 bottom-5 w-14 h-14 rounded-full bg-[#004D3A] text-white shadow-2xl flex items-center justify-center hover:bg-[#003C2F] transition z-40"
->
-    <svg xmlns="http://www.w3.org/2000/svg"
-         class="w-7 h-7"
-         fill="none"
-         viewBox="0 0 24 24"
-         stroke="currentColor">
-        <path stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4.5v15m7.5-7.5h-15"/>
-    </svg>
+<button type="button"
+        onclick="abrirModalAula()"
+        class="fixed right-5 bottom-5 w-14 h-14 rounded-full bg-[#004D3A] text-white shadow-2xl flex items-center justify-center hover:bg-[#003C2F] transition z-40">
+    +
 </button>
 
 <!-- MODAL CRIAR AULA -->
 <div id="modalAula" class="fixed inset-0 hidden items-center justify-center z-50"
      style="background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);">
 
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden"
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl mx-4 overflow-hidden"
          style="max-height: 90vh; overflow-y: auto;">
 
-        <!-- HEADER MODAL -->
         <div class="flex items-start justify-between px-5 sm:px-8 pt-8 pb-4">
-
             <div>
                 <h2 class="text-2xl font-extrabold text-[#003C2F]">
                     Criar Aula Completa
                 </h2>
 
                 <p class="text-sm text-[#60756B] mt-1">
-                    Cadastre curso, módulo, aula e mini teste, se desejar.
+                    Cadastre curso, módulo, aula, mini teste e importe perguntas antigas se desejar.
                 </p>
             </div>
 
-            <button
-                type="button"
-                onclick="fecharModalAula()"
-                class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition"
-            >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+            <button type="button"
+                    onclick="fecharModalAula()"
+                    class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition">
+                ✕
             </button>
-
         </div>
 
         <div class="px-5 sm:px-8 pb-8">
@@ -800,27 +541,19 @@
             <form action="{{ route('aulas.store') }}" method="POST" id="formAula">
                 @csrf
 
-                <!-- CURSO -->
                 <div class="mb-5 border border-[#E3EBE4] rounded-3xl p-4 bg-[#F8FBF8]">
-
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
                         <div>
                             <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
                                 Curso existente
                             </label>
 
-                            <select
-                                name="curso_id"
-                                class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer"
-                            >
+                            <select name="curso_id"
+                                    class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer">
                                 <option value="">Selecionar curso</option>
 
                                 @foreach ($cursos as $curso)
-                                    <option
-                                        value="{{ $curso->id }}"
-                                        {{ old('curso_id', $cursoAtualId) == $curso->id ? 'selected' : '' }}
-                                    >
+                                    <option value="{{ $curso->id }}" {{ old('curso_id', $cursoAtualId) == $curso->id ? 'selected' : '' }}>
                                         {{ $curso->nome }}
                                     </option>
                                 @endforeach
@@ -836,19 +569,16 @@
                                 Novo curso
                             </label>
 
-                            <input
-                                type="text"
-                                name="novo_curso"
-                                value="{{ old('novo_curso') }}"
-                                placeholder="Ou criar novo curso"
-                                class="w-full px-4 py-3 rounded-2xl border border-dashed border-[#00A63E] bg-[#EAF5EF] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
-                            >
+                            <input type="text"
+                                   name="novo_curso"
+                                   value="{{ old('novo_curso') }}"
+                                   placeholder="Ou criar novo curso"
+                                   class="w-full px-4 py-3 rounded-2xl border border-dashed border-[#00A63E] bg-[#EAF5EF] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
 
                             <p class="text-xs text-[#8A9B92] mt-1">
                                 Use se ainda não existir curso.
                             </p>
                         </div>
-
                     </div>
 
                     <div class="mt-4">
@@ -856,35 +586,25 @@
                             Descrição do novo curso
                         </label>
 
-                        <textarea
-                            name="descricao_curso"
-                            placeholder="Opcional: descreva o objetivo do novo curso..."
-                            rows="2"
-                            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none"
-                        >{{ old('descricao_curso') }}</textarea>
+                        <textarea name="descricao_curso"
+                                  placeholder="Opcional: descreva o objetivo do novo curso..."
+                                  rows="2"
+                                  class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none">{{ old('descricao_curso') }}</textarea>
                     </div>
-
                 </div>
 
-                <!-- MÓDULO -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-
                     <div>
                         <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
                             Módulo existente
                         </label>
 
-                        <select
-                            name="modulo_id"
-                            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer"
-                        >
+                        <select name="modulo_id"
+                                class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer">
                             <option value="">Selecionar módulo</option>
 
                             @foreach ($modulos as $modulo)
-                                <option
-                                    value="{{ $modulo->id }}"
-                                    {{ old('modulo_id') == $modulo->id ? 'selected' : '' }}
-                                >
+                                <option value="{{ $modulo->id }}" {{ old('modulo_id') == $modulo->id ? 'selected' : '' }}>
                                     {{ $modulo->nome }}
                                 </option>
                             @endforeach
@@ -900,92 +620,76 @@
                             Novo módulo
                         </label>
 
-                        <input
-                            type="text"
-                            name="novo_modulo"
-                            value="{{ old('novo_modulo') }}"
-                            placeholder="Ou criar novo módulo"
-                            class="w-full px-4 py-3 rounded-2xl border border-dashed border-[#00A63E] bg-[#EAF5EF] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
-                        >
+                        <input type="text"
+                               name="novo_modulo"
+                               value="{{ old('novo_modulo') }}"
+                               placeholder="Ou criar novo módulo"
+                               class="w-full px-4 py-3 rounded-2xl border border-dashed border-[#00A63E] bg-[#EAF5EF] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
 
                         <p class="text-xs text-[#8A9B92] mt-1">
                             Use se ainda não existir módulo.
                         </p>
                     </div>
-
                 </div>
 
-                <!-- TÍTULO -->
                 <div class="mb-4">
                     <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
                         Título da aula
                     </label>
 
-                    <input
-                        type="text"
-                        name="titulo"
-                        value="{{ old('titulo') }}"
-                        placeholder="Ex: Aula 01: Introdução aos Sistemas de Saúde"
-                        required
-                        class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
-                    >
+                    <input type="text"
+                           name="titulo"
+                           value="{{ old('titulo') }}"
+                           placeholder="Ex: Aula 01: Introdução aos Sistemas de Saúde"
+                           required
+                           class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
                 </div>
 
-                <!-- DESCRIÇÃO -->
                 <div class="mb-4">
                     <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
                         Descrição
                     </label>
 
-                    <textarea
-                        name="descricao"
-                        placeholder="Descreva brevemente o conteúdo da aula..."
-                        rows="3"
-                        class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none"
-                    >{{ old('descricao') }}</textarea>
+                    <textarea name="descricao"
+                              placeholder="Descreva brevemente o conteúdo da aula..."
+                              rows="3"
+                              class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none">{{ old('descricao') }}</textarea>
                 </div>
 
-                <!-- LINK -->
                 <div class="mb-6">
                     <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
                         Link do vídeo
                     </label>
 
-                    <input
-                        type="text"
-                        name="video_url"
-                        value="{{ old('video_url') }}"
-                        placeholder="Cole aqui o link do YouTube ou embed"
-                        required
-                        class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
-                    >
+                    <input type="text"
+                           name="video_url"
+                           value="{{ old('video_url') }}"
+                           placeholder="Cole aqui o link do YouTube ou embed"
+                           required
+                           class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
                 </div>
 
-                <!-- TESTE -->
                 <div class="mb-4 border-t border-[#DCE7DE] pt-5">
                     <h3 class="font-extrabold text-[#003C2F]">
                         Mini Teste
                     </h3>
 
                     <p class="text-xs text-[#60756B] mt-1">
-                        Opcional. Você pode criar a aula sem perguntas e adicionar o teste depois.
+                        Opcional. Você pode criar perguntas novas ou importar perguntas antigas.
                     </p>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-
                     <div>
                         <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
                             Título do teste
                         </label>
 
-                        <input
-                            type="text"
-                            name="avaliacao[titulo]"
-                            value="{{ old('avaliacao.titulo') }}"
-                            placeholder="Ex: Mini teste da Aula 01"
-                            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
-                        >
+                        <input type="text"
+                               name="avaliacao[titulo]"
+                               value="{{ old('avaliacao.titulo') }}"
+                               placeholder="Ex: Mini teste da Aula 01"
+                               class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
                     </div>
 
                     <div>
@@ -993,67 +697,151 @@
                             Tempo limite
                         </label>
 
-                        <input
-                            type="number"
-                            name="avaliacao[tempo_limite]"
-                            value="{{ old('avaliacao.tempo_limite') }}"
-                            placeholder="Tempo em minutos"
-                            min="1"
-                            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
-                        >
+                        <input type="number"
+                               name="avaliacao[tempo_limite]"
+                               value="{{ old('avaliacao.tempo_limite') }}"
+                               placeholder="Tempo em minutos"
+                               min="1"
+                               class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
                     </div>
-
                 </div>
 
-                <!-- PERGUNTAS -->
+                <div class="mb-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                        <div>
+                            <h4 class="font-extrabold text-[#003C2F]">
+                                Perguntas importadas
+                            </h4>
+
+                            <p class="text-xs text-[#60756B]">
+                                Escolha perguntas já utilizadas anteriormente.
+                            </p>
+                        </div>
+
+                        <button type="button"
+                                onclick="abrirBancoPerguntas()"
+                                class="bg-[#EAF5EF] text-[#004D3A] px-4 py-3 rounded-2xl font-extrabold hover:bg-[#DCE7DE] transition text-sm">
+                            Buscar perguntas antigas
+                        </button>
+                    </div>
+
+                    <div id="perguntasImportadasContainer" class="space-y-2"></div>
+                </div>
+
                 <div id="perguntas-container" class="space-y-4 mb-5"></div>
 
-                <!-- BOTÕES -->
                 <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between sm:items-center pt-2">
 
-                    <button
-                        type="button"
-                        onclick="addPergunta()"
-                        class="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-[#00A63E] text-[#004D3A] text-sm font-extrabold hover:bg-[#EAF5EF] transition"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2.5"
-                                  d="M12 4v16m8-8H4"/>
-                        </svg>
-
-                        Pergunta
+                    <button type="button"
+                            onclick="addPergunta()"
+                            class="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-[#00A63E] text-[#004D3A] text-sm font-extrabold hover:bg-[#EAF5EF] transition">
+                        Pergunta nova
                     </button>
 
                     <div class="flex flex-col sm:flex-row gap-3 justify-end">
 
-                        <button
-                            type="button"
-                            onclick="fecharModalAula()"
-                            class="px-6 py-3 rounded-2xl border border-[#DCE7DE] text-[#60756B] text-sm font-bold hover:bg-[#F8FBF8] transition"
-                        >
+                        <button type="button"
+                                onclick="fecharModalAula()"
+                                class="px-6 py-3 rounded-2xl border border-[#DCE7DE] text-[#60756B] text-sm font-bold hover:bg-[#F8FBF8] transition">
                             Cancelar
                         </button>
 
-                        <button
-                            type="submit"
-                            id="btnSalvarAula"
-                            class="px-6 py-3 rounded-2xl bg-[#004D3A] hover:bg-[#003C2F] text-white text-sm font-extrabold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
+                        <button type="submit"
+                                id="btnSalvarAula"
+                                class="px-6 py-3 rounded-2xl bg-[#004D3A] hover:bg-[#003C2F] text-white text-sm font-extrabold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
                             Salvar Aula
                         </button>
-
                     </div>
-
                 </div>
-
             </form>
+        </div>
+    </div>
+</div>
 
+<!-- MODAL BANCO DE PERGUNTAS -->
+<div id="modalBancoPerguntas"
+     class="fixed inset-0 hidden items-center justify-center z-[70] px-4"
+     style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
+
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden"
+         style="max-height: 90vh; overflow-y: auto;">
+
+        <div class="flex items-start justify-between px-5 sm:px-8 pt-8 pb-4 border-b border-[#E3EBE4]">
+            <div>
+                <h2 class="text-2xl font-extrabold text-[#003C2F]">
+                    Banco de Perguntas
+                </h2>
+
+                <p class="text-sm text-[#60756B] mt-1">
+                    Pesquise perguntas já utilizadas e importe para o novo pós-teste.
+                </p>
+            </div>
+
+            <button type="button"
+                    onclick="fecharBancoPerguntas()"
+                    class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition">
+                ✕
+            </button>
         </div>
 
-    </div>
+        <div class="p-5 sm:p-8">
 
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-5">
+                <div class="lg:col-span-6">
+                    <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                        Pesquisar pergunta
+                    </label>
+
+                    <input type="text"
+                           id="pesquisaBancoPerguntas"
+                           placeholder="Pesquisar por pergunta, curso, módulo ou aula..."
+                           class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                </div>
+
+                <div class="lg:col-span-2">
+                    <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                        Data inicial
+                    </label>
+
+                    <input type="date"
+                           id="dataInicioBancoPerguntas"
+                           class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                </div>
+
+                <div class="lg:col-span-2">
+                    <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                        Data final
+                    </label>
+
+                    <input type="date"
+                           id="dataFimBancoPerguntas"
+                           class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                </div>
+
+                <div class="lg:col-span-2 flex items-end">
+                    <button type="button"
+                            onclick="buscarPerguntasAntigas()"
+                            class="w-full bg-[#004D3A] text-white px-4 py-3 rounded-2xl font-extrabold hover:bg-[#003C2F] transition">
+                        Buscar
+                    </button>
+                </div>
+            </div>
+
+            <div id="listaBancoPerguntas" class="space-y-3">
+                <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-8 text-center text-[#60756B]">
+                    Clique em buscar para carregar perguntas antigas.
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-6">
+                <button type="button"
+                        onclick="fecharBancoPerguntas()"
+                        class="bg-[#004D3A] text-white px-6 py-3 rounded-2xl font-extrabold hover:bg-[#003C2F] transition">
+                    Concluir seleção
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- MODAL EDITAR AULA -->
@@ -1064,7 +852,6 @@
          style="max-height: 90vh; overflow-y: auto;">
 
         <div class="flex items-start justify-between px-5 sm:px-8 pt-8 pb-4">
-
             <div>
                 <h2 class="text-2xl font-extrabold text-[#003C2F]">
                     Editar Conteúdo da Aula
@@ -1075,23 +862,14 @@
                 </p>
             </div>
 
-            <button
-                type="button"
-                onclick="fecharModalEditarAula()"
-                class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition"
-            >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+            <button type="button"
+                    onclick="fecharModalEditarAula()"
+                    class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition">
+                ✕
             </button>
-
         </div>
 
         <div class="px-5 sm:px-8 pb-8">
-
             <form method="POST" id="formEditarAula">
                 @csrf
                 @method('PUT')
@@ -1101,15 +879,11 @@
                         Módulo
                     </label>
 
-                    <select
-                        id="edit_modulo_id"
-                        name="modulo_id"
-                        class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer"
-                    >
+                    <select id="edit_modulo_id"
+                            name="modulo_id"
+                            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer">
                         @foreach ($modulos as $modulo)
-                            <option value="{{ $modulo->id }}">
-                                {{ $modulo->nome }}
-                            </option>
+                            <option value="{{ $modulo->id }}">{{ $modulo->nome }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -1119,13 +893,11 @@
                         Título da aula
                     </label>
 
-                    <input
-                        type="text"
-                        id="edit_titulo"
-                        name="titulo"
-                        required
-                        class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
-                    >
+                    <input type="text"
+                           id="edit_titulo"
+                           name="titulo"
+                           required
+                           class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
                 </div>
 
                 <div class="mb-4">
@@ -1133,12 +905,10 @@
                         Descrição
                     </label>
 
-                    <textarea
-                        id="edit_descricao"
-                        name="descricao"
-                        rows="4"
-                        class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none"
-                    ></textarea>
+                    <textarea id="edit_descricao"
+                              name="descricao"
+                              rows="4"
+                              class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none"></textarea>
                 </div>
 
                 <div class="mb-6">
@@ -1146,49 +916,36 @@
                         Link do vídeo
                     </label>
 
-                    <input
-                        type="text"
-                        id="edit_video_url"
-                        name="video_url"
-                        required
-                        class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
-                    >
+                    <input type="text"
+                           id="edit_video_url"
+                           name="video_url"
+                           required
+                           class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
                 </div>
 
                 <div class="flex flex-col sm:flex-row justify-end gap-3">
-
-                    <button
-                        type="button"
-                        onclick="fecharModalEditarAula()"
-                        class="px-6 py-3 rounded-2xl border border-[#DCE7DE] text-[#60756B] text-sm font-bold hover:bg-[#F8FBF8] transition"
-                    >
+                    <button type="button"
+                            onclick="fecharModalEditarAula()"
+                            class="px-6 py-3 rounded-2xl border border-[#DCE7DE] text-[#60756B] text-sm font-bold hover:bg-[#F8FBF8] transition">
                         Cancelar
                     </button>
 
-                    <button
-                        type="submit"
-                        id="btnAtualizarAula"
-                        class="px-6 py-3 rounded-2xl bg-[#004D3A] hover:bg-[#003C2F] text-white text-sm font-extrabold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
+                    <button type="submit"
+                            id="btnAtualizarAula"
+                            class="px-6 py-3 rounded-2xl bg-[#004D3A] hover:bg-[#003C2F] text-white text-sm font-extrabold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
                         Salvar Alterações
                     </button>
-
                 </div>
-
             </form>
-
         </div>
-
     </div>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     let perguntaIndex = 0;
-
-    // ─── Modal Criar Aula ─────────────────────────────────────────────────────
+    let perguntasImportadas = new Set();
 
     function abrirModalAula() {
         const modal = document.getElementById('modalAula');
@@ -1209,10 +966,14 @@
 
         const form = document.getElementById('formAula');
         const perguntasContainer = document.getElementById('perguntas-container');
+        const importadasContainer = document.getElementById('perguntasImportadasContainer');
         const btnSalvar = document.getElementById('btnSalvarAula');
 
         if (form) form.reset();
         if (perguntasContainer) perguntasContainer.innerHTML = '';
+        if (importadasContainer) importadasContainer.innerHTML = '';
+
+        perguntasImportadas = new Set();
 
         if (btnSalvar) {
             btnSalvar.disabled = false;
@@ -1242,8 +1003,6 @@
             }
         });
     }
-
-    // ─── Modal Editar Aula ────────────────────────────────────────────────────
 
     function abrirModalEditarAula(id, titulo, descricao, videoUrl, moduloId) {
         const modal = document.getElementById('modalEditarAula');
@@ -1303,8 +1062,6 @@
         });
     }
 
-    // ─── Módulos ──────────────────────────────────────────────────────────────
-
     function toggleModulo(id) {
         const conteudo = document.getElementById(`modulo-${id}`);
         const icone = document.getElementById(`icon-${id}`);
@@ -1319,8 +1076,6 @@
             icone.style.transform = aberto ? 'rotate(0deg)' : 'rotate(180deg)';
         }
     }
-
-    // ─── Perguntas ────────────────────────────────────────────────────────────
 
     function addPergunta() {
         const container = document.getElementById('perguntas-container');
@@ -1340,10 +1095,7 @@
 
                 <button type="button" onclick="removerPergunta(${perguntaIndex})"
                     class="text-red-400 hover:text-red-600 transition" title="Remover">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    Remover
                 </button>
             </div>
 
@@ -1362,10 +1114,6 @@
 
             <button type="button" onclick="addResposta(${perguntaIndex})"
                 class="flex items-center gap-1 text-xs font-bold text-[#004D3A] hover:text-[#003C2F] transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                        d="M12 4v16m8-8H4" />
-                </svg>
                 Adicionar alternativa
             </button>
         `;
@@ -1416,10 +1164,7 @@
 
             <button type="button" onclick="removerResposta(${index}, ${total})"
                 class="text-gray-300 hover:text-red-500 transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                ✕
             </button>
         `;
 
@@ -1432,7 +1177,156 @@
         if (resposta) resposta.remove();
     }
 
-    // ─── Exclusão bonita com SweetAlert ───────────────────────────────────────
+    function abrirBancoPerguntas() {
+        const modal = document.getElementById('modalBancoPerguntas');
+
+        if (!modal) return;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        buscarPerguntasAntigas();
+    }
+
+    function fecharBancoPerguntas() {
+        const modal = document.getElementById('modalBancoPerguntas');
+
+        if (!modal) return;
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    async function buscarPerguntasAntigas() {
+        const lista = document.getElementById('listaBancoPerguntas');
+        const pesquisa = document.getElementById('pesquisaBancoPerguntas')?.value || '';
+        const dataInicio = document.getElementById('dataInicioBancoPerguntas')?.value || '';
+        const dataFim = document.getElementById('dataFimBancoPerguntas')?.value || '';
+
+        if (!lista) return;
+
+        lista.innerHTML = `
+            <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-8 text-center text-[#60756B]">
+                Carregando perguntas...
+            </div>
+        `;
+
+        const params = new URLSearchParams();
+
+        if (pesquisa) params.append('pesquisa', pesquisa);
+        if (dataInicio) params.append('data_inicio', dataInicio);
+        if (dataFim) params.append('data_fim', dataFim);
+
+        try {
+            const resposta = await fetch('/banco-perguntas?' + params.toString());
+            const dados = await resposta.json();
+
+            if (!dados.success || !dados.perguntas || dados.perguntas.length === 0) {
+                lista.innerHTML = `
+                    <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-8 text-center text-[#60756B]">
+                        Nenhuma pergunta encontrada.
+                    </div>
+                `;
+                return;
+            }
+
+            lista.innerHTML = '';
+
+            dados.perguntas.forEach((pergunta) => {
+                const respostas = pergunta.respostas || [];
+
+                const respostasHtml = respostas.map((resposta) => `
+                    <li class="${resposta.correta ? 'text-green-700 font-bold' : 'text-[#60756B]'}">
+                        ${resposta.resposta} ${resposta.correta ? '(correta)' : ''}
+                    </li>
+                `).join('');
+
+                const selecionada = perguntasImportadas.has(String(pergunta.id));
+
+                const item = document.createElement('div');
+                item.className = 'bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5';
+
+                item.innerHTML = `
+                    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold mb-2">
+                                ${pergunta.curso_nome || 'Sem curso'} • ${pergunta.modulo_nome || 'Sem módulo'} • ${pergunta.aula_titulo || 'Sem aula'}
+                            </p>
+
+                            <h3 class="text-base font-extrabold text-[#003C2F] break-words">
+                                ${pergunta.pergunta}
+                            </h3>
+
+                            <ul class="list-disc pl-5 text-sm mt-3 space-y-1">
+                                ${respostasHtml}
+                            </ul>
+                        </div>
+
+                        <button type="button"
+                                onclick='selecionarPerguntaImportada(${JSON.stringify(pergunta.id)}, ${JSON.stringify(pergunta.pergunta)})'
+                                class="${selecionada ? 'bg-green-600 text-white' : 'bg-[#004D3A] text-white'} px-4 py-3 rounded-2xl font-extrabold hover:bg-[#003C2F] transition shrink-0">
+                            ${selecionada ? 'Selecionada' : 'Importar'}
+                        </button>
+                    </div>
+                `;
+
+                lista.appendChild(item);
+            });
+
+        } catch (e) {
+            lista.innerHTML = `
+                <div class="bg-red-50 border border-red-100 rounded-3xl p-8 text-center text-red-600">
+                    Erro ao buscar perguntas antigas.
+                </div>
+            `;
+        }
+    }
+
+    function selecionarPerguntaImportada(id, texto) {
+        const container = document.getElementById('perguntasImportadasContainer');
+
+        if (!container) return;
+
+        const idString = String(id);
+
+        if (perguntasImportadas.has(idString)) {
+            return;
+        }
+
+        perguntasImportadas.add(idString);
+
+        const item = document.createElement('div');
+        item.id = 'pergunta-importada-' + idString;
+        item.className = 'bg-[#F8FBF8] border border-[#DCE7DE] rounded-2xl p-4 flex items-start justify-between gap-3';
+
+        item.innerHTML = `
+            <div>
+                <input type="hidden" name="perguntas_importadas[]" value="${idString}">
+                <p class="text-sm font-extrabold text-[#003C2F]">${texto}</p>
+                <p class="text-xs text-[#60756B] mt-1">Essa pergunta será copiada para o novo pós-teste.</p>
+            </div>
+
+            <button type="button"
+                    onclick="removerPerguntaImportada('${idString}')"
+                    class="text-red-600 font-bold">
+                Remover
+            </button>
+        `;
+
+        container.appendChild(item);
+
+        buscarPerguntasAntigas();
+    }
+
+    function removerPerguntaImportada(id) {
+        perguntasImportadas.delete(String(id));
+
+        const item = document.getElementById('pergunta-importada-' + id);
+
+        if (item) {
+            item.remove();
+        }
+    }
 
     function confirmarExclusaoAula(btn, titulo) {
         Swal.fire({
@@ -1457,15 +1351,20 @@
             confirmButtonColor: '#dc2626',
             cancelButtonColor: '#64748b',
             background: '#ffffff',
-            color: '#003C2F',
-            customClass: {
-                popup: 'rounded-3xl',
-                confirmButton: 'rounded-xl',
-                cancelButton: 'rounded-xl'
-            }
+            color: '#003C2F'
         }).then((result) => {
             if (result.isConfirmed) {
                 btn.closest('form').submit();
+            }
+        });
+    }
+
+    const modalBancoPerguntas = document.getElementById('modalBancoPerguntas');
+
+    if (modalBancoPerguntas) {
+        modalBancoPerguntas.addEventListener('click', function(e) {
+            if (e.target === this) {
+                fecharBancoPerguntas();
             }
         });
     }
@@ -1474,6 +1373,7 @@
         if (e.key === 'Escape') {
             fecharModalAula();
             fecharModalEditarAula();
+            fecharBancoPerguntas();
         }
     });
 
