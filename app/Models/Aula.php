@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Modulo;
 
 class Aula extends Model
 {
@@ -17,12 +16,26 @@ class Aula extends Model
         'descricao',
         'video_url',
         'curso_id',
-        'modulo_id' // 🔥 IMPORTANTE
+        'modulo_id',
     ];
 
-    // 🔥 RELAÇÃO COM MÓDULO
+    public function curso()
+    {
+        return $this->belongsTo(Curso::class, 'curso_id');
+    }
+
     public function modulo()
     {
-        return $this->belongsTo(Modulo::class);
+        return $this->belongsTo(Modulo::class, 'modulo_id');
+    }
+
+    public function avaliacoes()
+    {
+        return $this->hasMany(Avaliacao::class, 'aula_id');
+    }
+
+    public function avaliacao()
+    {
+        return $this->hasOne(Avaliacao::class, 'aula_id');
     }
 }

@@ -7,6 +7,9 @@
 @php
     use Illuminate\Support\Facades\DB;
 
+    $cursoAtualId = $cursoAtual->id ?? null;
+
+    $totalCursos = isset($cursos) ? $cursos->count() : 0;
     $totalModulos = isset($modulos) ? $modulos->count() : 0;
     $totalAulas = isset($aulas) ? $aulas->count() : 0;
 
@@ -64,62 +67,107 @@
                     </div>
 
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight">
-                        Gerenciamento de Videoaulas alskdhçaklsjdhçalsdjkhçl
+                        Gerenciamento de Videoaulas
                     </h1>
 
-                    <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
-                        Organize módulos, cadastre aulas, configure mini testes e acompanhe o conteúdo publicado.
+                    <p class="text-sm text-[#60756B] mt-2 max-w-3xl">
+                        Organize cursos, módulos, aulas, mini testes e reutilize conteúdos antigos pela biblioteca de cursos.
                     </p>
                 </div>
 
-                <button
-                    type="button"
-                    onclick="abrirModalAula()"
-                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#004D3A] text-white px-5 py-3 rounded-2xl shadow-sm hover:bg-[#003C2F] transition text-sm font-bold"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="w-5 h-5"
-                         fill="none"
-                         viewBox="0 0 24 24"
-                         stroke="currentColor">
-                        <path stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="1.8"
-                              d="M12 4.5v15m7.5-7.5h-15"/>
-                    </svg>
+                <div class="flex flex-col sm:flex-row gap-3">
 
-                    Nova Aula
-                </button>
+                    <a
+                        href="{{ route('biblioteca.cursos') }}"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-[#004D3A] border border-[#DCE7DE] px-5 py-3 rounded-2xl shadow-sm hover:bg-[#F8FBF8] transition text-sm font-bold"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="w-5 h-5"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="1.8"
+                                  d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25A8.966 8.966 0 0 1 18 3.75c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.966 8.966 0 0 0-6 2.292m0-14.25v14.25"/>
+                        </svg>
+
+                        Biblioteca de Cursos
+                    </a>
+
+                    <button
+                        type="button"
+                        onclick="abrirModalAula()"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#004D3A] text-white px-5 py-3 rounded-2xl shadow-sm hover:bg-[#003C2F] transition text-sm font-bold"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="w-5 h-5"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="1.8"
+                                  d="M12 4.5v15m7.5-7.5h-15"/>
+                        </svg>
+
+                        Nova Aula
+                    </button>
+
+                </div>
 
             </div>
 
-            <!-- ALERTAS -->
-            @if (session('success'))
-                <div class="mb-5 bg-green-100 text-green-700 px-4 py-3 rounded-2xl border border-green-200 shadow-sm">
-                    {{ session('success') }}
-                </div>
-            @endif
+            <!-- CURSO SELECIONADO -->
+            <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6 mb-7">
 
-            @if (session('error'))
-                <div class="mb-5 bg-red-100 text-red-700 px-4 py-3 rounded-2xl border border-red-200 shadow-sm">
-                    {{ session('error') }}
-                </div>
-            @endif
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
 
-            @if ($errors->any())
-                <div class="mb-5 bg-red-100 text-red-700 px-4 py-3 rounded-2xl border border-red-200 shadow-sm">
-                    <p class="font-semibold mb-2">Corrija os campos abaixo:</p>
+                    <div class="min-w-0">
+                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                            Curso selecionado
+                        </p>
 
-                    <ul class="list-disc pl-5 text-sm">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
+                        <h2 class="text-2xl font-extrabold text-[#003C2F] mt-1 break-words">
+                            {{ $cursoAtual->nome ?? 'Nenhum curso selecionado' }}
+                        </h2>
+
+                        <p class="text-sm text-[#60756B] mt-2 max-w-3xl break-words">
+                            {{ $cursoAtual->descricao ?? 'Selecione um curso ou crie uma nova aula para iniciar a estrutura.' }}
+                        </p>
+                    </div>
+
+                    <form method="GET" action="{{ route('videoaulas') }}" class="w-full lg:w-[380px]">
+                        <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                            Trocar curso
+                        </label>
+
+                        <select
+                            name="curso_id"
+                            onchange="this.form.submit()"
+                            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer"
+                        >
+                            @forelse($cursos as $curso)
+                                <option value="{{ $curso->id }}" {{ $cursoAtualId == $curso->id ? 'selected' : '' }}>
+                                    {{ $curso->nome }}
+                                </option>
+                            @empty
+                                <option value="">Nenhum curso cadastrado</option>
+                            @endforelse
+                        </select>
+                    </form>
+
                 </div>
-            @endif
+
+            </div>
 
             <!-- RESUMO MOBILE -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 xl:hidden">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6 xl:hidden">
+
+                <div class="bg-white border border-[#E3EBE4] rounded-3xl p-5 shadow-sm">
+                    <p class="text-xs text-[#60756B] font-semibold">Cursos</p>
+                    <h3 class="text-3xl font-extrabold mt-1">{{ $totalCursos }}</h3>
+                </div>
 
                 <div class="bg-white border border-[#E3EBE4] rounded-3xl p-5 shadow-sm">
                     <p class="text-xs text-[#60756B] font-semibold">Módulos</p>
@@ -649,6 +697,41 @@
 
                     </div>
 
+                    <!-- CARD BIBLIOTECA -->
+                    <div class="bg-white border border-[#E3EBE4] rounded-3xl p-5 shadow-sm">
+
+                        <div class="flex items-start gap-3 mb-4">
+                            <div class="w-11 h-11 rounded-2xl bg-[#EAF5EF] text-[#004D3A] flex items-center justify-center shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="w-6 h-6"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="1.8"
+                                          d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25A8.966 8.966 0 0 1 18 3.75c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.966 8.966 0 0 0-6 2.292m0-14.25v14.25"/>
+                                </svg>
+                            </div>
+
+                            <div>
+                                <h2 class="font-extrabold text-lg text-[#003C2F]">
+                                    Biblioteca
+                                </h2>
+
+                                <p class="text-xs text-[#60756B] mt-1">
+                                    Reutilize cursos antigos com módulos, aulas e testes.
+                                </p>
+                            </div>
+                        </div>
+
+                        <a href="{{ route('biblioteca.cursos') }}"
+                           class="w-full inline-flex items-center justify-center bg-[#EAF5EF] text-[#004D3A] rounded-2xl px-4 py-3 text-sm font-extrabold hover:bg-[#DCE7DE] transition">
+                            Abrir biblioteca de cursos
+                        </a>
+
+                    </div>
+
                 </aside>
 
             </div>
@@ -693,7 +776,7 @@
                 </h2>
 
                 <p class="text-sm text-[#60756B] mt-1">
-                    Cadastre a aula, vincule ao módulo e crie o mini teste, se desejar.
+                    Cadastre curso, módulo, aula e mini teste, se desejar.
                 </p>
             </div>
 
@@ -716,6 +799,72 @@
 
             <form action="{{ route('aulas.store') }}" method="POST" id="formAula">
                 @csrf
+
+                <!-- CURSO -->
+                <div class="mb-5 border border-[#E3EBE4] rounded-3xl p-4 bg-[#F8FBF8]">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                        <div>
+                            <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                                Curso existente
+                            </label>
+
+                            <select
+                                name="curso_id"
+                                class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer"
+                            >
+                                <option value="">Selecionar curso</option>
+
+                                @foreach ($cursos as $curso)
+                                    <option
+                                        value="{{ $curso->id }}"
+                                        {{ old('curso_id', $cursoAtualId) == $curso->id ? 'selected' : '' }}
+                                    >
+                                        {{ $curso->nome }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            <p class="text-xs text-[#8A9B92] mt-1">
+                                Escolha um curso existente.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                                Novo curso
+                            </label>
+
+                            <input
+                                type="text"
+                                name="novo_curso"
+                                value="{{ old('novo_curso') }}"
+                                placeholder="Ou criar novo curso"
+                                class="w-full px-4 py-3 rounded-2xl border border-dashed border-[#00A63E] bg-[#EAF5EF] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
+                            >
+
+                            <p class="text-xs text-[#8A9B92] mt-1">
+                                Use se ainda não existir curso.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="mt-4">
+                        <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                            Descrição do novo curso
+                        </label>
+
+                        <textarea
+                            name="descricao_curso"
+                            placeholder="Opcional: descreva o objetivo do novo curso..."
+                            rows="2"
+                            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none"
+                        >{{ old('descricao_curso') }}</textarea>
+                    </div>
+
+                </div>
 
                 <!-- MÓDULO -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">

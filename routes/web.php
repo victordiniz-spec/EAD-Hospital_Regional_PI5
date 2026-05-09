@@ -135,7 +135,7 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================
-    // 🎥 VIDEOAULAS (PROFESSOR)
+    // 🎥 VIDEOAULAS / CURSOS / BIBLIOTECA
     // =========================
     Route::get('/videoaulas', [AulaController::class, 'index'])
         ->name('videoaulas');
@@ -151,6 +151,12 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/aulas/{id}', [AulaController::class, 'destroy'])
         ->name('aulas.destroy');
+
+    Route::get('/biblioteca-cursos', [AulaController::class, 'bibliotecaCursos'])
+        ->name('biblioteca.cursos');
+
+    Route::post('/biblioteca-cursos/{id}/duplicar', [AulaController::class, 'duplicarCurso'])
+        ->name('biblioteca.cursos.duplicar');
 
 
     // =========================

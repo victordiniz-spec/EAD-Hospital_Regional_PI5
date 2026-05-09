@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Curso;
 use App\Models\Aula;
 use App\Models\Avaliacao;
 use App\Models\Pergunta;
@@ -13,14 +14,170 @@ use App\Models\Modulo;
 class AulaController extends Controller
 {
     // =========================
-    // 📺 LISTA DE AULAS (PROFESSOR)
+    // 📺 LISTA DE AULAS / CURSOS (PROFESSOR)
     // =========================
-    public function index()
+    public function index(Request $request)
     {
-        $aulas = Aula::with('modulo')->orderBy('id', 'desc')->get();
-        $modulos = Modulo::orderBy('ordem')->get();
+        $cursos = Curso::orderBy('id', 'desc')->get();
 
-        return view('dashboard.videoaulas', compact('aulas', 'modulos'));
+        // Se ainda não existir nenhum curso, cria um curso inicial
+        if ($cursos->count() === 0) {
+            $curso = Curso::create([
+                'nome' => 'Curso Principal',
+                'descricao' => 'Curso padrão do sistema',
+                'professor_id' => auth()->id(),
+            ]);
+
+            $cursos = Curso::orderBy('id', 'desc')->get();
+            $cursoAtual = $curso;
+        } else {
+            $cursoAtual = null;
+
+            if ($request->filled('curso_id')) {
+                $cursoAtual = Curso::where('id', $request->curso_id)->first();
+            }
+
+            if (!$cursoAtual) {
+                $cursoAtual = $cursos->first();
+            }
+        }
+
+        $modulos = Modulo::where('curso_id', $cursoAtual->id)
+            ->orderBy('ordem')
+            ->get();
+
+        $aulas = Aula::with('modulo')
+            ->where('curso_id', $cursoAtual->id)
+            ->orderBy('modulo_id')
+            ->orderBy('id')
+            ->get();
+
+        return view('dashboard.videoaulas', compact(
+            'cursos',
+            'cursoAtual',
+            'aulas',
+            'modulos'
+        ));
+    }
+
+    // =========================
+    // 📚 BIBLIOTECA DE CURSOS
+    // =========================
+    public function bibliotecaCursos()
+    {
+        $cursos = Curso::with(['modulos.aulas'])
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return view('dashboard.biblioteca-cursos', compact('cursos'));
+    }
+
+    // =========================
+    // 🔁 USAR CURSO NOVAMENTE
+    // =========================
+    public function duplicarCurso($id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $cursoOriginal = Curso::with(['modulos.aulas'])->findOrFail($id);
+
+            $novoCurso = Curso::create([
+                'nome' => $cursoOriginal->nome . ' - Cópia ' . now()->format('d/m/Y H:i'),
+                'descricao' => $cursoOriginal->descricao,
+                'professor_id' => auth()->id(),
+            ]);
+
+            $mapaModulos = [];
+            $mapaAulas = [];
+
+            // =========================
+            // 1. COPIAR MÓDULOS
+            // =========================
+            $modulosOriginais = Modulo::where('curso_id', $cursoOriginal->id)
+                ->orderBy('ordem')
+                ->get();
+
+            foreach ($modulosOriginais as $moduloOriginal) {
+                $novoModulo = Modulo::create([
+                    'nome' => $moduloOriginal->nome,
+                    'curso_id' => $novoCurso->id,
+                    'ordem' => $moduloOriginal->ordem ?? 0,
+                ]);
+
+                $mapaModulos[$moduloOriginal->id] = $novoModulo->id;
+            }
+
+            // =========================
+            // 2. COPIAR AULAS
+            // =========================
+            $aulasOriginais = Aula::where('curso_id', $cursoOriginal->id)
+                ->orderBy('modulo_id')
+                ->orderBy('id')
+                ->get();
+
+            foreach ($aulasOriginais as $aulaOriginal) {
+                $novoModuloId = $mapaModulos[$aulaOriginal->modulo_id] ?? null;
+
+                $novaAula = Aula::create([
+                    'titulo' => $aulaOriginal->titulo,
+                    'descricao' => $aulaOriginal->descricao,
+                    'video_url' => $aulaOriginal->video_url,
+                    'curso_id' => $novoCurso->id,
+                    'modulo_id' => $novoModuloId,
+                ]);
+
+                $mapaAulas[$aulaOriginal->id] = $novaAula->id;
+            }
+
+            // =========================
+            // 3. COPIAR AVALIAÇÕES, PERGUNTAS E RESPOSTAS
+            // =========================
+            foreach ($mapaAulas as $aulaOriginalId => $novaAulaId) {
+                $avaliacoesOriginais = Avaliacao::where('aula_id', $aulaOriginalId)->get();
+
+                foreach ($avaliacoesOriginais as $avaliacaoOriginal) {
+                    $novaAvaliacao = Avaliacao::create([
+                        'titulo' => $avaliacaoOriginal->titulo,
+                        'aula_id' => $novaAulaId,
+                        'tipo' => $avaliacaoOriginal->tipo ?? 'normal',
+                        'tempo_limite' => $avaliacaoOriginal->tempo_limite,
+                        'qtd_perguntas' => $avaliacaoOriginal->qtd_perguntas,
+                    ]);
+
+                    $perguntasOriginais = Pergunta::where('avaliacao_id', $avaliacaoOriginal->id)->get();
+
+                    foreach ($perguntasOriginais as $perguntaOriginal) {
+                        $novaPergunta = Pergunta::create([
+                            'pergunta' => $perguntaOriginal->pergunta,
+                            'avaliacao_id' => $novaAvaliacao->id,
+                        ]);
+
+                        $respostasOriginais = Resposta::where('pergunta_id', $perguntaOriginal->id)->get();
+
+                        foreach ($respostasOriginais as $respostaOriginal) {
+                            Resposta::create([
+                                'resposta' => $respostaOriginal->resposta,
+                                'correta' => $respostaOriginal->correta,
+                                'pergunta_id' => $novaPergunta->id,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('videoaulas', ['curso_id' => $novoCurso->id])
+                ->with('success', 'Curso duplicado com sucesso! Agora você pode editar e reutilizar o conteúdo.');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return back()
+                ->with('error', 'Erro ao duplicar curso: ' . $e->getMessage());
+        }
     }
 
     // =========================
@@ -30,9 +187,20 @@ class AulaController extends Controller
     {
         $alunoId = auth()->id();
 
+        $cursoId = DB::table('matriculas')
+            ->where('aluno_id', $alunoId)
+            ->value('curso_id');
+
+        if (!$cursoId) {
+            $cursoId = Curso::orderBy('id')->value('id');
+        }
+
         $modulos = Modulo::with(['aulas' => function ($q) {
             $q->orderBy('id');
-        }])->orderBy('ordem')->get();
+        }])
+            ->where('curso_id', $cursoId)
+            ->orderBy('ordem')
+            ->get();
 
         $assistidas = DB::table('aulas_assistidas')
             ->where('aluno_id', $alunoId)
@@ -61,9 +229,20 @@ class AulaController extends Controller
     {
         $alunoId = auth()->id();
 
+        $cursoId = DB::table('matriculas')
+            ->where('aluno_id', $alunoId)
+            ->value('curso_id');
+
+        if (!$cursoId) {
+            $cursoId = Curso::orderBy('id')->value('id');
+        }
+
         $modulos = Modulo::with(['aulas' => function ($q) {
             $q->orderBy('id');
-        }])->get();
+        }])
+            ->where('curso_id', $cursoId)
+            ->orderBy('ordem')
+            ->get();
 
         $assistidas = DB::table('aulas_assistidas')
             ->where('aluno_id', $alunoId)
@@ -82,12 +261,16 @@ class AulaController extends Controller
                 : 0;
         }
 
-        $proximasAulas = Aula::orderBy('id')->get();
+        $proximasAulas = Aula::where('curso_id', $cursoId)
+            ->orderBy('id')
+            ->get();
 
         $listaTestes = Avaliacao::leftJoin('aulas_assistidas', function ($join) use ($alunoId) {
             $join->on('avaliacoes.aula_id', '=', 'aulas_assistidas.aula_id')
                 ->where('aulas_assistidas.aluno_id', $alunoId);
         })
+            ->join('aulas', 'avaliacoes.aula_id', '=', 'aulas.id')
+            ->where('aulas.curso_id', $cursoId)
             ->select(
                 'avaliacoes.*',
                 DB::raw('CASE WHEN aulas_assistidas.assistido = true THEN true ELSE false END as assistido')
@@ -103,12 +286,14 @@ class AulaController extends Controller
     }
 
     // =========================
-    // ➕ CRIAR AULA
+    // ➕ TELA CRIAR AULA
     // =========================
     public function create()
     {
-        $modulos = Modulo::all();
-        return view('dashboard.criar-aula', compact('modulos'));
+        $cursos = Curso::orderBy('nome')->get();
+        $modulos = Modulo::orderBy('ordem')->get();
+
+        return view('dashboard.criar-aula', compact('cursos', 'modulos'));
     }
 
     // =========================
@@ -117,10 +302,13 @@ class AulaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'curso_id' => 'nullable|integer',
+            'novo_curso' => 'nullable|string|max:255',
+            'descricao_curso' => 'nullable|string',
             'titulo' => 'required|string|max:255',
             'descricao' => 'nullable|string',
             'video_url' => 'required|string',
-            'modulo_id' => 'nullable',
+            'modulo_id' => 'nullable|integer',
             'novo_modulo' => 'nullable|string|max:255',
             'avaliacao.titulo' => 'nullable|string|max:255',
             'avaliacao.tempo_limite' => 'nullable|integer|min:1',
@@ -131,31 +319,41 @@ class AulaController extends Controller
 
         try {
             // =========================
-            // 1. Garantir curso padrão
+            // 1. Criar ou selecionar curso
             // =========================
-            $curso = DB::table('cursos')->orderBy('id')->first();
+            $cursoId = $request->input('curso_id');
 
-            if (!$curso) {
-                $professorId = auth()->id();
-
-                $cursoId = DB::table('cursos')->insertGetId([
-                    'nome' => 'Curso Principal',
-                    'descricao' => 'Curso padrão do sistema',
-                    'professor_id' => $professorId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+            if ($request->filled('novo_curso')) {
+                $curso = Curso::create([
+                    'nome' => $request->input('novo_curso'),
+                    'descricao' => $request->input('descricao_curso'),
+                    'professor_id' => auth()->id(),
                 ]);
-            } else {
+
+                $cursoId = $curso->id;
+            }
+
+            if (!$cursoId) {
+                $curso = Curso::orderBy('id')->first();
+
+                if (!$curso) {
+                    $curso = Curso::create([
+                        'nome' => 'Curso Principal',
+                        'descricao' => 'Curso padrão do sistema',
+                        'professor_id' => auth()->id(),
+                    ]);
+                }
+
                 $cursoId = $curso->id;
             }
 
             // =========================
-            // 2. Criar ou pegar módulo
+            // 2. Criar ou selecionar módulo
             // =========================
             $moduloId = $request->input('modulo_id');
 
             if ($request->filled('novo_modulo')) {
-                $ultimaOrdem = Modulo::max('ordem') ?? 0;
+                $ultimaOrdem = Modulo::where('curso_id', $cursoId)->max('ordem') ?? 0;
 
                 $modulo = Modulo::create([
                     'nome' => $request->input('novo_modulo'),
@@ -166,12 +364,13 @@ class AulaController extends Controller
                 $moduloId = $modulo->id;
             }
 
-            // Se não escolheu módulo nem criou novo, cria um módulo padrão
             if (!$moduloId) {
                 $modulo = Modulo::firstOrCreate(
-                    ['nome' => 'Módulo Principal'],
                     [
+                        'nome' => 'Módulo Principal',
                         'curso_id' => $cursoId,
+                    ],
+                    [
                         'ordem' => 1,
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -194,7 +393,6 @@ class AulaController extends Controller
                 $video = str_replace('youtu.be/', 'www.youtube.com/embed/', $video);
             }
 
-            // Remove parâmetros extras simples do YouTube embed
             if (str_contains($video, '&')) {
                 $video = explode('&', $video)[0];
             }
@@ -261,7 +459,7 @@ class AulaController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('videoaulas')
+                ->route('videoaulas', ['curso_id' => $cursoId])
                 ->with('success', 'Aula criada com sucesso!');
 
         } catch (\Throwable $e) {
@@ -270,6 +468,58 @@ class AulaController extends Controller
             return back()
                 ->withInput()
                 ->with('error', 'Erro ao criar aula: ' . $e->getMessage());
+        }
+    }
+
+    // =========================
+    // ✏️ ATUALIZAR AULA
+    // =========================
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'titulo' => 'required|string|max:255',
+            'descricao' => 'nullable|string',
+            'video_url' => 'required|string',
+            'modulo_id' => 'required|integer',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $aula = Aula::findOrFail($id);
+
+            $video = $request->input('video_url');
+
+            if (str_contains($video, 'watch?v=')) {
+                $video = str_replace('watch?v=', 'embed/', $video);
+            }
+
+            if (str_contains($video, 'youtu.be/')) {
+                $video = str_replace('youtu.be/', 'www.youtube.com/embed/', $video);
+            }
+
+            if (str_contains($video, '&')) {
+                $video = explode('&', $video)[0];
+            }
+
+            $modulo = Modulo::find($request->modulo_id);
+
+            $aula->update([
+                'titulo' => $request->titulo,
+                'descricao' => $request->descricao,
+                'video_url' => $video,
+                'modulo_id' => $request->modulo_id,
+                'curso_id' => $modulo->curso_id ?? $aula->curso_id,
+            ]);
+
+            DB::commit();
+
+            return back()->with('success', 'Aula atualizada com sucesso!');
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return back()->with('error', 'Erro ao atualizar aula: ' . $e->getMessage());
         }
     }
 
@@ -319,7 +569,7 @@ class AulaController extends Controller
 
             DB::commit();
 
-            return back()->with('success', 'Aula excluída!');
+            return back()->with('success', 'Aula excluída com sucesso!');
 
         } catch (\Throwable $e) {
             DB::rollBack();

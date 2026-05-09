@@ -14,8 +14,15 @@ class Avaliacao extends Model
     protected $fillable = [
         'titulo',
         'tempo_limite',
-        'aula_id'
+        'qtd_perguntas',
+        'tipo',
+        'aula_id',
     ];
+
+    public function aula()
+    {
+        return $this->belongsTo(Aula::class, 'aula_id');
+    }
 
     public function perguntas()
     {
