@@ -38,6 +38,13 @@
         min-height: 100vh;
         width: 100%;
     }
+
+    @media (max-width: 768px) {
+        .modal-scroll-mobile {
+            max-height: 88vh !important;
+            overflow-y: auto !important;
+        }
+    }
 </style>
 
 <div class="flex min-h-screen w-full bg-[#F3F7F3] text-[#003C2F] overflow-x-hidden">
@@ -53,13 +60,13 @@
             <!-- CABEÇALHO -->
             <div class="mb-7 flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
 
-                <div>
+                <div class="min-w-0">
                     <div class="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#00A63E] mb-2">
                         <span class="w-2 h-2 rounded-full bg-[#00A63E]"></span>
                         Administração de conteúdo
                     </div>
 
-                    <h1 class="text-3xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight">
+                    <h1 class="text-2xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight break-words">
                         Gerenciamento de Videoaulas
                     </h1>
 
@@ -68,7 +75,7 @@
                     </p>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-3">
+                <div class="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
 
                     <a href="{{ route('biblioteca.cursos') }}"
                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-[#004D3A] border border-[#DCE7DE] px-5 py-3 rounded-2xl shadow-sm hover:bg-[#F8FBF8] transition text-sm font-bold">
@@ -85,6 +92,71 @@
 
             </div>
 
+            <!-- ALERTAS -->
+            @if(session('success'))
+                <div class="mb-5 bg-green-100 text-green-700 px-4 py-3 rounded-2xl border border-green-200 shadow-sm">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-5 bg-red-100 text-red-700 px-4 py-3 rounded-2xl border border-red-200 shadow-sm break-words">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="mb-5 bg-red-100 text-red-700 px-4 py-3 rounded-2xl border border-red-200 shadow-sm">
+                    <p class="font-extrabold mb-2">Corrija os campos abaixo:</p>
+
+                    <ul class="list-disc pl-5 text-sm">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <!-- PESQUISA AO VIVO -->
+            <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-4 sm:p-5 mb-7">
+                <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-5 flex items-center text-[#8A9B92]">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="w-6 h-6"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="1.8"
+                                      d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"/>
+                            </svg>
+                        </span>
+
+                        <input type="text"
+                               id="pesquisaVideoaulas"
+                               oninput="pesquisarVideoaulasAoVivo()"
+                               placeholder="Pesquisar como no WhatsApp: curso, módulo, aula, teste..."
+                               autocomplete="off"
+                               class="w-full h-14 pl-14 pr-12 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+
+                        <button type="button"
+                                onclick="limparPesquisaVideoaulas()"
+                                class="absolute inset-y-0 right-4 hidden items-center text-[#8A9B92] hover:text-[#003C2F]"
+                                id="btnLimparPesquisaVideoaulas">
+                            ✕
+                        </button>
+                    </div>
+
+                    <div class="bg-[#EAF5EF] text-[#004D3A] px-4 py-3 rounded-2xl text-sm font-extrabold whitespace-nowrap text-center">
+                        <span id="contadorPesquisaVideoaulas">{{ $totalAulas }}</span> resultado(s)
+                    </div>
+
+                </div>
+            </div>
+
             <!-- CURSO SELECIONADO -->
             <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6 mb-7">
 
@@ -95,7 +167,7 @@
                             Curso selecionado
                         </p>
 
-                        <h2 class="text-2xl font-extrabold text-[#003C2F] mt-1 break-words">
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-[#003C2F] mt-1 break-words">
                             {{ $cursoAtual->nome ?? 'Nenhum curso selecionado' }}
                         </h2>
 
@@ -126,48 +198,8 @@
 
             </div>
 
-            <!-- PESQUISA AO VIVO -->
-            <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-4 sm:p-5 mb-7">
-                <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-
-                    <div class="relative flex-1">
-                        <span class="absolute inset-y-0 left-5 flex items-center text-[#8A9B92]">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                 class="w-6 h-6"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 stroke="currentColor">
-                                <path stroke-linecap="round"
-                                      stroke-linejoin="round"
-                                      stroke-width="1.8"
-                                      d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"/>
-                            </svg>
-                        </span>
-
-                        <input type="text"
-                               id="pesquisaVideoaulas"
-                               oninput="pesquisarVideoaulasAoVivo()"
-                               placeholder="Pesquisar como no WhatsApp: aula, módulo, curso, teste..."
-                               autocomplete="off"
-                               class="w-full h-14 pl-14 pr-12 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
-
-                        <button type="button"
-                                onclick="limparPesquisaVideoaulas()"
-                                class="absolute inset-y-0 right-4 hidden items-center text-[#8A9B92] hover:text-[#003C2F]"
-                                id="btnLimparPesquisaVideoaulas">
-                            ✕
-                        </button>
-                    </div>
-
-                    <div class="bg-[#EAF5EF] text-[#004D3A] px-4 py-3 rounded-2xl text-sm font-extrabold whitespace-nowrap">
-                        <span id="contadorPesquisaVideoaulas">{{ $totalAulas }}</span> resultado(s)
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- RESUMO MOBILE -->
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6 xl:hidden">
+            <!-- RESUMO RESPONSIVO -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
 
                 <div class="bg-white border border-[#E3EBE4] rounded-3xl p-5 shadow-sm">
                     <p class="text-xs text-[#60756B] font-semibold">Cursos</p>
@@ -223,8 +255,8 @@
                                         {{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}
                                     </div>
 
-                                    <div>
-                                        <h2 class="text-lg sm:text-xl font-extrabold text-[#003C2F]">
+                                    <div class="min-w-0">
+                                        <h2 class="text-lg sm:text-xl font-extrabold text-[#003C2F] break-words">
                                             {{ $modulo->nome }}
                                         </h2>
 
@@ -255,8 +287,31 @@
                                 @forelse ($aulasDoModulo as $aulaIndex => $aula)
 
                                     @php
-                                        $avaliacaoAula = DB::table('avaliacoes')->where('aula_id', $aula->id)->first();
-                                        $temMiniTeste = $avaliacaoAula ? true : false;
+                                        $avaliacaoMiniTeste = DB::table('avaliacoes')
+                                            ->where('aula_id', $aula->id)
+                                            ->where(function ($query) {
+                                                $query->where('tipo', 'normal')
+                                                      ->orWhereNull('tipo');
+                                            })
+                                            ->first();
+
+                                        $temMiniTeste = $avaliacaoMiniTeste ? true : false;
+
+                                        $perguntasMiniTeste = collect();
+
+                                        if ($avaliacaoMiniTeste) {
+                                            $perguntasMiniTeste = DB::table('perguntas')
+                                                ->where('avaliacao_id', $avaliacaoMiniTeste->id)
+                                                ->orderBy('id')
+                                                ->get();
+
+                                            foreach ($perguntasMiniTeste as $perguntaMini) {
+                                                $perguntaMini->respostas = DB::table('respostas')
+                                                    ->where('pergunta_id', $perguntaMini->id)
+                                                    ->orderBy('id')
+                                                    ->get();
+                                            }
+                                        }
                                     @endphp
 
                                     <div class="aula-pesquisa bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-4 transition hover:shadow-md"
@@ -269,7 +324,10 @@
                                                 <div class="absolute inset-0 bg-gradient-to-br from-black via-[#1F2937] to-black opacity-90"></div>
 
                                                 <div class="relative w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                         class="w-6 h-6 text-white"
+                                                         fill="currentColor"
+                                                         viewBox="0 0 24 24">
                                                         <path d="M8 5v14l11-7z"/>
                                                     </svg>
                                                 </div>
@@ -330,15 +388,22 @@
                                                     Editar Conteúdo
                                                 </button>
 
-                                                <a href="{{ route('avaliacoes.criar', $aula->id) }}"
-                                                   class="inline-flex items-center justify-center gap-2
-                                                        {{ $temMiniTeste
-                                                            ? 'bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100'
-                                                            : 'bg-[#EAF5EF] text-[#004D3A] border border-[#DCE7DE] hover:bg-[#DCE7DE]'
-                                                        }}
-                                                        px-4 py-3 rounded-2xl text-sm font-bold transition">
+                                                <button type="button"
+                                                        onclick='abrirModalMiniTeste(
+                                                            @json($aula->id),
+                                                            @json($cursoAtual->id ?? null),
+                                                            @json($aula->titulo),
+                                                            @json($avaliacaoMiniTeste),
+                                                            @json($perguntasMiniTeste)
+                                                        )'
+                                                        class="inline-flex items-center justify-center gap-2
+                                                            {{ $temMiniTeste
+                                                                ? 'bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100'
+                                                                : 'bg-[#EAF5EF] text-[#004D3A] border border-[#DCE7DE] hover:bg-[#DCE7DE]'
+                                                            }}
+                                                            px-4 py-3 rounded-2xl text-sm font-bold transition">
                                                     {{ $temMiniTeste ? 'Editar Mini Teste' : 'Criar Mini Teste' }}
-                                                </a>
+                                                </button>
 
                                                 <form action="{{ route('aulas.destroy', $aula->id) }}"
                                                       method="POST"
@@ -413,7 +478,7 @@
 
                 </div>
 
-                <!-- PAINEL DIREITO SEM PROVA FINAL -->
+                <!-- PAINEL DIREITO -->
                 <aside class="xl:col-span-4 space-y-5">
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
@@ -503,6 +568,7 @@
 
 </div>
 
+<!-- BOTÃO FLUTUANTE -->
 <button type="button"
         onclick="abrirModalAula()"
         class="fixed right-5 bottom-5 w-14 h-14 rounded-full bg-[#004D3A] text-white shadow-2xl flex items-center justify-center hover:bg-[#003C2F] transition z-40">
@@ -510,10 +576,10 @@
 </button>
 
 <!-- MODAL CRIAR AULA -->
-<div id="modalAula" class="fixed inset-0 hidden items-center justify-center z-50"
+<div id="modalAula" class="fixed inset-0 hidden items-center justify-center z-50 px-3 sm:px-4"
      style="background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);">
 
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl mx-4 overflow-hidden"
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl mx-auto overflow-hidden modal-scroll-mobile"
          style="max-height: 90vh; overflow-y: auto;">
 
         <div class="flex items-start justify-between px-5 sm:px-8 pt-8 pb-4">
@@ -529,7 +595,7 @@
 
             <button type="button"
                     onclick="fecharModalAula()"
-                    class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition">
+                    class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition shrink-0">
                 ✕
             </button>
         </div>
@@ -758,10 +824,10 @@
 
 <!-- MODAL BANCO DE PERGUNTAS -->
 <div id="modalBancoPerguntas"
-     class="fixed inset-0 hidden items-center justify-center z-[70] px-4"
+     class="fixed inset-0 hidden items-center justify-center z-[70] px-3 sm:px-4"
      style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
 
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden"
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden modal-scroll-mobile"
          style="max-height: 90vh; overflow-y: auto;">
 
         <div class="flex items-start justify-between px-5 sm:px-8 pt-8 pb-4 border-b border-[#E3EBE4]">
@@ -777,7 +843,7 @@
 
             <button type="button"
                     onclick="fecharBancoPerguntas()"
-                    class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition">
+                    class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition shrink-0">
                 ✕
             </button>
         </div>
@@ -843,10 +909,10 @@
 </div>
 
 <!-- MODAL EDITAR AULA -->
-<div id="modalEditarAula" class="fixed inset-0 hidden items-center justify-center z-50"
+<div id="modalEditarAula" class="fixed inset-0 hidden items-center justify-center z-50 px-3 sm:px-4"
      style="background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);">
 
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden"
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-auto overflow-hidden modal-scroll-mobile"
          style="max-height: 90vh; overflow-y: auto;">
 
         <div class="flex items-start justify-between px-5 sm:px-8 pt-8 pb-4">
@@ -862,7 +928,7 @@
 
             <button type="button"
                     onclick="fecharModalEditarAula()"
-                    class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition">
+                    class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition shrink-0">
                 ✕
             </button>
         </div>
@@ -939,11 +1005,134 @@
     </div>
 </div>
 
+<!-- MODAL CRIAR / EDITAR MINI TESTE -->
+<div id="modalMiniTeste"
+     class="fixed inset-0 hidden items-center justify-center bg-black/50 backdrop-blur-sm z-[95] px-3 sm:px-4">
+
+    <div class="bg-white w-full max-w-5xl rounded-3xl border border-[#E3EBE4] shadow-2xl overflow-hidden modal-scroll-mobile"
+         style="max-height: 92vh; overflow-y: auto;">
+
+        <div class="p-5 sm:p-7 border-b border-[#E3EBE4] flex items-start justify-between gap-4">
+
+            <div class="min-w-0">
+                <div class="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#00A63E] mb-2">
+                    <span class="w-2 h-2 rounded-full bg-[#00A63E]"></span>
+                    Pós-teste da aula
+                </div>
+
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-[#003C2F] break-words">
+                    Criar / Editar Mini Teste
+                </h2>
+
+                <p class="text-sm text-[#60756B] mt-2 break-words">
+                    Aula: <strong id="miniTesteNomeAula">Aula</strong>
+                </p>
+            </div>
+
+            <button type="button"
+                    onclick="fecharModalMiniTeste()"
+                    class="w-10 h-10 rounded-xl bg-[#F1F6F2] text-[#003C2F] flex items-center justify-center hover:bg-[#E6EFE8] transition shrink-0">
+                ✕
+            </button>
+
+        </div>
+
+        <form method="POST" action="{{ route('avaliacoes.store') }}" id="formMiniTeste">
+            @csrf
+
+            <input type="hidden" name="aula_id" id="miniTesteAulaId">
+            <input type="hidden" name="curso_id" id="miniTesteCursoId">
+
+            <div class="p-5 sm:p-7">
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
+                    <div class="md:col-span-2">
+                        <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
+                            Título do mini teste
+                        </label>
+
+                        <input type="text"
+                               name="avaliacao[titulo]"
+                               id="miniTesteTitulo"
+                               required
+                               placeholder="Ex: Mini teste da aula"
+                               class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
+                            Tempo limite
+                        </label>
+
+                        <input type="number"
+                               name="avaliacao[tempo_limite]"
+                               id="miniTesteTempo"
+                               min="1"
+                               placeholder="Minutos"
+                               class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                    </div>
+
+                </div>
+
+                <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl overflow-hidden">
+
+                    <div class="p-5 border-b border-[#E3EBE4] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+                        <div>
+                            <h3 class="text-xl font-extrabold text-[#003C2F]">
+                                Perguntas do mini teste
+                            </h3>
+
+                            <p class="text-xs text-[#60756B] mt-1">
+                                Adicione perguntas e marque uma alternativa correta.
+                            </p>
+                        </div>
+
+                        <button type="button"
+                                onclick="adicionarPerguntaMiniTeste()"
+                                class="bg-[#004D3A] hover:bg-[#003C2F] text-white px-5 py-3 rounded-2xl font-extrabold transition shadow-sm text-sm">
+                            Adicionar pergunta
+                        </button>
+
+                    </div>
+
+                    <div class="p-5">
+                        <div id="miniTestePerguntasContainer" class="space-y-5"></div>
+                    </div>
+
+                </div>
+
+                <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 mt-7">
+
+                    <button type="button"
+                            onclick="fecharModalMiniTeste()"
+                            class="px-6 py-3 rounded-2xl border border-[#DCE7DE] text-[#60756B] text-sm font-bold hover:bg-[#F8FBF8] transition">
+                        Cancelar
+                    </button>
+
+                    <button type="submit"
+                            id="btnSalvarMiniTeste"
+                            class="px-7 py-3 rounded-2xl bg-[#004D3A] hover:bg-[#003C2F] text-white text-sm font-extrabold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                        Salvar mini teste
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     let perguntaIndex = 0;
     let perguntasImportadas = new Set();
+    let miniTestePerguntaIndex = 0;
 
     function abrirModalAula() {
         const modal = document.getElementById('modalAula');
@@ -979,27 +1168,6 @@
         }
 
         perguntaIndex = 0;
-    }
-
-    const modalAula = document.getElementById('modalAula');
-
-    if (modalAula) {
-        modalAula.addEventListener('click', function (e) {
-            if (e.target === this) fecharModalAula();
-        });
-    }
-
-    const formAula = document.getElementById('formAula');
-
-    if (formAula) {
-        formAula.addEventListener('submit', function () {
-            const btnSalvar = document.getElementById('btnSalvarAula');
-
-            if (btnSalvar) {
-                btnSalvar.disabled = true;
-                btnSalvar.innerText = 'Salvando...';
-            }
-        });
     }
 
     function abrirModalEditarAulaPeloBotao(botao) {
@@ -1068,27 +1236,184 @@
         }
     }
 
-    const modalEditarAula = document.getElementById('modalEditarAula');
+    function abrirModalMiniTeste(aulaId, cursoId, nomeAula, avaliacao, perguntas) {
+        const modal = document.getElementById('modalMiniTeste');
+        const aulaIdInput = document.getElementById('miniTesteAulaId');
+        const cursoIdInput = document.getElementById('miniTesteCursoId');
+        const nomeAulaTexto = document.getElementById('miniTesteNomeAula');
+        const tituloInput = document.getElementById('miniTesteTitulo');
+        const tempoInput = document.getElementById('miniTesteTempo');
+        const container = document.getElementById('miniTestePerguntasContainer');
+        const btnSalvar = document.getElementById('btnSalvarMiniTeste');
 
-    if (modalEditarAula) {
-        modalEditarAula.addEventListener('click', function(e) {
-            if (e.target === this) {
-                fecharModalEditarAula();
-            }
-        });
+        if (!modal || !aulaIdInput || !cursoIdInput || !nomeAulaTexto || !tituloInput || !tempoInput || !container) {
+            alert('Modal de mini teste não encontrado na página.');
+            return;
+        }
+
+        miniTestePerguntaIndex = 0;
+
+        aulaIdInput.value = aulaId || '';
+        cursoIdInput.value = cursoId || '';
+        nomeAulaTexto.innerText = nomeAula || 'Aula';
+
+        tituloInput.value = avaliacao && avaliacao.titulo
+            ? avaliacao.titulo
+            : 'Pós-teste - ' + (nomeAula || 'Aula');
+
+        tempoInput.value = avaliacao && avaliacao.tempo_limite
+            ? avaliacao.tempo_limite
+            : '';
+
+        container.innerHTML = '';
+
+        if (btnSalvar) {
+            btnSalvar.disabled = false;
+            btnSalvar.innerText = 'Salvar mini teste';
+        }
+
+        if (perguntas && perguntas.length > 0) {
+            perguntas.forEach((pergunta) => {
+                adicionarPerguntaMiniTeste(pergunta);
+            });
+        } else {
+            adicionarPerguntaMiniTeste();
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
     }
 
-    const formEditarAula = document.getElementById('formEditarAula');
+    function fecharModalMiniTeste() {
+        const modal = document.getElementById('modalMiniTeste');
+        const form = document.getElementById('formMiniTeste');
+        const container = document.getElementById('miniTestePerguntasContainer');
+        const btnSalvar = document.getElementById('btnSalvarMiniTeste');
 
-    if (formEditarAula) {
-        formEditarAula.addEventListener('submit', function () {
-            const btn = document.getElementById('btnAtualizarAula');
+        if (!modal) return;
 
-            if (btn) {
-                btn.disabled = true;
-                btn.innerText = 'Salvando...';
-            }
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+
+        if (form) form.reset();
+        if (container) container.innerHTML = '';
+
+        if (btnSalvar) {
+            btnSalvar.disabled = false;
+            btnSalvar.innerText = 'Salvar mini teste';
+        }
+
+        miniTestePerguntaIndex = 0;
+    }
+
+    function adicionarPerguntaMiniTeste(dados = null) {
+        const container = document.getElementById('miniTestePerguntasContainer');
+
+        if (!container) return;
+
+        const index = miniTestePerguntaIndex;
+        const perguntaTexto = dados && dados.pergunta ? dados.pergunta : '';
+
+        let respostas = dados && dados.respostas && dados.respostas.length > 0
+            ? dados.respostas
+            : [
+                { resposta: '', correta: true },
+                { resposta: '', correta: false },
+                { resposta: '', correta: false },
+                { resposta: '', correta: false }
+            ];
+
+        const card = document.createElement('div');
+        card.className = 'mini-teste-card bg-white border border-[#DCE7DE] rounded-3xl p-5 shadow-sm';
+        card.id = 'mini-teste-pergunta-' + index;
+
+        card.innerHTML = `
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#EAF5EF] text-[#004D3A] text-[11px] font-extrabold uppercase tracking-widest">
+                        Pergunta ${index + 1}
+                    </span>
+                </div>
+
+                <button type="button"
+                        onclick="removerPerguntaMiniTeste(${index})"
+                        class="text-red-600 font-bold text-sm hover:text-red-700">
+                    Remover
+                </button>
+            </div>
+
+            <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
+                Enunciado
+            </label>
+
+            <input type="text"
+                   name="perguntas[${index}][pergunta]"
+                   value="${escapeHtmlMiniTeste(perguntaTexto)}"
+                   placeholder="Digite a pergunta..."
+                   required
+                   class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition mb-4">
+
+            <div class="space-y-3" id="mini-teste-respostas-${index}"></div>
+        `;
+
+        container.appendChild(card);
+
+        respostas.forEach((resposta, respostaIndex) => {
+            adicionarRespostaMiniTeste(index, respostaIndex, resposta);
         });
+
+        miniTestePerguntaIndex++;
+    }
+
+    function adicionarRespostaMiniTeste(perguntaIndex, respostaIndex, respostaDados = null) {
+        const container = document.getElementById('mini-teste-respostas-' + perguntaIndex);
+
+        if (!container) return;
+
+        const letras = ['A', 'B', 'C', 'D', 'E'];
+        const texto = respostaDados && respostaDados.resposta ? respostaDados.resposta : '';
+        const correta = respostaDados && (respostaDados.correta == 1 || respostaDados.correta === true);
+
+        const div = document.createElement('div');
+        div.className = 'bg-[#F8FBF8] border border-[#DCE7DE] rounded-2xl px-4 py-3 flex items-center gap-3';
+
+        div.innerHTML = `
+            <input type="radio"
+                   name="perguntas[${perguntaIndex}][correta]"
+                   value="${respostaIndex}"
+                   ${correta ? 'checked' : ''}
+                   class="w-4 h-4 accent-[#004D3A] cursor-pointer">
+
+            <span class="text-xs font-extrabold text-[#60756B] w-5">
+                ${letras[respostaIndex] ?? respostaIndex + 1}
+            </span>
+
+            <input type="text"
+                   name="perguntas[${perguntaIndex}][respostas][]"
+                   value="${escapeHtmlMiniTeste(texto)}"
+                   placeholder="Digite a alternativa..."
+                   required
+                   class="flex-1 bg-transparent text-sm text-[#003C2F] placeholder-[#8A9B92] focus:outline-none">
+        `;
+
+        container.appendChild(div);
+    }
+
+    function removerPerguntaMiniTeste(index) {
+        const card = document.getElementById('mini-teste-pergunta-' + index);
+
+        if (card) {
+            card.remove();
+        }
+    }
+
+    function escapeHtmlMiniTeste(texto) {
+        return String(texto ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;');
     }
 
     function toggleModulo(id) {
@@ -1460,12 +1785,70 @@
         });
     }
 
+    const modalAula = document.getElementById('modalAula');
+    const modalEditarAula = document.getElementById('modalEditarAula');
     const modalBancoPerguntas = document.getElementById('modalBancoPerguntas');
+    const modalMiniTeste = document.getElementById('modalMiniTeste');
+
+    if (modalAula) {
+        modalAula.addEventListener('click', function (e) {
+            if (e.target === this) fecharModalAula();
+        });
+    }
+
+    if (modalEditarAula) {
+        modalEditarAula.addEventListener('click', function(e) {
+            if (e.target === this) fecharModalEditarAula();
+        });
+    }
 
     if (modalBancoPerguntas) {
         modalBancoPerguntas.addEventListener('click', function(e) {
-            if (e.target === this) {
-                fecharBancoPerguntas();
+            if (e.target === this) fecharBancoPerguntas();
+        });
+    }
+
+    if (modalMiniTeste) {
+        modalMiniTeste.addEventListener('click', function(e) {
+            if (e.target === this) fecharModalMiniTeste();
+        });
+    }
+
+    const formAula = document.getElementById('formAula');
+
+    if (formAula) {
+        formAula.addEventListener('submit', function () {
+            const btnSalvar = document.getElementById('btnSalvarAula');
+
+            if (btnSalvar) {
+                btnSalvar.disabled = true;
+                btnSalvar.innerText = 'Salvando...';
+            }
+        });
+    }
+
+    const formEditarAula = document.getElementById('formEditarAula');
+
+    if (formEditarAula) {
+        formEditarAula.addEventListener('submit', function () {
+            const btn = document.getElementById('btnAtualizarAula');
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Salvando...';
+            }
+        });
+    }
+
+    const formMiniTeste = document.getElementById('formMiniTeste');
+
+    if (formMiniTeste) {
+        formMiniTeste.addEventListener('submit', function () {
+            const btn = document.getElementById('btnSalvarMiniTeste');
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Salvando...';
             }
         });
     }
@@ -1475,6 +1858,7 @@
             fecharModalAula();
             fecharModalEditarAula();
             fecharBancoPerguntas();
+            fecharModalMiniTeste();
         }
     });
 
