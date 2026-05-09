@@ -61,31 +61,6 @@
 
             </div>
 
-            <!-- ALERTAS -->
-            @if(session('success'))
-                <div class="mb-5 bg-green-100 text-green-700 px-4 py-3 rounded-2xl border border-green-200 shadow-sm">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="mb-5 bg-red-100 text-red-700 px-4 py-3 rounded-2xl border border-red-200 shadow-sm">
-                    {{ session('error') }}
-                </div>
-            @endif
-
-            @if($errors->any())
-                <div class="mb-5 bg-red-100 text-red-700 px-4 py-3 rounded-2xl border border-red-200 shadow-sm">
-                    <p class="font-bold mb-2">Corrija os campos abaixo:</p>
-
-                    <ul class="list-disc pl-5 text-sm">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
             <div class="grid grid-cols-1 xl:grid-cols-12 gap-7">
 
                 <!-- FORMULÁRIO -->

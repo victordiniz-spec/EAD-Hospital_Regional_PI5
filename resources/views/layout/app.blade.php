@@ -40,11 +40,6 @@
             color: #E5E7EB !important;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | FUNDOS CLAROS DO SISTEMA
-        |--------------------------------------------------------------------------
-        */
         html.dark .bg-\[\#F3F7F3\],
         html.dark .bg-\[\#F4F7F3\],
         html.dark .bg-\[\#F8FBF8\],
@@ -62,13 +57,6 @@
             background-color: rgba(16, 24, 39, 0.94) !important;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | SIDEBAR PROFESSOR / ALUNO
-        |--------------------------------------------------------------------------
-        | Esse bloco força a sidebar a escurecer mesmo se ela estiver com bg-gray-100,
-        | bg-white ou classes fixas.
-        */
         html.dark aside {
             background: #0B1220 !important;
             color: #E5E7EB !important;
@@ -105,22 +93,6 @@
             color: #FFFFFF !important;
         }
 
-        html.dark aside .hover\:bg-gray-200:hover {
-            background-color: #111C2E !important;
-        }
-
-        html.dark aside .text-gray-700,
-        html.dark aside .text-gray-800,
-        html.dark aside .text-gray-600,
-        html.dark aside .text-gray-500 {
-            color: #CBD5E1 !important;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | CARDS, ALERTAS E CORES DE STATUS
-        |--------------------------------------------------------------------------
-        */
         html.dark .bg-green-100,
         html.dark .bg-green-50 {
             background-color: rgba(22, 101, 52, 0.22) !important;
@@ -141,11 +113,6 @@
             background-color: rgba(30, 64, 175, 0.22) !important;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | TEXTOS
-        |--------------------------------------------------------------------------
-        */
         html.dark .text-\[\#003C2F\],
         html.dark .text-\[\#0B3B2E\],
         html.dark .text-\[\#1F2A24\],
@@ -168,11 +135,6 @@
             color: #AAB7C4 !important;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | BORDAS
-        |--------------------------------------------------------------------------
-        */
         html.dark .border-\[\#E3EBE4\],
         html.dark .border-\[\#DCE7DE\],
         html.dark .border-\[\#D8E3DD\],
@@ -185,11 +147,6 @@
             border-color: #243044 !important;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | FORMULÁRIOS
-        |--------------------------------------------------------------------------
-        */
         html.dark input,
         html.dark select,
         html.dark textarea {
@@ -203,11 +160,6 @@
             color: #718096 !important;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | TABELAS
-        |--------------------------------------------------------------------------
-        */
         html.dark table thead tr {
             background-color: #0B1220 !important;
         }
@@ -216,11 +168,6 @@
             background-color: #111C2E !important;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | SOMBRAS E EFEITOS
-        |--------------------------------------------------------------------------
-        */
         html.dark .shadow-sm,
         html.dark .shadow-md,
         html.dark .shadow-lg,
@@ -229,24 +176,10 @@
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.38) !important;
         }
 
-        html.dark .backdrop-blur {
-            backdrop-filter: blur(14px);
-        }
-
         html.dark .ring-green-100 {
             --tw-ring-color: rgba(34, 197, 94, 0.25) !important;
         }
 
-        html.dark .dark-card {
-            background: #101827 !important;
-            border-color: #243044 !important;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | SCROLLBAR NO MODO ESCURO
-        |--------------------------------------------------------------------------
-        */
         html.dark ::-webkit-scrollbar {
             width: 10px;
             height: 10px;
@@ -264,6 +197,43 @@
         html.dark ::-webkit-scrollbar-thumb:hover {
             background: #334155;
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | TOAST GLOBAL
+        |--------------------------------------------------------------------------
+        */
+        .toast-global {
+            animation: toastEntrar 0.35s ease forwards;
+        }
+
+        .toast-global.saindo {
+            animation: toastSair 0.25s ease forwards;
+        }
+
+        @keyframes toastEntrar {
+            from {
+                opacity: 0;
+                transform: translateY(18px) scale(0.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes toastSair {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(18px) scale(0.96);
+            }
+        }
     </style>
 </head>
 
@@ -278,6 +248,65 @@
     @if(!isset($noLayout) && View::exists('components.footer'))
         @include('components.footer')
     @endif
+
+    {{-- CONTAINER DOS TOASTS --}}
+    <div id="toastContainer"
+         class="fixed bottom-5 right-5 z-[9999] flex flex-col gap-3 w-[calc(100%-40px)] sm:w-[390px] pointer-events-none">
+    </div>
+
+    @php
+        $toasts = [];
+
+        if (session('success')) {
+            $toasts[] = [
+                'tipo' => 'success',
+                'titulo' => 'Tudo certo!',
+                'mensagem' => session('success'),
+            ];
+        }
+
+        if (session('error')) {
+            $toasts[] = [
+                'tipo' => 'error',
+                'titulo' => 'Atenção!',
+                'mensagem' => session('error'),
+            ];
+        }
+
+        if (session('erro')) {
+            $toasts[] = [
+                'tipo' => 'error',
+                'titulo' => 'Atenção!',
+                'mensagem' => session('erro'),
+            ];
+        }
+
+        if (session('warning')) {
+            $toasts[] = [
+                'tipo' => 'warning',
+                'titulo' => 'Aviso!',
+                'mensagem' => session('warning'),
+            ];
+        }
+
+        if (session('info')) {
+            $toasts[] = [
+                'tipo' => 'info',
+                'titulo' => 'Informação',
+                'mensagem' => session('info'),
+            ];
+        }
+
+        if ($errors->any()) {
+            foreach ($errors->all() as $erro) {
+                $toasts[] = [
+                    'tipo' => 'error',
+                    'titulo' => 'Corrija este campo',
+                    'mensagem' => $erro,
+                ];
+            }
+        }
+    @endphp
 
     <script>
         function aplicarTemaSistema(tema) {
@@ -315,8 +344,139 @@
             });
         }
 
+        function criarToast(tipo, titulo, mensagem) {
+            const container = document.getElementById('toastContainer');
+
+            if (!container) return;
+
+            const toast = document.createElement('div');
+
+            let estilos = {
+                borda: 'border-green-200',
+                fundoIcone: 'bg-green-100',
+                textoIcone: 'text-green-700',
+                barra: 'bg-green-600',
+                icone: '✓'
+            };
+
+            if (tipo === 'error') {
+                estilos = {
+                    borda: 'border-red-200',
+                    fundoIcone: 'bg-red-100',
+                    textoIcone: 'text-red-700',
+                    barra: 'bg-red-600',
+                    icone: '!'
+                };
+            }
+
+            if (tipo === 'warning') {
+                estilos = {
+                    borda: 'border-yellow-200',
+                    fundoIcone: 'bg-yellow-100',
+                    textoIcone: 'text-yellow-700',
+                    barra: 'bg-yellow-500',
+                    icone: '!'
+                };
+            }
+
+            if (tipo === 'info') {
+                estilos = {
+                    borda: 'border-blue-200',
+                    fundoIcone: 'bg-blue-100',
+                    textoIcone: 'text-blue-700',
+                    barra: 'bg-blue-600',
+                    icone: 'i'
+                };
+            }
+
+            toast.className = `
+                toast-global pointer-events-auto relative overflow-hidden
+                bg-white border ${estilos.borda}
+                rounded-3xl shadow-2xl p-4
+            `;
+
+            toast.innerHTML = `
+                <div class="flex items-start gap-3 pr-8">
+                    <div class="w-11 h-11 rounded-2xl ${estilos.fundoIcone} ${estilos.textoIcone} flex items-center justify-center font-extrabold shrink-0">
+                        ${estilos.icone}
+                    </div>
+
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-extrabold text-[#003C2F] leading-tight">
+                            ${titulo}
+                        </p>
+
+                        <p class="text-sm text-[#60756B] mt-1 leading-relaxed break-words">
+                            ${mensagem}
+                        </p>
+                    </div>
+
+                    <button type="button"
+                            class="absolute top-3 right-3 w-8 h-8 rounded-xl flex items-center justify-center text-[#8A9B92] hover:bg-[#F1F6F2] hover:text-[#003C2F] transition"
+                            onclick="fecharToast(this)">
+                        ×
+                    </button>
+                </div>
+
+                <div class="absolute bottom-0 left-0 h-1 ${estilos.barra} toast-barra"
+                     style="width: 100%; animation: toastBarra 4s linear forwards;">
+                </div>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                removerToast(toast);
+            }, 4200);
+        }
+
+        function removerToast(toast) {
+            if (!toast) return;
+
+            toast.classList.add('saindo');
+
+            setTimeout(() => {
+                toast.remove();
+            }, 280);
+        }
+
+        function fecharToast(botao) {
+            const toast = botao.closest('.toast-global');
+            removerToast(toast);
+        }
+
+        const styleToastBarra = document.createElement('style');
+        styleToastBarra.innerHTML = `
+            @keyframes toastBarra {
+                from { width: 100%; }
+                to { width: 0%; }
+            }
+
+            html.dark .toast-global {
+                background: #101827 !important;
+                border-color: #243044 !important;
+            }
+
+            html.dark .toast-global p:first-child {
+                color: #F8FAFC !important;
+            }
+
+            html.dark .toast-global p {
+                color: #AAB7C4 !important;
+            }
+        `;
+        document.head.appendChild(styleToastBarra);
+
         document.addEventListener('DOMContentLoaded', function () {
             atualizarIconeTemaSistema();
+
+            const toasts = @json($toasts);
+
+            toasts.forEach((toast, index) => {
+                setTimeout(() => {
+                    criarToast(toast.tipo, toast.titulo, toast.mensagem);
+                }, index * 250);
+            });
         });
     </script>
 
