@@ -23,14 +23,6 @@
     @vite('resources/css/app.css')
 
     <style>
-        /*
-        |--------------------------------------------------------------------------
-        | MODO ESCURO GLOBAL
-        |--------------------------------------------------------------------------
-        | Esse bloco escurece o sistema mesmo nas telas que usam cores fixas
-        | como bg-white, bg-[#F3F7F3], text-[#003C2F], border-[#E3EBE4], etc.
-        */
-
         html,
         body {
             transition: background-color 0.25s ease, color 0.25s ease;
@@ -48,6 +40,11 @@
             color: #E5E7EB !important;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | FUNDOS CLAROS DO SISTEMA
+        |--------------------------------------------------------------------------
+        */
         html.dark .bg-\[\#F3F7F3\],
         html.dark .bg-\[\#F4F7F3\],
         html.dark .bg-\[\#F8FBF8\],
@@ -55,14 +52,75 @@
         html.dark .bg-\[\#EAF5EF\],
         html.dark .bg-\[\#E7F0EC\],
         html.dark .bg-\[\#F9FBFA\],
-        html.dark .bg-white {
+        html.dark .bg-white,
+        html.dark .bg-gray-50,
+        html.dark .bg-gray-100 {
             background-color: #101827 !important;
         }
 
         html.dark .bg-white\/90 {
-            background-color: rgba(16, 24, 39, 0.92) !important;
+            background-color: rgba(16, 24, 39, 0.94) !important;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | SIDEBAR PROFESSOR / ALUNO
+        |--------------------------------------------------------------------------
+        | Esse bloco força a sidebar a escurecer mesmo se ela estiver com bg-gray-100,
+        | bg-white ou classes fixas.
+        */
+        html.dark aside {
+            background: #0B1220 !important;
+            color: #E5E7EB !important;
+            border-color: #243044 !important;
+        }
+
+        html.dark aside * {
+            border-color: #243044 !important;
+        }
+
+        html.dark aside h1,
+        html.dark aside h2,
+        html.dark aside h3,
+        html.dark aside p,
+        html.dark aside span {
+            color: #E5E7EB !important;
+        }
+
+        html.dark aside a {
+            color: #CBD5E1 !important;
+        }
+
+        html.dark aside a:hover {
+            background: #111C2E !important;
+            color: #FFFFFF !important;
+        }
+
+        html.dark aside a.bg-green-600,
+        html.dark aside .bg-green-600,
+        html.dark aside a[class*="bg-green"],
+        html.dark aside .bg-\[\#004D3A\],
+        html.dark aside .bg-\[\#00A63E\] {
+            background: #00A63E !important;
+            color: #FFFFFF !important;
+        }
+
+        html.dark aside .hover\:bg-gray-200:hover {
+            background-color: #111C2E !important;
+        }
+
+        html.dark aside .text-gray-700,
+        html.dark aside .text-gray-800,
+        html.dark aside .text-gray-600,
+        html.dark aside .text-gray-500 {
+            color: #CBD5E1 !important;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | CARDS, ALERTAS E CORES DE STATUS
+        |--------------------------------------------------------------------------
+        */
         html.dark .bg-green-100,
         html.dark .bg-green-50 {
             background-color: rgba(22, 101, 52, 0.22) !important;
@@ -83,6 +141,11 @@
             background-color: rgba(30, 64, 175, 0.22) !important;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | TEXTOS
+        |--------------------------------------------------------------------------
+        */
         html.dark .text-\[\#003C2F\],
         html.dark .text-\[\#0B3B2E\],
         html.dark .text-\[\#1F2A24\],
@@ -105,23 +168,28 @@
             color: #AAB7C4 !important;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | BORDAS
+        |--------------------------------------------------------------------------
+        */
         html.dark .border-\[\#E3EBE4\],
         html.dark .border-\[\#DCE7DE\],
         html.dark .border-\[\#D8E3DD\],
         html.dark .border-\[\#D7E6DE\],
         html.dark .border-\[\#D9E2DD\],
-        html.dark .border-gray-200 {
+        html.dark .border-gray-100,
+        html.dark .border-gray-200,
+        html.dark .border-gray-300,
+        html.dark .border-gray-700 {
             border-color: #243044 !important;
         }
 
-        html.dark .shadow-sm,
-        html.dark .shadow-md,
-        html.dark .shadow-lg,
-        html.dark .shadow-xl,
-        html.dark .shadow-2xl {
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35) !important;
-        }
-
+        /*
+        |--------------------------------------------------------------------------
+        | FORMULÁRIOS
+        |--------------------------------------------------------------------------
+        */
         html.dark input,
         html.dark select,
         html.dark textarea {
@@ -135,12 +203,30 @@
             color: #718096 !important;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | TABELAS
+        |--------------------------------------------------------------------------
+        */
         html.dark table thead tr {
             background-color: #0B1220 !important;
         }
 
         html.dark table tbody tr:hover {
             background-color: #111C2E !important;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | SOMBRAS E EFEITOS
+        |--------------------------------------------------------------------------
+        */
+        html.dark .shadow-sm,
+        html.dark .shadow-md,
+        html.dark .shadow-lg,
+        html.dark .shadow-xl,
+        html.dark .shadow-2xl {
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.38) !important;
         }
 
         html.dark .backdrop-blur {
@@ -154,6 +240,29 @@
         html.dark .dark-card {
             background: #101827 !important;
             border-color: #243044 !important;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | SCROLLBAR NO MODO ESCURO
+        |--------------------------------------------------------------------------
+        */
+        html.dark ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        html.dark ::-webkit-scrollbar-track {
+            background: #070B14;
+        }
+
+        html.dark ::-webkit-scrollbar-thumb {
+            background: #243044;
+            border-radius: 999px;
+        }
+
+        html.dark ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
         }
     </style>
 </head>
