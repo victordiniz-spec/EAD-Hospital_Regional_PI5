@@ -19,11 +19,6 @@
         ? DB::table('avaliacoes')->whereIn('aula_id', $idsAulas)->count()
         : 0;
 
-    $provaFinal = DB::table('avaliacoes')->where('tipo', 'final')->first();
-
-    $tempoProvaFinal = $provaFinal->tempo_limite ?? 60;
-    $notaMinima = 70;
-
     $totalAulasComTeste = count($idsAulas) > 0
         ? DB::table('avaliacoes')->whereIn('aula_id', $idsAulas)->distinct('aula_id')->count('aula_id')
         : 0;
@@ -131,6 +126,46 @@
 
             </div>
 
+            <!-- PESQUISA AO VIVO -->
+            <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-4 sm:p-5 mb-7">
+                <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-5 flex items-center text-[#8A9B92]">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="w-6 h-6"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="1.8"
+                                      d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"/>
+                            </svg>
+                        </span>
+
+                        <input type="text"
+                               id="pesquisaVideoaulas"
+                               oninput="pesquisarVideoaulasAoVivo()"
+                               placeholder="Pesquisar como no WhatsApp: aula, módulo, curso, teste..."
+                               autocomplete="off"
+                               class="w-full h-14 pl-14 pr-12 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+
+                        <button type="button"
+                                onclick="limparPesquisaVideoaulas()"
+                                class="absolute inset-y-0 right-4 hidden items-center text-[#8A9B92] hover:text-[#003C2F]"
+                                id="btnLimparPesquisaVideoaulas">
+                            ✕
+                        </button>
+                    </div>
+
+                    <div class="bg-[#EAF5EF] text-[#004D3A] px-4 py-3 rounded-2xl text-sm font-extrabold whitespace-nowrap">
+                        <span id="contadorPesquisaVideoaulas">{{ $totalAulas }}</span> resultado(s)
+                    </div>
+
+                </div>
+            </div>
+
             <!-- RESUMO MOBILE -->
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6 xl:hidden">
 
@@ -175,7 +210,8 @@
                                 : 0;
                         @endphp
 
-                        <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm overflow-hidden">
+                        <div class="modulo-pesquisa bg-white border border-[#E3EBE4] rounded-3xl shadow-sm overflow-hidden"
+                             data-search="{{ strtolower(($modulo->nome ?? '') . ' ' . ($cursoAtual->nome ?? '')) }}">
 
                             <!-- CABEÇALHO DO MÓDULO -->
                             <div onclick="toggleModulo({{ $modulo->id }})"
@@ -223,7 +259,8 @@
                                         $temMiniTeste = $avaliacaoAula ? true : false;
                                     @endphp
 
-                                    <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-4 transition hover:shadow-md">
+                                    <div class="aula-pesquisa bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-4 transition hover:shadow-md"
+                                         data-search="{{ strtolower(($aula->titulo ?? '') . ' ' . ($aula->descricao ?? '') . ' ' . ($aula->video_url ?? '') . ' ' . ($modulo->nome ?? '') . ' ' . ($cursoAtual->nome ?? '') . ' ' . ($temMiniTeste ? 'mini teste pos teste pós teste posteste avaliação avaliacao' : 'sem teste')) }}">
 
                                         <div class="flex flex-col lg:flex-row lg:items-center gap-4">
 
@@ -283,13 +320,12 @@
                                             <div class="w-full lg:w-auto flex flex-col sm:flex-row lg:flex-col gap-2 shrink-0">
 
                                                 <button type="button"
-                                                        onclick='abrirModalEditarAula(
-                                                            @json($aula->id),
-                                                            @json($aula->titulo),
-                                                            @json($aula->descricao),
-                                                            @json($aula->video_url),
-                                                            @json($aula->modulo_id)
-                                                        )'
+                                                        data-id="{{ $aula->id }}"
+                                                        data-titulo='@json($aula->titulo)'
+                                                        data-descricao='@json($aula->descricao)'
+                                                        data-video='@json($aula->video_url)'
+                                                        data-modulo="{{ $aula->modulo_id }}"
+                                                        onclick="abrirModalEditarAulaPeloBotao(this)"
                                                         class="inline-flex items-center justify-center gap-2 bg-white text-[#004D3A] border border-[#DCE7DE] px-4 py-3 rounded-2xl text-sm font-bold hover:bg-[#EAF5EF] hover:border-[#00A63E]/40 transition">
                                                     Editar Conteúdo
                                                 </button>
@@ -377,75 +413,8 @@
 
                 </div>
 
-                <!-- PAINEL DIREITO -->
+                <!-- PAINEL DIREITO SEM PROVA FINAL -->
                 <aside class="xl:col-span-4 space-y-5">
-
-                    <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm overflow-hidden">
-                        <div class="h-1.5 bg-[#004D3A]"></div>
-
-                        <div class="p-5 sm:p-6">
-                            <div class="flex items-start gap-3 mb-6">
-                                <div class="w-11 h-11 rounded-2xl bg-[#EAF5EF] text-[#004D3A] flex items-center justify-center shrink-0">
-                                    ✓
-                                </div>
-
-                                <div>
-                                    <h2 class="font-extrabold text-xl text-[#003C2F]">
-                                        Configuração: Prova Final
-                                    </h2>
-
-                                    <p class="text-xs text-[#60756B] mt-1">
-                                        Parâmetros gerais da avaliação final.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="mb-6">
-                                <div class="flex justify-between items-end mb-2">
-                                    <p class="text-[11px] font-bold uppercase tracking-widest text-[#60756B]">
-                                        Nota mínima para aprovação
-                                    </p>
-
-                                    <span class="text-2xl font-extrabold text-[#004D3A]">
-                                        {{ $notaMinima }}%
-                                    </span>
-                                </div>
-
-                                <div class="h-2 bg-[#E8EFE9] rounded-full overflow-hidden">
-                                    <div class="h-full bg-[#004D3A] rounded-full" style="width: {{ $notaMinima }}%;"></div>
-                                </div>
-                            </div>
-
-                            <div class="space-y-3 mb-6">
-
-                                <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 flex items-center justify-between gap-3">
-                                    <p class="text-sm font-bold text-[#60756B]">
-                                        Tempo limite
-                                    </p>
-
-                                    <p class="text-lg font-extrabold text-[#004D3A]">
-                                        {{ $tempoProvaFinal }} min
-                                    </p>
-                                </div>
-
-                                <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 flex items-center justify-between gap-3">
-                                    <p class="text-sm font-bold text-[#60756B]">
-                                        Questões aleatórias
-                                    </p>
-
-                                    <div class="w-12 h-7 rounded-full bg-[#00A63E] p-1 flex justify-end">
-                                        <span class="w-5 h-5 rounded-full bg-white shadow"></span>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <a href="{{ route('prova.final.criar') }}"
-                               class="w-full inline-flex items-center justify-center gap-2 bg-[#004D3A] text-white rounded-2xl px-4 py-3 text-sm font-extrabold hover:bg-[#003C2F] transition">
-                                Editar Banco de Questões
-                            </a>
-                        </div>
-                    </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
                         <div class="bg-[#004D3A] text-white rounded-3xl p-5 shadow-sm">
@@ -499,10 +468,39 @@
                             Abrir biblioteca de cursos
                         </a>
                     </div>
+
+                    <div class="bg-white border border-[#E3EBE4] rounded-3xl p-5 shadow-sm">
+                        <div class="flex items-start gap-3 mb-4">
+                            <div class="w-11 h-11 rounded-2xl bg-[#EAF5EF] text-[#004D3A] flex items-center justify-center shrink-0">
+                                🎥
+                            </div>
+
+                            <div>
+                                <h2 class="font-extrabold text-lg text-[#003C2F]">
+                                    Conteúdos
+                                </h2>
+
+                                <p class="text-xs text-[#60756B] mt-1">
+                                    Gerencie aulas, módulos e pós-testes deste curso.
+                                </p>
+                            </div>
+                        </div>
+
+                        <button type="button"
+                                onclick="abrirModalAula()"
+                                class="w-full inline-flex items-center justify-center bg-[#004D3A] text-white rounded-2xl px-4 py-3 text-sm font-extrabold hover:bg-[#003C2F] transition">
+                            Criar nova aula
+                        </button>
+                    </div>
+
                 </aside>
+
             </div>
+
         </section>
+
     </main>
+
 </div>
 
 <button type="button"
@@ -1004,16 +1002,47 @@
         });
     }
 
+    function abrirModalEditarAulaPeloBotao(botao) {
+        if (!botao) return;
+
+        const id = botao.dataset.id;
+        const moduloId = botao.dataset.modulo;
+
+        let titulo = '';
+        let descricao = '';
+        let videoUrl = '';
+
+        try {
+            titulo = JSON.parse(botao.dataset.titulo || '""');
+            descricao = JSON.parse(botao.dataset.descricao || '""');
+            videoUrl = JSON.parse(botao.dataset.video || '""');
+        } catch (e) {
+            titulo = botao.dataset.titulo || '';
+            descricao = botao.dataset.descricao || '';
+            videoUrl = botao.dataset.video || '';
+        }
+
+        abrirModalEditarAula(id, titulo, descricao, videoUrl, moduloId);
+    }
+
     function abrirModalEditarAula(id, titulo, descricao, videoUrl, moduloId) {
         const modal = document.getElementById('modalEditarAula');
         const form = document.getElementById('formEditarAula');
 
-        if (!modal || !form) return;
+        if (!modal || !form) {
+            alert('Modal de edição não encontrado na página.');
+            return;
+        }
 
-        document.getElementById('edit_titulo').value = titulo ?? '';
-        document.getElementById('edit_descricao').value = descricao ?? '';
-        document.getElementById('edit_video_url').value = videoUrl ?? '';
-        document.getElementById('edit_modulo_id').value = moduloId ?? '';
+        const inputTitulo = document.getElementById('edit_titulo');
+        const inputDescricao = document.getElementById('edit_descricao');
+        const inputVideo = document.getElementById('edit_video_url');
+        const inputModulo = document.getElementById('edit_modulo_id');
+
+        if (inputTitulo) inputTitulo.value = titulo ?? '';
+        if (inputDescricao) inputDescricao.value = descricao ?? '';
+        if (inputVideo) inputVideo.value = videoUrl ?? '';
+        if (inputModulo) inputModulo.value = moduloId ?? '';
 
         form.action = '/aulas/' + id;
 
@@ -1075,6 +1104,78 @@
         if (icone) {
             icone.style.transform = aberto ? 'rotate(0deg)' : 'rotate(180deg)';
         }
+    }
+
+    function normalizarPesquisa(texto) {
+        return (texto || '')
+            .toString()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
+    }
+
+    function pesquisarVideoaulasAoVivo() {
+        const input = document.getElementById('pesquisaVideoaulas');
+        const btnLimpar = document.getElementById('btnLimparPesquisaVideoaulas');
+        const contador = document.getElementById('contadorPesquisaVideoaulas');
+
+        const termo = normalizarPesquisa(input ? input.value : '');
+
+        const modulos = document.querySelectorAll('.modulo-pesquisa');
+        let resultados = 0;
+
+        if (btnLimpar) {
+            btnLimpar.classList.toggle('hidden', termo.length === 0);
+            btnLimpar.classList.toggle('flex', termo.length > 0);
+        }
+
+        modulos.forEach((modulo) => {
+            const textoModulo = normalizarPesquisa(modulo.dataset.search || '');
+            const aulas = modulo.querySelectorAll('.aula-pesquisa');
+
+            let moduloTemResultado = textoModulo.includes(termo);
+            let aulasVisiveis = 0;
+
+            aulas.forEach((aula) => {
+                const textoAula = normalizarPesquisa(aula.dataset.search || '');
+                const aparece = termo === '' || textoAula.includes(termo) || textoModulo.includes(termo);
+
+                aula.classList.toggle('hidden', !aparece);
+
+                if (aparece) {
+                    aulasVisiveis++;
+                    resultados++;
+                }
+            });
+
+            if (aulas.length === 0 && moduloTemResultado) {
+                resultados++;
+            }
+
+            modulo.classList.toggle('hidden', !(termo === '' || moduloTemResultado || aulasVisiveis > 0));
+
+            const corpoModulo = modulo.querySelector('[id^="modulo-"]');
+
+            if (corpoModulo && termo !== '' && (moduloTemResultado || aulasVisiveis > 0)) {
+                corpoModulo.classList.remove('hidden');
+            }
+        });
+
+        if (contador) {
+            contador.innerText = resultados;
+        }
+    }
+
+    function limparPesquisaVideoaulas() {
+        const input = document.getElementById('pesquisaVideoaulas');
+
+        if (input) {
+            input.value = '';
+            input.focus();
+        }
+
+        pesquisarVideoaulasAoVivo();
     }
 
     function addPergunta() {
