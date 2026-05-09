@@ -48,28 +48,31 @@
 
         <section class="p-4 sm:p-6 lg:p-8">
 
-            <!-- CABEÇALHO -->
-            <div class="mb-7">
+            <!-- CABEÇALHO CENTRALIZADO -->
+            <div class="mb-8">
 
-                <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
+                <div class="max-w-4xl mx-auto text-center">
 
-                    <div>
-                        <h1 class="text-3xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight">
-                            Controle de Usuários
-                        </h1>
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#003C2F] tracking-tight leading-tight">
+                        Controle de Usuários
+                    </h1>
 
-                        <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
-                            Administre acessos, perfis, datas de cadastro, aprovações e permissões da instituição.
-                        </p>
-                    </div>
+                    <p class="text-base sm:text-lg text-[#60756B] mt-4 max-w-2xl mx-auto leading-relaxed">
+                        Administre acessos, perfis, datas de cadastro, aprovações e permissões da instituição.
+                    </p>
 
-                    <div class="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+                </div>
+
+                <!-- PESQUISA E BOTÕES -->
+                <div class="mt-8 max-w-6xl mx-auto">
+
+                    <div class="flex flex-col xl:flex-row items-stretch justify-center gap-4">
 
                         <!-- PESQUISA -->
-                        <div class="relative w-full xl:w-[430px]">
-                            <span class="absolute inset-y-0 left-4 flex items-center text-[#8A9B92]">
+                        <div class="relative flex-1 max-w-3xl">
+                            <span class="absolute inset-y-0 left-6 flex items-center text-[#8A9B92]">
                                 <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="w-5 h-5"
+                                     class="w-7 h-7"
                                      fill="none"
                                      viewBox="0 0 24 24"
                                      stroke="currentColor">
@@ -85,17 +88,17 @@
                                 id="pesquisaUsuarios"
                                 onkeyup="filtrarUsuarios()"
                                 placeholder="Pesquisar aluno, CPF, e-mail..."
-                                class="w-full bg-white border border-[#DCE7DE] text-[#003C2F] placeholder-[#8A9B92] rounded-2xl pl-12 pr-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
+                                class="w-full h-[72px] bg-white border-2 border-[#00A63E] text-[#003C2F] placeholder-[#8A9B92] rounded-[26px] pl-17 pr-6 text-base sm:text-lg shadow-sm focus:outline-none focus:ring-4 focus:ring-green-100 focus:border-[#00A63E] transition"
                             >
                         </div>
 
                         <!-- BOTÃO FILTROS -->
                         <button type="button"
                                 onclick="abrirModalFiltros()"
-                                class="bg-[#EAF5EF] border border-[#DCE7DE] text-[#004D3A] px-5 py-3 rounded-2xl hover:bg-[#DFF1E5] transition flex items-center justify-center gap-2 text-sm font-extrabold shadow-sm">
+                                class="h-[72px] bg-[#EAF5EF] border border-[#DCE7DE] text-[#004D3A] px-7 rounded-[26px] hover:bg-[#DFF1E5] transition flex items-center justify-center gap-3 text-base font-extrabold shadow-sm min-w-[230px]">
 
                             <svg xmlns="http://www.w3.org/2000/svg"
-                                 class="w-5 h-5"
+                                 class="w-6 h-6"
                                  fill="none"
                                  viewBox="0 0 24 24"
                                  stroke="currentColor">
@@ -105,16 +108,16 @@
                                       d="M10.5 6h9.75M10.5 12h9.75M10.5 18h9.75M3.75 6h.008v.008H3.75V6zm0 6h.008v.008H3.75V12zm0 6h.008v.008H3.75V18z"/>
                             </svg>
 
-                            Filtros Avançados
+                            <span>Filtros Avançados</span>
                         </button>
 
                         <!-- BOTÃO LIMPAR -->
                         <button type="button"
                                 onclick="limparPesquisa()"
-                                class="bg-white border border-[#DCE7DE] text-[#60756B] px-5 py-3 rounded-2xl hover:bg-[#F8FBF8] transition flex items-center justify-center gap-2 text-sm font-bold shadow-sm">
+                                class="h-[72px] bg-white border border-[#DCE7DE] text-[#60756B] px-7 rounded-[26px] hover:bg-[#F8FBF8] transition flex items-center justify-center gap-3 text-base font-bold shadow-sm min-w-[160px]">
 
                             <svg xmlns="http://www.w3.org/2000/svg"
-                                 class="w-5 h-5"
+                                 class="w-6 h-6"
                                  fill="none"
                                  viewBox="0 0 24 24"
                                  stroke="currentColor">
@@ -124,7 +127,7 @@
                                       d="M16.023 9.348h4.992M2.985 19.644v-4.992m0 0h4.992m-4.992 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M7.977 14.652H2.985m18.03-9.296v4.992m0 0h-4.992m4.992 0-3.181-3.183a8.25 8.25 0 0 0-13.803 3.7"/>
                             </svg>
 
-                            Limpar
+                            <span>Limpar</span>
                         </button>
 
                     </div>
@@ -216,10 +219,6 @@
 
                                     $dataCadastro = $user->created_at ? \Carbon\Carbon::parse($user->created_at) : null;
 
-                                    /*
-                                     * Se você ainda não tem uma coluna approved_at, usamos updated_at
-                                     * como referência da aprovação.
-                                     */
                                     $dataAceito = $statusAtivo && $user->updated_at
                                         ? \Carbon\Carbon::parse($user->updated_at)
                                         : null;
@@ -530,7 +529,7 @@
                         <path stroke-linecap="round"
                               stroke-linejoin="round"
                               stroke-width="1.8"
-                              d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125z"/>
+                              d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 .504 1.125 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125z"/>
                     </svg>
 
                     <h2 class="text-xl font-extrabold text-[#003C2F]">
