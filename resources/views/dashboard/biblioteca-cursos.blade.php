@@ -540,6 +540,26 @@
     }
 
     function confirmarExcluirCurso(id, nome) {
+        const form = document.getElementById('formExcluirCurso' + id);
+
+        if (!form) {
+            alert('Formulário de exclusão não encontrado.');
+            return;
+        }
+
+        if (typeof Swal === 'undefined') {
+            const confirmar = confirm(
+                'Tem certeza que deseja excluir o curso "' + (nome ?? 'selecionado') + '"?\n\n' +
+                'Isso também remove módulos, aulas, pós-testes, perguntas e respostas desse curso.'
+            );
+
+            if (confirmar) {
+                form.submit();
+            }
+
+            return;
+        }
+
         Swal.fire({
             title: 'Excluir curso?',
             html: `
@@ -559,11 +579,7 @@
             color: '#003C2F'
         }).then((result) => {
             if (result.isConfirmed) {
-                const form = document.getElementById('formExcluirCurso' + id);
-
-                if (form) {
-                    form.submit();
-                }
+                form.submit();
             }
         });
     }
