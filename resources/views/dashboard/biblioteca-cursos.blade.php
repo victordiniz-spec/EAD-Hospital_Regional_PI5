@@ -69,6 +69,19 @@
 
             </div>
 
+            <!-- ALERTAS -->
+            @if(session('success'))
+                <div class="mb-5 bg-green-100 text-green-700 px-4 py-3 rounded-2xl border border-green-200 shadow-sm">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-5 bg-red-100 text-red-700 px-4 py-3 rounded-2xl border border-red-200 shadow-sm break-words">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <!-- FILTROS -->
             <form method="GET" action="{{ route('biblioteca.cursos') }}"
                   class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6 mb-7">

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Curso;
 use App\Models\Aula;
 use App\Models\Avaliacao;
@@ -187,46 +189,85 @@ class AulaController extends Controller
             $aulasIds = Aula::where('curso_id', $curso->id)->pluck('id')->toArray();
             $modulosIds = Modulo::where('curso_id', $curso->id)->pluck('id')->toArray();
 
-            // Apaga dados relacionados às aulas, somente se as tabelas existirem
+            $avaliacoesIds = [];
+            $perguntasIds = [];
+
+            if (!empty($aulasIds) && Schema::hasTable('avaliacoes')) {
+                $avaliacoesIds = Avaliacao::whereIn('aula_id', $aulasIds)
+                    ->pluck('id')
+                    ->toArray();
+            }
+
+            if (!empty($avaliacoesIds) && Schema::hasTable('perguntas')) {
+                $perguntasIds = Pergunta::whereIn('avaliacao_id', $avaliacoesIds)
+                    ->pluck('id')
+                    ->toArray();
+            }
+
+            // =========================
+            // LIMPAR TABELAS RELACIONADAS AO CURSO
+            // =========================
+            $this->deletarSeTabelaColunaExiste('matriculas', 'curso_id', [$curso->id]);
+            $this->deletarSeTabelaColunaExiste('curso_user', 'curso_id', [$curso->id]);
+            $this->deletarSeTabelaColunaExiste('curso_usuario', 'curso_id', [$curso->id]);
+            $this->deletarSeTabelaColunaExiste('inscricoes', 'curso_id', [$curso->id]);
+            $this->deletarSeTabelaColunaExiste('certificados_alunos', 'curso_id', [$curso->id]);
+            $this->deletarSeTabelaColunaExiste('progresso_cursos', 'curso_id', [$curso->id]);
+            $this->deletarSeTabelaColunaExiste('curso_aluno', 'curso_id', [$curso->id]);
+            $this->deletarSeTabelaColunaExiste('aluno_curso', 'curso_id', [$curso->id]);
+
+            // =========================
+            // LIMPAR TABELAS RELACIONADAS ÀS AULAS
+            // =========================
             if (!empty($aulasIds)) {
-                if (DB::getSchemaBuilder()->hasTable('aulas_assistidas')) {
-                    DB::table('aulas_assistidas')->whereIn('aula_id', $aulasIds)->delete();
-                }
+                $this->deletarSeTabelaColunaExiste('aulas_assistidas', 'aula_id', $aulasIds);
+                $this->deletarSeTabelaColunaExiste('resultados', 'aula_id', $aulasIds);
+                $this->deletarSeTabelaColunaExiste('respostas_alunos', 'aula_id', $aulasIds);
+                $this->deletarSeTabelaColunaExiste('tentativas_avaliacoes', 'aula_id', $aulasIds);
+                $this->deletarSeTabelaColunaExiste('progresso_aulas', 'aula_id', $aulasIds);
+                $this->deletarSeTabelaColunaExiste('aula_user', 'aula_id', $aulasIds);
+                $this->deletarSeTabelaColunaExiste('aula_usuario', 'aula_id', $aulasIds);
+                $this->deletarSeTabelaColunaExiste('visualizacoes_aulas', 'aula_id', $aulasIds);
+                $this->deletarSeTabelaColunaExiste('historico_aulas', 'aula_id', $aulasIds);
+            }
 
-                if (DB::getSchemaBuilder()->hasTable('resultados')) {
-                    DB::table('resultados')->whereIn('aula_id', $aulasIds)->delete();
-                }
+            // =========================
+            // LIMPAR TABELAS RELACIONADAS ÀS AVALIAÇÕES
+            // =========================
+            if (!empty($avaliacoesIds)) {
+                $this->deletarSeTabelaColunaExiste('resultados_avaliacoes', 'avaliacao_id', $avaliacoesIds);
+                $this->deletarSeTabelaColunaExiste('tentativas', 'avaliacao_id', $avaliacoesIds);
+                $this->deletarSeTabelaColunaExiste('tentativas_avaliacoes', 'avaliacao_id', $avaliacoesIds);
+                $this->deletarSeTabelaColunaExiste('respostas_alunos', 'avaliacao_id', $avaliacoesIds);
+                $this->deletarSeTabelaColunaExiste('avaliacao_user', 'avaliacao_id', $avaliacoesIds);
+                $this->deletarSeTabelaColunaExiste('avaliacao_usuario', 'avaliacao_id', $avaliacoesIds);
+            }
 
-                if (DB::getSchemaBuilder()->hasTable('respostas_alunos')) {
-                    DB::table('respostas_alunos')->whereIn('aula_id', $aulasIds)->delete();
-                }
+            // =========================
+            // LIMPAR TABELAS RELACIONADAS ÀS PERGUNTAS
+            // =========================
+            if (!empty($perguntasIds)) {
+                $this->deletarSeTabelaColunaExiste('respostas_alunos', 'pergunta_id', $perguntasIds);
+                $this->deletarSeTabelaColunaExiste('respostas_usuario', 'pergunta_id', $perguntasIds);
+                $this->deletarSeTabelaColunaExiste('alternativas_marcadas', 'pergunta_id', $perguntasIds);
 
-                if (DB::getSchemaBuilder()->hasTable('avaliacoes')) {
-                    $avaliacoesIds = Avaliacao::whereIn('aula_id', $aulasIds)->pluck('id')->toArray();
+                Resposta::whereIn('pergunta_id', $perguntasIds)->delete();
+                Pergunta::whereIn('avaliacao_id', $avaliacoesIds)->delete();
+            }
 
-                    if (!empty($avaliacoesIds)) {
-                        $perguntasIds = Pergunta::whereIn('avaliacao_id', $avaliacoesIds)->pluck('id')->toArray();
+            // =========================
+            // EXCLUIR AVALIAÇÕES, AULAS, MÓDULOS E CURSO
+            // =========================
+            if (!empty($avaliacoesIds)) {
+                Avaliacao::whereIn('id', $avaliacoesIds)->delete();
+            }
 
-                        if (!empty($perguntasIds)) {
-                            Resposta::whereIn('pergunta_id', $perguntasIds)->delete();
-                        }
-
-                        Pergunta::whereIn('avaliacao_id', $avaliacoesIds)->delete();
-                    }
-
-                    Avaliacao::whereIn('aula_id', $aulasIds)->delete();
-                }
-
+            if (!empty($aulasIds)) {
                 Aula::whereIn('id', $aulasIds)->delete();
             }
 
             if (!empty($modulosIds)) {
                 Modulo::whereIn('id', $modulosIds)->delete();
-            }
-
-            // Se existir matrícula vinculada ao curso, remove antes de apagar o curso
-            if (DB::getSchemaBuilder()->hasTable('matriculas')) {
-                DB::table('matriculas')->where('curso_id', $curso->id)->delete();
             }
 
             $curso->delete();
@@ -240,8 +281,18 @@ class AulaController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
 
-            return back()
-                ->with('error', 'Erro ao excluir curso: ' . $e->getMessage());
+            Log::error('ERRO AO EXCLUIR CURSO DA BIBLIOTECA', [
+                'curso_id' => $id,
+                'mensagem' => $e->getMessage(),
+                'arquivo' => $e->getFile(),
+                'linha' => $e->getLine(),
+            ]);
+
+            return back()->with('error',
+                'Erro ao excluir curso: ' . $e->getMessage() .
+                ' | Arquivo: ' . $e->getFile() .
+                ' | Linha: ' . $e->getLine()
+            );
         }
     }
 
@@ -636,6 +687,23 @@ class AulaController extends Controller
     // =========================
     // 🔧 FUNÇÕES AUXILIARES
     // =========================
+
+    private function deletarSeTabelaColunaExiste($tabela, $coluna, array $valores)
+    {
+        if (empty($valores)) {
+            return;
+        }
+
+        if (!Schema::hasTable($tabela)) {
+            return;
+        }
+
+        if (!Schema::hasColumn($tabela, $coluna)) {
+            return;
+        }
+
+        DB::table($tabela)->whereIn($coluna, $valores)->delete();
+    }
 
     private function copiarEstruturaCurso($cursoOriginalId, $novoCursoId)
     {
