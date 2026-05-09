@@ -184,14 +184,50 @@ class AulaController extends Controller
         try {
             $curso = Curso::findOrFail($id);
 
-            $aulas = Aula::where('curso_id', $curso->id)->get();
+            $aulasIds = Aula::where('curso_id', $curso->id)->pluck('id')->toArray();
+            $modulosIds = Modulo::where('curso_id', $curso->id)->pluck('id')->toArray();
 
-            foreach ($aulas as $aula) {
-                $this->excluirAvaliacoesDaAula($aula->id);
+            // Apaga dados relacionados às aulas, somente se as tabelas existirem
+            if (!empty($aulasIds)) {
+                if (DB::getSchemaBuilder()->hasTable('aulas_assistidas')) {
+                    DB::table('aulas_assistidas')->whereIn('aula_id', $aulasIds)->delete();
+                }
+
+                if (DB::getSchemaBuilder()->hasTable('resultados')) {
+                    DB::table('resultados')->whereIn('aula_id', $aulasIds)->delete();
+                }
+
+                if (DB::getSchemaBuilder()->hasTable('respostas_alunos')) {
+                    DB::table('respostas_alunos')->whereIn('aula_id', $aulasIds)->delete();
+                }
+
+                if (DB::getSchemaBuilder()->hasTable('avaliacoes')) {
+                    $avaliacoesIds = Avaliacao::whereIn('aula_id', $aulasIds)->pluck('id')->toArray();
+
+                    if (!empty($avaliacoesIds)) {
+                        $perguntasIds = Pergunta::whereIn('avaliacao_id', $avaliacoesIds)->pluck('id')->toArray();
+
+                        if (!empty($perguntasIds)) {
+                            Resposta::whereIn('pergunta_id', $perguntasIds)->delete();
+                        }
+
+                        Pergunta::whereIn('avaliacao_id', $avaliacoesIds)->delete();
+                    }
+
+                    Avaliacao::whereIn('aula_id', $aulasIds)->delete();
+                }
+
+                Aula::whereIn('id', $aulasIds)->delete();
             }
 
-            Aula::where('curso_id', $curso->id)->delete();
-            Modulo::where('curso_id', $curso->id)->delete();
+            if (!empty($modulosIds)) {
+                Modulo::whereIn('id', $modulosIds)->delete();
+            }
+
+            // Se existir matrícula vinculada ao curso, remove antes de apagar o curso
+            if (DB::getSchemaBuilder()->hasTable('matriculas')) {
+                DB::table('matriculas')->where('curso_id', $curso->id)->delete();
+            }
 
             $curso->delete();
 
