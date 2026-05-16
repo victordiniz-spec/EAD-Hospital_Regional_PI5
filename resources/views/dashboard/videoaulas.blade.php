@@ -39,35 +39,10 @@
         width: 100%;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | MODAIS RESPONSIVOS
-    |--------------------------------------------------------------------------
-    | A sidebar/topbar usam z-index alto. Por isso os modais precisam ficar
-    | acima deles para não aparecerem atrás do menu.
-    */
-    .modal-videoaulas-overlay {
-        z-index: 10050 !important;
-    }
-
-    .modal-videoaulas-card {
-        width: min(100%, 980px);
-        max-height: calc(100vh - 56px);
-        overflow-y: auto;
-        overscroll-behavior: contain;
-    }
-
-    body.modal-aberto {
-        overflow: hidden;
-    }
-
     @media (max-width: 768px) {
-        .modal-scroll-mobile,
-        .modal-videoaulas-card {
-            width: calc(100vw - 24px) !important;
-            max-height: calc(100vh - 32px) !important;
+        .modal-scroll-mobile {
+            max-height: 88vh !important;
             overflow-y: auto !important;
-            border-radius: 1.5rem !important;
         }
 
         .area-professor-videoaulas {
@@ -625,10 +600,11 @@
 
 
 <!-- MODAL CRIAR AULA -->
-<div id="modalAula" class="modal-videoaulas-overlay fixed inset-0 hidden items-center justify-center px-3 sm:px-4 py-4"
-     style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
+<div id="modalAula" class="fixed inset-0 hidden items-center justify-center z-50 px-3 sm:px-4"
+     style="background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);">
 
-    <div class="modal-videoaulas-card bg-white rounded-3xl shadow-2xl mx-auto overflow-hidden modal-scroll-mobile">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl mx-auto overflow-hidden modal-scroll-mobile"
+         style="max-height: 90vh; overflow-y: auto;">
 
         <div class="flex items-start justify-between px-5 sm:px-8 pt-8 pb-4">
             <div>
@@ -872,10 +848,11 @@
 
 <!-- MODAL BANCO DE PERGUNTAS -->
 <div id="modalBancoPerguntas"
-     class="modal-videoaulas-overlay fixed inset-0 hidden items-center justify-center px-3 sm:px-4 py-4"
-     style="background: rgba(0,0,0,0.58); backdrop-filter: blur(4px);">
+     class="fixed inset-0 hidden items-center justify-center z-[70] px-3 sm:px-4"
+     style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
 
-    <div class="modal-videoaulas-card bg-white rounded-3xl shadow-2xl overflow-hidden modal-scroll-mobile" style="width: min(100%, 1100px);">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden modal-scroll-mobile"
+         style="max-height: 90vh; overflow-y: auto;">
 
         <div class="flex items-start justify-between px-5 sm:px-8 pt-8 pb-4 border-b border-[#E3EBE4]">
             <div>
@@ -956,10 +933,11 @@
 </div>
 
 <!-- MODAL EDITAR AULA -->
-<div id="modalEditarAula" class="modal-videoaulas-overlay fixed inset-0 hidden items-center justify-center px-3 sm:px-4 py-4"
-     style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
+<div id="modalEditarAula" class="fixed inset-0 hidden items-center justify-center z-50 px-3 sm:px-4"
+     style="background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);">
 
-    <div class="modal-videoaulas-card bg-white rounded-3xl shadow-2xl mx-auto overflow-hidden modal-scroll-mobile" style="width: min(100%, 760px);">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-auto overflow-hidden modal-scroll-mobile"
+         style="max-height: 90vh; overflow-y: auto;">
 
         <div class="flex items-start justify-between px-5 sm:px-8 pt-8 pb-4">
             <div>
@@ -1053,9 +1031,10 @@
 
 <!-- MODAL CRIAR / EDITAR MINI TESTE -->
 <div id="modalMiniTeste"
-     class="modal-videoaulas-overlay fixed inset-0 hidden items-center justify-center bg-black/55 backdrop-blur-sm px-3 sm:px-4 py-4">
+     class="fixed inset-0 hidden items-center justify-center bg-black/50 backdrop-blur-sm z-[95] px-3 sm:px-4">
 
-    <div class="modal-videoaulas-card bg-white rounded-3xl border border-[#E3EBE4] shadow-2xl overflow-hidden modal-scroll-mobile" style="width: min(100%, 1100px);">
+    <div class="bg-white w-full max-w-5xl rounded-3xl border border-[#E3EBE4] shadow-2xl overflow-hidden modal-scroll-mobile"
+         style="max-height: 92vh; overflow-y: auto;">
 
         <div class="p-5 sm:p-7 border-b border-[#E3EBE4] flex items-start justify-between gap-4">
 
@@ -1180,8 +1159,6 @@
     let miniTestePerguntaIndex = 0;
 
     function abrirModalAula() {
-        document.body.classList.add('modal-aberto');
-
         const modal = document.getElementById('modalAula');
 
         if (!modal) return;
@@ -1191,8 +1168,6 @@
     }
 
     function fecharModalAula() {
-        document.body.classList.remove('modal-aberto');
-
         const modal = document.getElementById('modalAula');
 
         if (!modal) return;
@@ -1243,8 +1218,6 @@
     }
 
     function abrirModalEditarAula(id, titulo, descricao, videoUrl, moduloId) {
-        document.body.classList.add('modal-aberto');
-
         const modal = document.getElementById('modalEditarAula');
         const form = document.getElementById('formEditarAula');
 
@@ -1270,8 +1243,6 @@
     }
 
     function fecharModalEditarAula() {
-        document.body.classList.remove('modal-aberto');
-
         const modal = document.getElementById('modalEditarAula');
         const form = document.getElementById('formEditarAula');
         const btn = document.getElementById('btnAtualizarAula');
@@ -1290,8 +1261,6 @@
     }
 
     function abrirModalMiniTeste(aulaId, cursoId, nomeAula, avaliacao, perguntas) {
-        document.body.classList.add('modal-aberto');
-
         const modal = document.getElementById('modalMiniTeste');
         const aulaIdInput = document.getElementById('miniTesteAulaId');
         const cursoIdInput = document.getElementById('miniTesteCursoId');
@@ -1340,8 +1309,6 @@
     }
 
     function fecharModalMiniTeste() {
-        document.body.classList.remove('modal-aberto');
-
         const modal = document.getElementById('modalMiniTeste');
         const form = document.getElementById('formMiniTeste');
         const container = document.getElementById('miniTestePerguntasContainer');
@@ -1560,24 +1527,127 @@
         pesquisarVideoaulasAoVivo();
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | PERGUNTAS DO PÓS-TESTE NA CRIAÇÃO DA AULA
+    |--------------------------------------------------------------------------
+    | Corrigido:
+    | - Ao remover pergunta, a numeração é reorganizada.
+    | - Ao criar nova pergunta depois de remover, continua a sequência correta.
+    | - Alternativas continuam em ordem alfabética: A, B, C, D, E, F, G...
+    */
+
+    function letraAlternativa(indice) {
+        let numero = indice + 1;
+        let letra = '';
+
+        while (numero > 0) {
+            const resto = (numero - 1) % 26;
+            letra = String.fromCharCode(65 + resto) + letra;
+            numero = Math.floor((numero - 1) / 26);
+        }
+
+        return letra;
+    }
+
+    function reindexarPerguntas() {
+        const container = document.getElementById('perguntas-container');
+
+        if (!container) return;
+
+        const cards = Array.from(container.querySelectorAll('.pergunta-card'));
+
+        cards.forEach((card, novoIndex) => {
+            card.id = `pergunta-${novoIndex}`;
+            card.dataset.index = novoIndex;
+
+            const titulo = card.querySelector('.titulo-pergunta-card');
+            if (titulo) {
+                titulo.innerText = `Pergunta ${novoIndex + 1}`;
+            }
+
+            const remover = card.querySelector('.btn-remover-pergunta');
+            if (remover) {
+                remover.setAttribute('onclick', `removerPergunta(${novoIndex})`);
+            }
+
+            const inputPergunta = card.querySelector('.input-pergunta');
+            if (inputPergunta) {
+                inputPergunta.name = `perguntas[${novoIndex}][pergunta]`;
+            }
+
+            const respostasContainer = card.querySelector('.respostas-container');
+            if (respostasContainer) {
+                respostasContainer.id = `respostas-${novoIndex}`;
+            }
+
+            const addRespostaBotao = card.querySelector('.btn-add-resposta');
+            if (addRespostaBotao) {
+                addRespostaBotao.setAttribute('onclick', `addResposta(${novoIndex})`);
+            }
+
+            reindexarRespostas(novoIndex);
+        });
+
+        perguntaIndex = cards.length;
+    }
+
+    function reindexarRespostas(perguntaIndexAtual) {
+        const container = document.getElementById(`respostas-${perguntaIndexAtual}`);
+
+        if (!container) return;
+
+        const respostas = Array.from(container.querySelectorAll('.resposta-card'));
+
+        respostas.forEach((resposta, novoIndex) => {
+            resposta.id = `resposta-${perguntaIndexAtual}-${novoIndex}`;
+            resposta.dataset.index = novoIndex;
+
+            const radio = resposta.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.name = `perguntas[${perguntaIndexAtual}][correta]`;
+                radio.value = novoIndex;
+            }
+
+            const letra = resposta.querySelector('.letra-resposta');
+            if (letra) {
+                letra.innerText = letraAlternativa(novoIndex);
+            }
+
+            const input = resposta.querySelector('.input-resposta');
+            if (input) {
+                input.name = `perguntas[${perguntaIndexAtual}][respostas][]`;
+                input.placeholder = `Texto da alternativa ${letraAlternativa(novoIndex)}...`;
+            }
+
+            const remover = resposta.querySelector('.btn-remover-resposta');
+            if (remover) {
+                remover.setAttribute('onclick', `removerResposta(${perguntaIndexAtual}, ${novoIndex})`);
+            }
+        });
+    }
+
     function addPergunta() {
         const container = document.getElementById('perguntas-container');
 
         if (!container) return;
 
+        perguntaIndex = container.querySelectorAll('.pergunta-card').length;
+
         const div = document.createElement('div');
 
-        div.className = 'border border-[#DCE7DE] rounded-3xl p-4 bg-[#F8FBF8]';
+        div.className = 'pergunta-card border border-[#DCE7DE] rounded-3xl p-4 bg-[#F8FBF8]';
         div.id = `pergunta-${perguntaIndex}`;
+        div.dataset.index = perguntaIndex;
 
         div.innerHTML = `
             <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-bold text-[#60756B] uppercase tracking-widest bg-white border border-[#DCE7DE] px-3 py-1 rounded-xl">
+                <span class="titulo-pergunta-card text-xs font-bold text-[#60756B] uppercase tracking-widest bg-white border border-[#DCE7DE] px-3 py-1 rounded-xl">
                     Pergunta ${perguntaIndex + 1}
                 </span>
 
                 <button type="button" onclick="removerPergunta(${perguntaIndex})"
-                    class="text-red-400 hover:text-red-600 transition" title="Remover">
+                    class="btn-remover-pergunta text-red-400 hover:text-red-600 transition" title="Remover">
                     Remover
                 </button>
             </div>
@@ -1586,17 +1656,17 @@
                 type="text"
                 name="perguntas[${perguntaIndex}][pergunta]"
                 placeholder="Digite o enunciado da questão aqui..."
-                class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition mb-3"
+                class="input-pergunta w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition mb-3"
             >
 
             <p class="text-xs font-bold text-[#60756B] uppercase tracking-wider mb-2">
                 Alternativas — marque a correta
             </p>
 
-            <div id="respostas-${perguntaIndex}" class="space-y-2 mb-3"></div>
+            <div id="respostas-${perguntaIndex}" class="respostas-container space-y-2 mb-3"></div>
 
             <button type="button" onclick="addResposta(${perguntaIndex})"
-                class="flex items-center gap-1 text-xs font-bold text-[#004D3A] hover:text-[#003C2F] transition">
+                class="btn-add-resposta flex items-center gap-1 text-xs font-bold text-[#004D3A] hover:text-[#003C2F] transition">
                 Adicionar alternativa
             </button>
         `;
@@ -1608,61 +1678,68 @@
         addResposta(perguntaIndex);
         addResposta(perguntaIndex);
 
-        perguntaIndex++;
+        reindexarPerguntas();
     }
 
     function removerPergunta(index) {
         const pergunta = document.getElementById(`pergunta-${index}`);
 
-        if (pergunta) pergunta.remove();
-    }
+        if (pergunta) {
+            pergunta.remove();
+        }
 
-    const letras = ['A', 'B', 'C', 'D', 'E'];
+        reindexarPerguntas();
+    }
 
     function addResposta(index) {
         const container = document.getElementById(`respostas-${index}`);
 
         if (!container) return;
 
-        const total = container.children.length;
-        const letra = letras[total] ?? String(total + 1);
+        const total = container.querySelectorAll('.resposta-card').length;
+        const letra = letraAlternativa(total);
 
         const div = document.createElement('div');
 
         div.id = `resposta-${index}-${total}`;
-        div.className = 'flex items-center gap-3 bg-white border border-[#DCE7DE] rounded-2xl px-4 py-3';
+        div.dataset.index = total;
+        div.className = 'resposta-card flex items-center gap-3 bg-white border border-[#DCE7DE] rounded-2xl px-4 py-3';
 
         div.innerHTML = `
             <input type="radio" name="perguntas[${index}][correta]" value="${total}"
                 class="w-4 h-4 accent-[#004D3A] cursor-pointer">
 
-            <span class="text-xs font-bold text-[#60756B] w-4">${letra}</span>
+            <span class="letra-resposta text-xs font-bold text-[#60756B] w-6">${letra}</span>
 
             <input
                 type="text"
                 name="perguntas[${index}][respostas][]"
                 placeholder="Texto da alternativa ${letra}..."
-                class="flex-1 text-sm text-[#003C2F] bg-transparent placeholder-[#8A9B92] focus:outline-none"
+                class="input-resposta flex-1 text-sm text-[#003C2F] bg-transparent placeholder-[#8A9B92] focus:outline-none"
             >
 
             <button type="button" onclick="removerResposta(${index}, ${total})"
-                class="text-gray-300 hover:text-red-500 transition">
+                class="btn-remover-resposta text-gray-300 hover:text-red-500 transition">
                 ✕
             </button>
         `;
 
         container.appendChild(div);
+
+        reindexarRespostas(index);
     }
 
-    function removerResposta(perguntaIndex, respostaIndex) {
-        const resposta = document.getElementById(`resposta-${perguntaIndex}-${respostaIndex}`);
+    function removerResposta(perguntaIndexAtual, respostaIndex) {
+        const resposta = document.getElementById(`resposta-${perguntaIndexAtual}-${respostaIndex}`);
 
-        if (resposta) resposta.remove();
+        if (resposta) {
+            resposta.remove();
+        }
+
+        reindexarRespostas(perguntaIndexAtual);
     }
 
     function abrirBancoPerguntas() {
-        document.body.classList.add('modal-aberto');
-
         const modal = document.getElementById('modalBancoPerguntas');
 
         if (!modal) return;
@@ -1924,27 +2001,6 @@
     @if ($errors->any() || session('error'))
         abrirModalAula();
     @endif
-
-    /*
-    |--------------------------------------------------------------------------
-    | FECHAR MODAIS AO CLICAR FORA
-    |--------------------------------------------------------------------------
-    */
-    ['modalAula', 'modalEditarAula', 'modalMiniTeste', 'modalBancoPerguntas'].forEach(function(idModal) {
-        const modal = document.getElementById(idModal);
-
-        if (!modal) return;
-
-        modal.addEventListener('click', function(e) {
-            if (e.target !== modal) return;
-
-            if (idModal === 'modalAula') fecharModalAula();
-            if (idModal === 'modalEditarAula') fecharModalEditarAula();
-            if (idModal === 'modalMiniTeste') fecharModalMiniTeste();
-            if (idModal === 'modalBancoPerguntas') fecharBancoPerguntas();
-        });
-    });
-
 </script>
 
 @endsection
