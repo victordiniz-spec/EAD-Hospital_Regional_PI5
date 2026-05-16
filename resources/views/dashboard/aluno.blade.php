@@ -6,17 +6,198 @@
 
 @php
     use Illuminate\Support\Facades\DB;
+    use Illuminate\Support\Facades\Schema;
 
     $alunoLogado = auth()->user();
+    $alunoId = auth()->id();
 
-    $totalModulos = isset($modulos) ? count($modulos) : 0;
+    /*
+    |--------------------------------------------------------------------------
+    | CURSO ATUAL DO ALUNO
+    |--------------------------------------------------------------------------
+    | Prioridade:
+    | 1. Curso vinculado pela matrícula do aluno
+    | 2. Curso publicado/ativo mais recente
+    | 3. Último curso cadastrado
+    |
+    | Assim a home do aluno passa a puxar apenas o curso correto do período,
+    | e não mistura módulos/aulas de outros cursos.
+    */
+
+    $cursoAtual = null;
+    $cursoAtualId = null;
+
+    if (Schema::hasTable('matriculas') && Schema::hasTable('cursos')) {
+        $cursoMatriculadoId = DB::table('matriculas')
+            ->where('aluno_id', $alunoId)
+            ->orderBy('id', 'desc')
+            ->value('curso_id');
+
+        if ($cursoMatriculadoId) {
+            $cursoAtual = DB::table('cursos')
+                ->where('id', $cursoMatriculadoId)
+                ->first();
+        }
+    }
+
+    if (!$cursoAtual && Schema::hasTable('cursos')) {
+        $queryCurso = DB::table('cursos');
+
+        if (Schema::hasColumn('cursos', 'publicado')) {
+            $queryCurso->where('publicado', true);
+        } elseif (Schema::hasColumn('cursos', 'ativo')) {
+            $queryCurso->where('ativo', true);
+        } elseif (Schema::hasColumn('cursos', 'status')) {
+            $queryCurso->whereIn('status', ['publicado', 'ativo', 'aprovado']);
+        }
+
+        $cursoAtual = $queryCurso
+            ->orderBy('id', 'desc')
+            ->first();
+    }
+
+    if (!$cursoAtual && Schema::hasTable('cursos')) {
+        $cursoAtual = DB::table('cursos')
+            ->orderBy('id', 'desc')
+            ->first();
+    }
+
+    $cursoAtualId = $cursoAtual->id ?? null;
+
+    /*
+    |--------------------------------------------------------------------------
+    | MÓDULOS E AULAS DO CURSO ATUAL
+    |--------------------------------------------------------------------------
+    */
+
+    $modulos = collect();
+    $aulasCurso = collect();
+
+    if ($cursoAtualId && Schema::hasTable('modulos') && Schema::hasTable('aulas')) {
+        $modulosQuery = DB::table('modulos')
+            ->where('curso_id', $cursoAtualId);
+
+        if (Schema::hasColumn('modulos', 'ordem')) {
+            $modulosQuery->orderBy('ordem');
+        }
+
+        $modulos = $modulosQuery
+            ->orderBy('id')
+            ->get();
+
+        foreach ($modulos as $modulo) {
+            $aulasModuloQuery = DB::table('aulas')
+                ->where('modulo_id', $modulo->id);
+
+            if (Schema::hasColumn('aulas', 'ordem')) {
+                $aulasModuloQuery->orderBy('ordem');
+            }
+
+            $modulo->aulas = $aulasModuloQuery
+                ->orderBy('id')
+                ->get();
+
+            foreach ($modulo->aulas as $aula) {
+                $aulasCurso->push($aula);
+            }
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PROGRESSO DO CURSO ATUAL
+    |--------------------------------------------------------------------------
+    | Cálculo por etapas do curso inteiro:
+    | - assistir aula = 1 etapa
+    | - concluir pós-teste da aula = 1 etapa
+    */
+
+    $totalEtapasCurso = 0;
+    $etapasConcluidasCurso = 0;
+    $aulasAssistidasGeral = 0;
+    $testesPendentesGeral = 0;
+    $notasAluno = collect();
+
+    foreach ($aulasCurso as $aula) {
+        $avaliacaoId = null;
+
+        if (Schema::hasTable('avaliacoes')) {
+            $avaliacaoQuery = DB::table('avaliacoes')
+                ->where('aula_id', $aula->id);
+
+            if (Schema::hasColumn('avaliacoes', 'tipo')) {
+                $avaliacaoQuery->where(function ($query) {
+                    $query->where('tipo', 'normal')
+                          ->orWhere('tipo', 'pos_teste')
+                          ->orWhere('tipo', 'pós-teste')
+                          ->orWhereNull('tipo');
+                });
+            }
+
+            $avaliacaoId = $avaliacaoQuery
+                ->orderBy('id')
+                ->value('id');
+        }
+
+        $aulaAssistida = false;
+
+        if (Schema::hasTable('aulas_assistidas')) {
+            $aulaAssistidaQuery = DB::table('aulas_assistidas')
+                ->where('aluno_id', $alunoId)
+                ->where('aula_id', $aula->id);
+
+            if (Schema::hasColumn('aulas_assistidas', 'assistido')) {
+                $aulaAssistidaQuery->where('assistido', true);
+            }
+
+            $aulaAssistida = $aulaAssistidaQuery->exists();
+        }
+
+        $posTesteConcluido = false;
+
+        if ($avaliacaoId && Schema::hasTable('notas')) {
+            $notaRegistro = DB::table('notas')
+                ->where('aluno_id', $alunoId)
+                ->where('avaliacao_id', $avaliacaoId)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            $posTesteConcluido = (bool) $notaRegistro;
+
+            if ($notaRegistro && isset($notaRegistro->nota)) {
+                $notasAluno->push((float) $notaRegistro->nota);
+            }
+        }
+
+        $totalEtapasCurso++;
+
+        if ($aulaAssistida) {
+            $etapasConcluidasCurso++;
+            $aulasAssistidasGeral++;
+        }
+
+        if ($avaliacaoId) {
+            $totalEtapasCurso++;
+
+            if ($posTesteConcluido) {
+                $etapasConcluidasCurso++;
+            } elseif ($aulaAssistida) {
+                $testesPendentesGeral++;
+            }
+        }
+    }
+
+    $totalModulos = $modulos->count();
     $totalAvisos = isset($avisosRecentes) ? $avisosRecentes->count() : 0;
+    $totalAulasGeral = $aulasCurso->count();
 
-    $progressoGeral = isset($progresso) ? $progresso : 0;
-    $aulasAssistidasGeral = isset($aulasAssistidas) ? $aulasAssistidas : 0;
-    $totalAulasGeral = isset($totalAulas) ? $totalAulas : 0;
-    $testesPendentesGeral = isset($testesPendentes) ? $testesPendentes : 0;
-    $mediaGeral = isset($media) ? $media : 0;
+    $progressoGeral = $totalEtapasCurso > 0
+        ? round(($etapasConcluidasCurso / $totalEtapasCurso) * 100)
+        : 0;
+
+    $mediaGeral = $notasAluno->count() > 0
+        ? round($notasAluno->avg(), 1)
+        : (isset($media) ? $media : 0);
 
     /*
     |--------------------------------------------------------------------------
@@ -68,11 +249,6 @@
                 <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
 
                     <div>
-                        <div class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest text-[#60756B] mb-2">
-                            <span>Aluno</span>
-                            <span>›</span>
-                            <span class="text-[#004D3A]">Dashboard</span>
-                        </div>
 
                         <h1 class="text-3xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight">
                             Bem-vindo, {{ $alunoLogado->name }}
@@ -81,6 +257,16 @@
                         <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
                             Continue seus estudos, acompanhe seu progresso e veja os comunicados mais recentes da plataforma.
                         </p>
+
+                        @if($cursoAtual)
+                            <p class="text-sm text-[#004D3A] mt-2 font-extrabold max-w-2xl">
+                                Curso atual: {{ $cursoAtual->nome }}
+                            </p>
+                        @else
+                            <p class="text-sm text-red-600 mt-2 font-extrabold max-w-2xl">
+                                Nenhum curso publicado ou vinculado ao aluno.
+                            </p>
+                        @endif
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-3">
