@@ -71,7 +71,7 @@
                     </h1>
 
                     <p class="text-sm text-[#60756B] mt-2 max-w-3xl">
-                        Organize cursos, módulos, aulas, mini testes e reutilize conteúdos antigos pela biblioteca de cursos.
+                        Organize o curso do período com módulos, aulas e pós-testes. O aluno verá apenas o curso publicado/atual no ambiente dele.
                     </p>
                 </div>
 
@@ -164,7 +164,7 @@
 
                     <div class="min-w-0">
                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                            Curso selecionado
+                            Curso em edição
                         </p>
 
                         <h2 class="text-xl sm:text-2xl font-extrabold text-[#003C2F] mt-1 break-words">
@@ -172,13 +172,13 @@
                         </h2>
 
                         <p class="text-sm text-[#60756B] mt-2 max-w-3xl break-words">
-                            {{ $cursoAtual->descricao ?? 'Selecione um curso ou crie uma nova aula para iniciar a estrutura.' }}
+                            {{ $cursoAtual->descricao ?? 'Este é o curso que você está editando. No ambiente do aluno, ele verá somente o curso definido/publicado para o período.' }}
                         </p>
                     </div>
 
                     <form method="GET" action="{{ route('videoaulas') }}" class="w-full lg:w-[380px]">
                         <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
-                            Trocar curso
+                            Curso para gerenciar
                         </label>
 
                         <select name="curso_id"
@@ -196,6 +196,32 @@
 
                 </div>
 
+            </div>
+
+            <!-- REGRA DO CURSO DO PERÍODO -->
+            <div class="bg-[#EAF5EF] border border-[#DCE7DE] rounded-3xl shadow-sm p-5 sm:p-6 mb-7">
+                <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div class="min-w-0">
+                        <p class="text-[11px] uppercase tracking-widest text-[#004D3A] font-extrabold">
+                            Regra do sistema
+                        </p>
+
+                        <h3 class="text-lg sm:text-xl font-extrabold text-[#003C2F] mt-1 break-words">
+                            1 curso por período • módulos dentro do curso • aulas dentro dos módulos
+                        </h3>
+
+                        <p class="text-sm text-[#60756B] mt-2 leading-relaxed">
+                            O aluno não escolhe curso no ambiente dele. Ele verá automaticamente o curso publicado/atual do período.
+                            A prova final deve ser liberada somente quando o aluno concluir 70% do curso completo, e o certificado somente com 70% ou mais na prova final.
+                        </p>
+                    </div>
+
+                    <div class="bg-white border border-[#DCE7DE] rounded-2xl px-4 py-3 text-sm font-extrabold text-[#004D3A] shrink-0 text-center">
+                        Curso atual:
+                        <br>
+                        <span class="text-[#003C2F]">{{ $cursoAtual->nome ?? 'Não definido' }}</span>
+                    </div>
+                </div>
             </div>
 
             <!-- RESUMO RESPONSIVO -->
@@ -217,7 +243,7 @@
                 </div>
 
                 <div class="bg-white border border-[#E3EBE4] rounded-3xl p-5 shadow-sm">
-                    <p class="text-xs text-[#60756B] font-semibold">Mini testes</p>
+                    <p class="text-xs text-[#60756B] font-semibold">Pós-testes</p>
                     <h3 class="text-3xl font-extrabold mt-1">{{ $totalMiniTestes }}</h3>
                 </div>
 
@@ -261,7 +287,7 @@
                                         </h2>
 
                                         <p class="text-xs sm:text-sm text-[#60756B] mt-1">
-                                            {{ $totalAulasModulo }} aula(s) • {{ $totalTestesModulo }} mini teste(s)
+                                            {{ $totalAulasModulo }} aula(s) • {{ $totalTestesModulo }} pós-teste(s)
                                         </p>
                                     </div>
 
@@ -315,7 +341,7 @@
                                     @endphp
 
                                     <div class="aula-pesquisa bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-4 transition hover:shadow-md"
-                                         data-search="{{ strtolower(($aula->titulo ?? '') . ' ' . ($aula->descricao ?? '') . ' ' . ($aula->video_url ?? '') . ' ' . ($modulo->nome ?? '') . ' ' . ($cursoAtual->nome ?? '') . ' ' . ($temMiniTeste ? 'mini teste pos teste pós teste posteste avaliação avaliacao' : 'sem teste')) }}">
+                                         data-search="{{ strtolower(($aula->titulo ?? '') . ' ' . ($aula->descricao ?? '') . ' ' . ($aula->video_url ?? '') . ' ' . ($modulo->nome ?? '') . ' ' . ($cursoAtual->nome ?? '') . ' ' . ($temMiniTeste ? 'pós-teste pos teste pós teste posteste avaliação avaliacao' : 'sem teste')) }}">
 
                                         <div class="flex flex-col lg:flex-row lg:items-center gap-4">
 
@@ -344,11 +370,11 @@
 
                                                     @if($temMiniTeste)
                                                         <span class="text-[11px] font-bold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg">
-                                                            Mini teste cadastrado
+                                                            Pós-teste cadastrado
                                                         </span>
                                                     @else
                                                         <span class="text-[11px] font-bold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg">
-                                                            Sem mini teste
+                                                            Sem pós-teste
                                                         </span>
                                                     @endif
 
@@ -402,7 +428,7 @@
                                                                 : 'bg-[#EAF5EF] text-[#004D3A] border border-[#DCE7DE] hover:bg-[#DCE7DE]'
                                                             }}
                                                             px-4 py-3 rounded-2xl text-sm font-bold transition">
-                                                    {{ $temMiniTeste ? 'Editar Mini Teste' : 'Criar Mini Teste' }}
+                                                    {{ $temMiniTeste ? 'Editar Pós-teste' : 'Criar Pós-teste' }}
                                                 </button>
 
                                                 <form action="{{ route('aulas.destroy', $aula->id) }}"
@@ -498,7 +524,7 @@
 
                         <div class="bg-white border border-[#E3EBE4] rounded-3xl p-5 shadow-sm">
                             <p class="text-[11px] uppercase tracking-widest font-bold text-[#60756B]">
-                                Mini testes
+                                Pós-testes
                             </p>
 
                             <h3 class="text-3xl font-extrabold mt-2 text-[#003C2F]">
@@ -589,7 +615,7 @@
                 </h2>
 
                 <p class="text-sm text-[#60756B] mt-1">
-                    Cadastre curso, módulo, aula, mini teste e importe perguntas antigas se desejar.
+                    Cadastre ou atualize o curso do período, seus módulos, aulas e o pós-teste de cada aula.
                 </p>
             </div>
 
@@ -624,7 +650,7 @@
                             </select>
 
                             <p class="text-xs text-[#8A9B92] mt-1">
-                                Escolha um curso existente.
+                                Use para adicionar a aula ao curso do período já cadastrado.
                             </p>
                         </div>
 
@@ -640,7 +666,7 @@
                                    class="w-full px-4 py-3 rounded-2xl border border-dashed border-[#00A63E] bg-[#EAF5EF] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
 
                             <p class="text-xs text-[#8A9B92] mt-1">
-                                Use se ainda não existir curso.
+                                Use somente quando for iniciar um novo curso/período.
                             </p>
                         </div>
                     </div>
@@ -735,7 +761,7 @@
 
                 <div class="mb-4 border-t border-[#DCE7DE] pt-5">
                     <h3 class="font-extrabold text-[#003C2F]">
-                        Mini Teste
+                        Pós-teste
                     </h3>
 
                     <p class="text-xs text-[#60756B] mt-1">
@@ -746,13 +772,13 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
                     <div>
                         <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
-                            Título do teste
+                            Título do pós-teste
                         </label>
 
                         <input type="text"
                                name="avaliacao[titulo]"
                                value="{{ old('avaliacao.titulo') }}"
-                               placeholder="Ex: Mini teste da Aula 01"
+                               placeholder="Ex: Pós-teste da Aula 01"
                                class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
                     </div>
 
@@ -1021,7 +1047,7 @@
                 </div>
 
                 <h2 class="text-2xl sm:text-3xl font-extrabold text-[#003C2F] break-words">
-                    Criar / Editar Mini Teste
+                    Criar / Editar Pós-teste
                 </h2>
 
                 <p class="text-sm text-[#60756B] mt-2 break-words">
@@ -1049,14 +1075,14 @@
 
                     <div class="md:col-span-2">
                         <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
-                            Título do mini teste
+                            Título do pós-teste
                         </label>
 
                         <input type="text"
                                name="avaliacao[titulo]"
                                id="miniTesteTitulo"
                                required
-                               placeholder="Ex: Mini teste da aula"
+                               placeholder="Ex: Pós-teste da aula"
                                class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
                     </div>
 
@@ -1081,7 +1107,7 @@
 
                         <div>
                             <h3 class="text-xl font-extrabold text-[#003C2F]">
-                                Perguntas do mini teste
+                                Perguntas do pós-teste
                             </h3>
 
                             <p class="text-xs text-[#60756B] mt-1">
@@ -1114,7 +1140,7 @@
                     <button type="submit"
                             id="btnSalvarMiniTeste"
                             class="px-7 py-3 rounded-2xl bg-[#004D3A] hover:bg-[#003C2F] text-white text-sm font-extrabold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
-                        Salvar mini teste
+                        Salvar pós-teste
                     </button>
 
                 </div>
@@ -1247,7 +1273,7 @@
         const btnSalvar = document.getElementById('btnSalvarMiniTeste');
 
         if (!modal || !aulaIdInput || !cursoIdInput || !nomeAulaTexto || !tituloInput || !tempoInput || !container) {
-            alert('Modal de mini teste não encontrado na página.');
+            alert('Modal de pós-teste não encontrado na página.');
             return;
         }
 
@@ -1269,7 +1295,7 @@
 
         if (btnSalvar) {
             btnSalvar.disabled = false;
-            btnSalvar.innerText = 'Salvar mini teste';
+            btnSalvar.innerText = 'Salvar pós-teste';
         }
 
         if (perguntas && perguntas.length > 0) {
@@ -1300,7 +1326,7 @@
 
         if (btnSalvar) {
             btnSalvar.disabled = false;
-            btnSalvar.innerText = 'Salvar mini teste';
+            btnSalvar.innerText = 'Salvar pós-teste';
         }
 
         miniTestePerguntaIndex = 0;
