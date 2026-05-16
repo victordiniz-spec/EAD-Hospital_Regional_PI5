@@ -312,6 +312,34 @@
         width: 100%;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | MODAL DO PLAYER
+    |--------------------------------------------------------------------------
+    | A sidebar/topbar usam z-index alto. Por isso o modal do vídeo precisa
+    | ficar acima deles para não aparecer atrás do menu.
+    */
+    .modal-player-overlay {
+        z-index: 10050 !important;
+    }
+
+    .modal-player-card {
+        width: min(100%, 1080px);
+        max-height: calc(100vh - 48px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    body.modal-video-aberto {
+        overflow: hidden;
+    }
+
+    .iframe-player-aula {
+        width: 100%;
+        height: min(62vh, 560px);
+        min-height: 260px;
+    }
+
     @media (max-width: 1024px) {
         .area-aluno-video {
             padding-left: 1rem !important;
@@ -912,28 +940,35 @@
 </div>
 
 <!-- MODAL DE VÍDEO -->
-<div id="modalVideo" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 px-4">
-    <div class="bg-white w-[980px] max-w-full rounded-3xl p-4 relative border border-[#DFE8E1] shadow-2xl">
+<div id="modalVideo"
+     class="modal-player-overlay fixed inset-0 bg-black/75 hidden items-center justify-center px-3 sm:px-4 py-4">
 
-        <button onclick="fecharModal()"
-                class="absolute top-3 right-4 text-3xl leading-none text-[#52645E] hover:text-red-600 transition z-10">
+    <div class="modal-player-card bg-white rounded-3xl p-3 sm:p-4 relative border border-[#DFE8E1] shadow-2xl">
+
+        <button type="button"
+                onclick="fecharModal()"
+                class="absolute top-3 right-3 sm:right-4 w-10 h-10 rounded-2xl bg-white/90 text-[#52645E] hover:text-red-600 hover:bg-red-50 transition z-[10060] flex items-center justify-center text-3xl leading-none shadow">
             ×
         </button>
 
-        <iframe id="videoFrame"
-                class="w-full h-[230px] sm:h-[420px] lg:h-[520px] rounded-2xl bg-black"
-                src=""
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen>
-        </iframe>
+        <div class="rounded-2xl overflow-hidden bg-black">
+            <iframe id="videoFrame"
+                    class="iframe-player-aula rounded-2xl bg-black"
+                    src=""
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+            </iframe>
+        </div>
 
         <div class="mt-4 flex flex-col sm:flex-row sm:justify-between gap-3">
-            <button onclick="fecharModal()"
+            <button type="button"
+                    onclick="fecharModal()"
                     class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-2xl font-bold transition">
                 Fechar
             </button>
 
-            <button onclick="marcarAssistida()"
+            <button type="button"
+                    onclick="marcarAssistida()"
                     class="bg-[#005543] hover:bg-[#004636] text-white px-4 py-3 rounded-2xl font-bold transition">
                 Concluir aula
             </button>
@@ -968,6 +1003,8 @@ function normalizarUrlYoutube(url) {
 }
 
 function abrirModal(url, aulaId, avaliacaoId = null) {
+    document.body.classList.add('modal-video-aberto');
+
     aulaIdAtual = aulaId;
     avaliacaoIdAtual = avaliacaoId && avaliacaoId !== 'null' && avaliacaoId !== '' ? avaliacaoId : null;
 
@@ -994,6 +1031,8 @@ function abrirModal(url, aulaId, avaliacaoId = null) {
 }
 
 function fecharModal() {
+    document.body.classList.remove('modal-video-aberto');
+
     const modal = document.getElementById('modalVideo');
     const frame = document.getElementById('videoFrame');
 
@@ -1234,6 +1273,17 @@ function gerarPDFResultado() {
     `);
 
     janela.document.close();
+}
+
+
+const modalVideoAluno = document.getElementById('modalVideo');
+
+if (modalVideoAluno) {
+    modalVideoAluno.addEventListener('click', function(e) {
+        if (e.target === this) {
+            fecharModal();
+        }
+    });
 }
 
 document.addEventListener('keydown', function(e) {

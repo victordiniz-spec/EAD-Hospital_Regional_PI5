@@ -160,11 +160,6 @@
             <div class="mb-7 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 nao-imprimir">
 
                 <div>
-                    <div class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest text-[#60756B] mb-2">
-                        <span>Aluno</span>
-                        <span>›</span>
-                        <span class="text-[#004D3A]">Certificado</span>
-                    </div>
 
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight">
                         Meu Certificado
