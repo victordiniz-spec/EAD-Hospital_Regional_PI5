@@ -6,6 +6,7 @@
 
 @php
     use Illuminate\Support\Facades\DB;
+    use Illuminate\Support\Facades\Schema;
 
     $alunoId = auth()->id();
 
@@ -13,20 +14,115 @@
     // Senha temporária: 123
     $acessoTeste = request('teste') === '123';
 
-    $totalAulas = DB::table('aulas')->count();
+    /*
+    |--------------------------------------------------------------------------
+    | CURSO ATUAL DO ALUNO
+    |--------------------------------------------------------------------------
+    | A prova final deve considerar somente o curso atual do aluno.
+    | Prioridade:
+    | 1. Curso vinculado na tabela matriculas
+    | 2. Curso publicado/ativo mais recente
+    | 3. Último curso cadastrado
+    */
 
-    $totalAulasAssistidas = DB::table('aulas_assistidas')
-        ->where('aluno_id', $alunoId)
-        ->where('assistido', true)
-        ->count();
+    $cursoAtual = null;
 
-    $avaliacoesPosTesteIds = DB::table('avaliacoes')
-        ->whereNotNull('aula_id')
-        ->pluck('id');
+    if (Schema::hasTable('matriculas') && Schema::hasTable('cursos')) {
+        $cursoMatriculadoId = DB::table('matriculas')
+            ->where('aluno_id', $alunoId)
+            ->orderBy('id', 'desc')
+            ->value('curso_id');
+
+        if ($cursoMatriculadoId) {
+            $cursoAtual = DB::table('cursos')
+                ->where('id', $cursoMatriculadoId)
+                ->first();
+        }
+    }
+
+    if (!$cursoAtual && Schema::hasTable('cursos')) {
+        $queryCurso = DB::table('cursos');
+
+        if (Schema::hasColumn('cursos', 'publicado')) {
+            $queryCurso->where('publicado', true);
+        } elseif (Schema::hasColumn('cursos', 'ativo')) {
+            $queryCurso->where('ativo', true);
+        } elseif (Schema::hasColumn('cursos', 'status')) {
+            $queryCurso->whereIn('status', ['publicado', 'ativo', 'aprovado']);
+        }
+
+        $cursoAtual = $queryCurso
+            ->orderBy('id', 'desc')
+            ->first();
+    }
+
+    $cursoAtualId = $cursoAtual->id ?? null;
+
+    /*
+    |--------------------------------------------------------------------------
+    | AULAS E PÓS-TESTES DO CURSO ATUAL
+    |--------------------------------------------------------------------------
+    */
+
+    $modulosCursoIds = collect();
+    $aulasCursoIds = collect();
+
+    if ($cursoAtualId && Schema::hasTable('modulos')) {
+        $modulosCursoIds = DB::table('modulos')
+            ->where('curso_id', $cursoAtualId)
+            ->pluck('id');
+    }
+
+    if ($modulosCursoIds->count() > 0 && Schema::hasTable('aulas')) {
+        $aulasCursoIds = DB::table('aulas')
+            ->whereIn('modulo_id', $modulosCursoIds)
+            ->pluck('id');
+    }
+
+    // Caso exista curso_id diretamente na tabela aulas, usa também como segurança.
+    if ($cursoAtualId && Schema::hasTable('aulas') && Schema::hasColumn('aulas', 'curso_id')) {
+        $aulasPorCursoDireto = DB::table('aulas')
+            ->where('curso_id', $cursoAtualId)
+            ->pluck('id');
+
+        $aulasCursoIds = $aulasCursoIds
+            ->merge($aulasPorCursoDireto)
+            ->unique()
+            ->values();
+    }
+
+    $totalAulas = $aulasCursoIds->count();
+
+    $totalAulasAssistidas = $totalAulas > 0 && Schema::hasTable('aulas_assistidas')
+        ? DB::table('aulas_assistidas')
+            ->where('aluno_id', $alunoId)
+            ->whereIn('aula_id', $aulasCursoIds)
+            ->where('assistido', true)
+            ->distinct('aula_id')
+            ->count('aula_id')
+        : 0;
+
+    $avaliacoesPosTesteIds = collect();
+
+    if ($totalAulas > 0 && Schema::hasTable('avaliacoes')) {
+        $avaliacoesPosTesteQuery = DB::table('avaliacoes')
+            ->whereIn('aula_id', $aulasCursoIds);
+
+        if (Schema::hasColumn('avaliacoes', 'tipo')) {
+            $avaliacoesPosTesteQuery->where(function ($query) {
+                $query->where('tipo', 'normal')
+                      ->orWhere('tipo', 'pos_teste')
+                      ->orWhere('tipo', 'pós-teste')
+                      ->orWhereNull('tipo');
+            });
+        }
+
+        $avaliacoesPosTesteIds = $avaliacoesPosTesteQuery->pluck('id');
+    }
 
     $totalPosTestes = $avaliacoesPosTesteIds->count();
 
-    $totalPosTestesFeitos = $totalPosTestes > 0
+    $totalPosTestesFeitos = $totalPosTestes > 0 && Schema::hasTable('notas')
         ? DB::table('notas')
             ->where('aluno_id', $alunoId)
             ->whereIn('avaliacao_id', $avaliacoesPosTesteIds)
@@ -34,10 +130,13 @@
             ->count('avaliacao_id')
         : 0;
 
-    $aulasOk = $totalAulas > 0 && $totalAulasAssistidas >= $totalAulas;
-    $posTestesOk = $totalPosTestesFeitos >= $totalPosTestes;
-
-    $provaLiberada = ($aulasOk && $posTestesOk) || $acessoTeste;
+    /*
+    |--------------------------------------------------------------------------
+    | REGRA DE LIBERAÇÃO
+    |--------------------------------------------------------------------------
+    | Agora a prova final libera com 70% do curso atual concluído.
+    | Não é mais obrigatório concluir 100% das aulas/módulos.
+    */
 
     $totalEtapas = $totalAulas + $totalPosTestes;
     $etapasConcluidas = $totalAulasAssistidas + $totalPosTestesFeitos;
@@ -45,6 +144,20 @@
     $porcentagemConclusao = $totalEtapas > 0
         ? round(($etapasConcluidas / $totalEtapas) * 100)
         : 0;
+
+    $cursoTemConteudo = $cursoAtual && $totalEtapas > 0;
+
+    $aulasOk = $totalAulas > 0
+        ? $totalAulasAssistidas >= $totalAulas
+        : false;
+
+    $posTestesOk = $totalPosTestes > 0
+        ? $totalPosTestesFeitos >= $totalPosTestes
+        : true;
+
+    $provaLiberada = ($cursoTemConteudo && $porcentagemConclusao >= 70) || $acessoTeste;
+
+    $faltamPorcentagem = max(0, 70 - $porcentagemConclusao);
 
     $tentativas = isset($avaliacao) && isset($avaliacao->tentativas)
         ? $avaliacao->tentativas
@@ -92,8 +205,18 @@
                     </h1>
 
                     <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
-                        A avaliação final será liberada somente após assistir todas as videoaulas e concluir todos os pós-testes.
+                        A avaliação final será liberada quando você concluir pelo menos 70% do curso atual.
                     </p>
+
+                    @if($cursoAtual)
+                        <p class="text-sm text-[#004D3A] mt-2 font-extrabold">
+                            Curso atual: {{ $cursoAtual->nome }}
+                        </p>
+                    @else
+                        <p class="text-sm text-red-600 mt-2 font-extrabold">
+                            Nenhum curso atual foi encontrado para este aluno.
+                        </p>
+                    @endif
 
                     @if($acessoTeste)
                         <div class="mt-4 inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 border border-yellow-200 px-4 py-2 rounded-2xl text-sm font-bold">
@@ -190,14 +313,26 @@
                             </h2>
 
                             <p class="text-[#60756B] text-sm leading-relaxed max-w-2xl">
-                                Para acessar a prova final, você precisa assistir todas as videoaulas e concluir todos os pós-testes cadastrados no curso.
+                                Para acessar a prova final, você precisa concluir pelo menos 70% do curso atual, considerando aulas assistidas e pós-testes realizados.
                             </p>
+
+                            @if($cursoAtual)
+                                <p class="text-sm text-[#004D3A] font-extrabold mt-3">
+                                    Curso atual: {{ $cursoAtual->nome }}
+                                </p>
+                            @endif
+
+                            @if($totalEtapas > 0)
+                                <p class="text-sm text-[#60756B] mt-2">
+                                    Você está com {{ $porcentagemConclusao }}%. Faltam {{ $faltamPorcentagem }} ponto(s) percentual(is) para liberar.
+                                </p>
+                            @endif
 
                             <div class="mt-6 bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5">
 
                                 <div class="flex items-center justify-between mb-3">
                                     <p class="text-sm font-extrabold text-[#003C2F]">
-                                        Progresso obrigatório
+                                        Progresso do curso atual
                                     </p>
 
                                     <p class="text-sm font-extrabold text-[#004D3A]">
@@ -274,7 +409,7 @@
 
                                     <div>
                                         <p class="font-bold text-[#003C2F]">
-                                            Assistir todas as aulas
+                                            Assistir as aulas do curso
                                         </p>
 
                                         <p class="text-sm text-[#60756B]">
@@ -294,7 +429,7 @@
 
                                     <div>
                                         <p class="font-bold text-[#003C2F]">
-                                            Concluir os pós-testes
+                                            Concluir os pós-testes do curso
                                         </p>
 
                                         <p class="text-sm text-[#60756B]">
@@ -569,7 +704,7 @@
             title: '{{ $acessoTeste ? 'Acesso de teste ativado' : 'Deseja iniciar a prova final?' }}',
             html: `
                 <p style="color:#60756B; font-size:14px; line-height:1.6;">
-                    {{ $acessoTeste ? 'Você está acessando a prova usando a senha de teste.' : 'A prova final está liberada para você.' }}
+                    {{ $acessoTeste ? 'Você está acessando a prova usando a senha de teste.' : 'A prova final está liberada porque você atingiu pelo menos 70% do curso atual.' }}
                     <br><br>
                     Você terá <strong>{{ $tentativas }} tentativa(s)</strong> e o tempo limite será de
                     <strong>{{ $avaliacao->tempo_limite ?? 60 }} minutos</strong>.
