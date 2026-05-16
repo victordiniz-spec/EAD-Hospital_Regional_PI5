@@ -446,6 +446,45 @@
                 <form action="{{ route('prova.final.responder') }}" method="POST" id="formProvaFinalAluno">
                     @csrf
 
+                    <input type="hidden" name="avaliacao_id" value="{{ $avaliacao->id }}">
+
+                    <!-- CRONÔMETRO DA PROVA -->
+                    <div id="cronometroProvaFinal"
+                         class="hidden fixed bottom-4 right-4 z-[70] bg-white border-2 border-[#004D3A] rounded-3xl shadow-2xl px-5 py-4 min-w-[220px]">
+
+                        <div class="flex items-center gap-3">
+                            <div class="w-11 h-11 rounded-2xl bg-[#EAF5EF] text-[#004D3A] flex items-center justify-center shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="w-6 h-6"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="1.8"
+                                          d="M12 6v6h4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                                </svg>
+                            </div>
+
+                            <div>
+                                <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                    Tempo restante
+                                </p>
+
+                                <p id="tempoRestanteProva" class="text-2xl font-extrabold text-[#004D3A] leading-tight">
+                                    --:--
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 h-2 bg-[#E8EFE9] rounded-full overflow-hidden">
+                            <div id="barraTempoProva"
+                                 class="h-full bg-[#004D3A] rounded-full transition-all duration-500"
+                                 style="width: 100%;">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 xl:grid-cols-12 gap-7">
 
                         <!-- INFORMAÇÕES -->
@@ -515,7 +554,8 @@
                                 </div>
 
                                 <div class="mt-5 bg-green-50 border border-green-100 rounded-2xl p-4 text-green-800 text-xs leading-relaxed">
-                                    Leia com atenção. Após finalizar, suas respostas serão enviadas para correção.
+                                    Leia com atenção. O cronômetro começa somente quando você clicar em <strong>Sim, iniciar</strong>.
+                                    Ao terminar o tempo, a prova será enviada automaticamente.
                                 </div>
 
                             </div>
@@ -693,6 +733,108 @@
 
 @if(isset($avaliacao) && $provaLiberada)
 <script>
+    let intervaloCronometroProva = null;
+    let tempoTotalProvaSegundos = {{ (int) ($avaliacao->tempo_limite ?? 60) }} * 60;
+    let tempoRestanteProvaSegundos = tempoTotalProvaSegundos;
+    let provaFinalIniciada = false;
+    let provaFinalEnviando = false;
+
+    function formatarTempoProva(segundos) {
+        const minutos = Math.floor(segundos / 60);
+        const restoSegundos = segundos % 60;
+
+        return String(minutos).padStart(2, '0') + ':' + String(restoSegundos).padStart(2, '0');
+    }
+
+    function atualizarVisualCronometroProva() {
+        const tempoEl = document.getElementById('tempoRestanteProva');
+        const barraEl = document.getElementById('barraTempoProva');
+        const caixaEl = document.getElementById('cronometroProvaFinal');
+
+        if (tempoEl) {
+            tempoEl.innerText = formatarTempoProva(Math.max(0, tempoRestanteProvaSegundos));
+        }
+
+        const porcentagem = tempoTotalProvaSegundos > 0
+            ? Math.max(0, Math.round((tempoRestanteProvaSegundos / tempoTotalProvaSegundos) * 100))
+            : 0;
+
+        if (barraEl) {
+            barraEl.style.width = porcentagem + '%';
+
+            if (porcentagem <= 20) {
+                barraEl.classList.remove('bg-[#004D3A]', 'bg-yellow-500');
+                barraEl.classList.add('bg-red-600');
+            } else if (porcentagem <= 50) {
+                barraEl.classList.remove('bg-[#004D3A]', 'bg-red-600');
+                barraEl.classList.add('bg-yellow-500');
+            } else {
+                barraEl.classList.remove('bg-yellow-500', 'bg-red-600');
+                barraEl.classList.add('bg-[#004D3A]');
+            }
+        }
+
+        if (caixaEl) {
+            if (porcentagem <= 20) {
+                caixaEl.classList.remove('border-[#004D3A]', 'border-yellow-500');
+                caixaEl.classList.add('border-red-600');
+            } else if (porcentagem <= 50) {
+                caixaEl.classList.remove('border-[#004D3A]', 'border-red-600');
+                caixaEl.classList.add('border-yellow-500');
+            } else {
+                caixaEl.classList.remove('border-yellow-500', 'border-red-600');
+                caixaEl.classList.add('border-[#004D3A]');
+            }
+        }
+    }
+
+    function iniciarCronometroProvaFinal() {
+        if (provaFinalIniciada) return;
+
+        provaFinalIniciada = true;
+        tempoRestanteProvaSegundos = tempoTotalProvaSegundos;
+
+        const cronometro = document.getElementById('cronometroProvaFinal');
+
+        if (cronometro) {
+            cronometro.classList.remove('hidden');
+        }
+
+        atualizarVisualCronometroProva();
+
+        intervaloCronometroProva = setInterval(() => {
+            tempoRestanteProvaSegundos--;
+            atualizarVisualCronometroProva();
+
+            if (tempoRestanteProvaSegundos <= 0) {
+                clearInterval(intervaloCronometroProva);
+                enviarProvaPorTempoEsgotado();
+            }
+        }, 1000);
+    }
+
+    function enviarProvaPorTempoEsgotado() {
+        if (provaFinalEnviando) return;
+
+        provaFinalEnviando = true;
+
+        const form = document.getElementById('formProvaFinalAluno');
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Tempo esgotado!',
+            text: 'O tempo da prova acabou. Suas respostas serão enviadas automaticamente.',
+            confirmButtonText: 'Entendi',
+            confirmButtonColor: '#dc2626',
+            allowOutsideClick: false,
+            allowEscapeKey: false
+        }).then(() => {
+            if (form) {
+                form.submit();
+            }
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         Swal.fire({
             icon: '{{ $acessoTeste ? 'warning' : 'question' }}',
@@ -701,8 +843,10 @@
                 <p style="color:#60756B; font-size:14px; line-height:1.6;">
                     {{ $acessoTeste ? 'Você está acessando a prova usando a senha de teste.' : 'A prova final está liberada porque você atingiu pelo menos 70% do curso atual.' }}
                     <br><br>
-                    Você terá <strong>{{ $tentativas }} tentativa(s)</strong> e o tempo limite será de
-                    <strong>{{ $avaliacao->tempo_limite ?? 60 }} minutos</strong>.
+                    Ao clicar em <strong>Sim, iniciar</strong>, o cronômetro começará imediatamente.
+                    <br><br>
+                    Tempo limite: <strong>{{ $avaliacao->tempo_limite ?? 60 }} minutos</strong>.<br>
+                    Tentativas: <strong>{{ $tentativas }}</strong>.
                 </p>
             `,
             showCancelButton: true,
@@ -711,16 +855,34 @@
             confirmButtonColor: '#004D3A',
             cancelButtonColor: '#64748b',
             background: '#ffffff',
-            color: '#003C2F'
+            color: '#003C2F',
+            allowOutsideClick: false,
+            allowEscapeKey: false
         }).then((result) => {
             if (!result.isConfirmed) {
                 window.location.href = "{{ route('dashboard.aluno') }}";
+                return;
             }
+
+            iniciarCronometroProvaFinal();
         });
     });
 
     function confirmarEnvioProva() {
         const form = document.getElementById('formProvaFinalAluno');
+
+        if (!form) return;
+
+        if (!form.reportValidity()) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Responda todas as questões',
+                text: 'Antes de finalizar, marque uma alternativa em cada pergunta.',
+                confirmButtonColor: '#004D3A'
+            });
+
+            return;
+        }
 
         Swal.fire({
             icon: 'warning',
@@ -733,10 +895,23 @@
             cancelButtonColor: '#64748b'
         }).then((result) => {
             if (result.isConfirmed) {
+                provaFinalEnviando = true;
+
+                if (intervaloCronometroProva) {
+                    clearInterval(intervaloCronometroProva);
+                }
+
                 form.submit();
             }
         });
     }
+
+    window.addEventListener('beforeunload', function(e) {
+        if (provaFinalIniciada && !provaFinalEnviando) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
 </script>
 @endif
 
