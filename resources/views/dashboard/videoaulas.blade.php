@@ -39,10 +39,35 @@
         width: 100%;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | MODAIS RESPONSIVOS
+    |--------------------------------------------------------------------------
+    | A sidebar/topbar usam z-index alto. Por isso os modais precisam ficar
+    | acima deles para não aparecerem atrás do menu.
+    */
+    .modal-videoaulas-overlay {
+        z-index: 10050 !important;
+    }
+
+    .modal-videoaulas-card {
+        width: min(100%, 980px);
+        max-height: calc(100vh - 56px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    body.modal-aberto {
+        overflow: hidden;
+    }
+
     @media (max-width: 768px) {
-        .modal-scroll-mobile {
-            max-height: 88vh !important;
+        .modal-scroll-mobile,
+        .modal-videoaulas-card {
+            width: calc(100vw - 24px) !important;
+            max-height: calc(100vh - 32px) !important;
             overflow-y: auto !important;
+            border-radius: 1.5rem !important;
         }
 
         .area-professor-videoaulas {
@@ -600,11 +625,10 @@
 
 
 <!-- MODAL CRIAR AULA -->
-<div id="modalAula" class="fixed inset-0 hidden items-center justify-center z-50 px-3 sm:px-4"
-     style="background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);">
+<div id="modalAula" class="modal-videoaulas-overlay fixed inset-0 hidden items-center justify-center px-3 sm:px-4 py-4"
+     style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
 
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl mx-auto overflow-hidden modal-scroll-mobile"
-         style="max-height: 90vh; overflow-y: auto;">
+    <div class="modal-videoaulas-card bg-white rounded-3xl shadow-2xl mx-auto overflow-hidden modal-scroll-mobile">
 
         <div class="flex items-start justify-between px-5 sm:px-8 pt-8 pb-4">
             <div>
@@ -848,11 +872,10 @@
 
 <!-- MODAL BANCO DE PERGUNTAS -->
 <div id="modalBancoPerguntas"
-     class="fixed inset-0 hidden items-center justify-center z-[70] px-3 sm:px-4"
-     style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
+     class="modal-videoaulas-overlay fixed inset-0 hidden items-center justify-center px-3 sm:px-4 py-4"
+     style="background: rgba(0,0,0,0.58); backdrop-filter: blur(4px);">
 
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden modal-scroll-mobile"
-         style="max-height: 90vh; overflow-y: auto;">
+    <div class="modal-videoaulas-card bg-white rounded-3xl shadow-2xl overflow-hidden modal-scroll-mobile" style="width: min(100%, 1100px);">
 
         <div class="flex items-start justify-between px-5 sm:px-8 pt-8 pb-4 border-b border-[#E3EBE4]">
             <div>
@@ -933,11 +956,10 @@
 </div>
 
 <!-- MODAL EDITAR AULA -->
-<div id="modalEditarAula" class="fixed inset-0 hidden items-center justify-center z-50 px-3 sm:px-4"
-     style="background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);">
+<div id="modalEditarAula" class="modal-videoaulas-overlay fixed inset-0 hidden items-center justify-center px-3 sm:px-4 py-4"
+     style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);">
 
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-auto overflow-hidden modal-scroll-mobile"
-         style="max-height: 90vh; overflow-y: auto;">
+    <div class="modal-videoaulas-card bg-white rounded-3xl shadow-2xl mx-auto overflow-hidden modal-scroll-mobile" style="width: min(100%, 760px);">
 
         <div class="flex items-start justify-between px-5 sm:px-8 pt-8 pb-4">
             <div>
@@ -1031,10 +1053,9 @@
 
 <!-- MODAL CRIAR / EDITAR MINI TESTE -->
 <div id="modalMiniTeste"
-     class="fixed inset-0 hidden items-center justify-center bg-black/50 backdrop-blur-sm z-[95] px-3 sm:px-4">
+     class="modal-videoaulas-overlay fixed inset-0 hidden items-center justify-center bg-black/55 backdrop-blur-sm px-3 sm:px-4 py-4">
 
-    <div class="bg-white w-full max-w-5xl rounded-3xl border border-[#E3EBE4] shadow-2xl overflow-hidden modal-scroll-mobile"
-         style="max-height: 92vh; overflow-y: auto;">
+    <div class="modal-videoaulas-card bg-white rounded-3xl border border-[#E3EBE4] shadow-2xl overflow-hidden modal-scroll-mobile" style="width: min(100%, 1100px);">
 
         <div class="p-5 sm:p-7 border-b border-[#E3EBE4] flex items-start justify-between gap-4">
 
@@ -1159,6 +1180,8 @@
     let miniTestePerguntaIndex = 0;
 
     function abrirModalAula() {
+        document.body.classList.add('modal-aberto');
+
         const modal = document.getElementById('modalAula');
 
         if (!modal) return;
@@ -1168,6 +1191,8 @@
     }
 
     function fecharModalAula() {
+        document.body.classList.remove('modal-aberto');
+
         const modal = document.getElementById('modalAula');
 
         if (!modal) return;
@@ -1218,6 +1243,8 @@
     }
 
     function abrirModalEditarAula(id, titulo, descricao, videoUrl, moduloId) {
+        document.body.classList.add('modal-aberto');
+
         const modal = document.getElementById('modalEditarAula');
         const form = document.getElementById('formEditarAula');
 
@@ -1243,6 +1270,8 @@
     }
 
     function fecharModalEditarAula() {
+        document.body.classList.remove('modal-aberto');
+
         const modal = document.getElementById('modalEditarAula');
         const form = document.getElementById('formEditarAula');
         const btn = document.getElementById('btnAtualizarAula');
@@ -1261,6 +1290,8 @@
     }
 
     function abrirModalMiniTeste(aulaId, cursoId, nomeAula, avaliacao, perguntas) {
+        document.body.classList.add('modal-aberto');
+
         const modal = document.getElementById('modalMiniTeste');
         const aulaIdInput = document.getElementById('miniTesteAulaId');
         const cursoIdInput = document.getElementById('miniTesteCursoId');
@@ -1309,6 +1340,8 @@
     }
 
     function fecharModalMiniTeste() {
+        document.body.classList.remove('modal-aberto');
+
         const modal = document.getElementById('modalMiniTeste');
         const form = document.getElementById('formMiniTeste');
         const container = document.getElementById('miniTestePerguntasContainer');
@@ -1628,6 +1661,8 @@
     }
 
     function abrirBancoPerguntas() {
+        document.body.classList.add('modal-aberto');
+
         const modal = document.getElementById('modalBancoPerguntas');
 
         if (!modal) return;
@@ -1889,6 +1924,27 @@
     @if ($errors->any() || session('error'))
         abrirModalAula();
     @endif
+
+    /*
+    |--------------------------------------------------------------------------
+    | FECHAR MODAIS AO CLICAR FORA
+    |--------------------------------------------------------------------------
+    */
+    ['modalAula', 'modalEditarAula', 'modalMiniTeste', 'modalBancoPerguntas'].forEach(function(idModal) {
+        const modal = document.getElementById(idModal);
+
+        if (!modal) return;
+
+        modal.addEventListener('click', function(e) {
+            if (e.target !== modal) return;
+
+            if (idModal === 'modalAula') fecharModalAula();
+            if (idModal === 'modalEditarAula') fecharModalEditarAula();
+            if (idModal === 'modalMiniTeste') fecharModalMiniTeste();
+            if (idModal === 'modalBancoPerguntas') fecharBancoPerguntas();
+        });
+    });
+
 </script>
 
 @endsection
