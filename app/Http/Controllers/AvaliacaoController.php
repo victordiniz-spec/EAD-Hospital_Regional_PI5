@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AvaliacaoController extends Controller
 {
     // =========================
-    // CRIAR / EDITAR AVALIAÇÃO NORMAL
+    // CRIAR / EDITAR AVALIAÇÃO NORMAL / PÓS-TESTE
     // =========================
     public function create($aula)
     {
@@ -27,6 +28,8 @@ class AvaliacaoController extends Controller
                 ->where('aula_id', $aula)
                 ->where(function ($query) {
                     $query->where('tipo', 'normal')
+                          ->orWhere('tipo', 'pos_teste')
+                          ->orWhere('tipo', 'pós-teste')
                           ->orWhereNull('tipo');
                 })
                 ->first();
@@ -66,7 +69,7 @@ class AvaliacaoController extends Controller
     }
 
     // =========================
-    // SALVAR / ATUALIZAR AVALIAÇÃO NORMAL
+    // SALVAR / ATUALIZAR AVALIAÇÃO NORMAL / PÓS-TESTE
     // =========================
     public function store(Request $request)
     {
@@ -86,85 +89,36 @@ class AvaliacaoController extends Controller
                 ->where('aula_id', $aulaId)
                 ->where(function ($query) {
                     $query->where('tipo', 'normal')
+                          ->orWhere('tipo', 'pos_teste')
+                          ->orWhere('tipo', 'pós-teste')
                           ->orWhereNull('tipo');
                 })
                 ->first();
+
+            $dadosAvaliacao = [
+                'titulo' => $request->avaliacao['titulo'],
+                'tempo_limite' => $request->avaliacao['tempo_limite'] ?? null,
+                'qtd_perguntas' => count($request->perguntas ?? []),
+                'tipo' => 'normal',
+                'updated_at' => now(),
+            ];
 
             if ($avaliacaoExistente) {
                 $avaliacaoId = $avaliacaoExistente->id;
 
                 DB::table('avaliacoes')
                     ->where('id', $avaliacaoId)
-                    ->update([
-                        'titulo' => $request->avaliacao['titulo'],
-                        'tempo_limite' => $request->avaliacao['tempo_limite'] ?? null,
-                        'qtd_perguntas' => count($request->perguntas ?? []),
-                        'tipo' => 'normal',
-                        'updated_at' => now(),
-                    ]);
+                    ->update($dadosAvaliacao);
 
-                $perguntasAntigas = DB::table('perguntas')
-                    ->where('avaliacao_id', $avaliacaoId)
-                    ->pluck('id')
-                    ->toArray();
-
-                if (!empty($perguntasAntigas)) {
-                    DB::table('respostas')
-                        ->whereIn('pergunta_id', $perguntasAntigas)
-                        ->delete();
-
-                    if (DB::getSchemaBuilder()->hasTable('respostas_alunos')) {
-                        DB::table('respostas_alunos')
-                            ->whereIn('pergunta_id', $perguntasAntigas)
-                            ->delete();
-                    }
-
-                    DB::table('perguntas')
-                        ->where('avaliacao_id', $avaliacaoId)
-                        ->delete();
-                }
-
+                $this->apagarPerguntasRespostasDaAvaliacao($avaliacaoId);
             } else {
-                $avaliacaoId = DB::table('avaliacoes')->insertGetId([
-                    'titulo' => $request->avaliacao['titulo'],
-                    'aula_id' => $aulaId,
-                    'tempo_limite' => $request->avaliacao['tempo_limite'] ?? null,
-                    'qtd_perguntas' => count($request->perguntas ?? []),
-                    'tipo' => 'normal',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+                $dadosAvaliacao['aula_id'] = $aulaId;
+                $dadosAvaliacao['created_at'] = now();
+
+                $avaliacaoId = DB::table('avaliacoes')->insertGetId($dadosAvaliacao);
             }
 
-            foreach ($request->perguntas as $pergunta) {
-                if (empty($pergunta['pergunta'])) {
-                    continue;
-                }
-
-                $perguntaId = DB::table('perguntas')->insertGetId([
-                    'avaliacao_id' => $avaliacaoId,
-                    'pergunta' => $pergunta['pergunta'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                $respostas = $pergunta['respostas'] ?? [];
-                $correta = isset($pergunta['correta']) ? (int) $pergunta['correta'] : null;
-
-                foreach ($respostas as $index => $resposta) {
-                    if (empty($resposta)) {
-                        continue;
-                    }
-
-                    DB::table('respostas')->insert([
-                        'pergunta_id' => $perguntaId,
-                        'resposta' => $resposta,
-                        'correta' => $correta === (int) $index,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-            }
+            $this->salvarPerguntasRespostas($avaliacaoId, $request->perguntas);
 
             DB::commit();
 
@@ -186,7 +140,7 @@ class AvaliacaoController extends Controller
     }
 
     // =========================
-    // CRIAR PROVA FINAL
+    // CRIAR / EDITAR PROVA FINAL
     // =========================
     public function createFinal()
     {
@@ -194,68 +148,109 @@ class AvaliacaoController extends Controller
     }
 
     // =========================
-    // SALVAR PROVA FINAL
+    // SALVAR / ATUALIZAR PROVA FINAL
     // =========================
     public function storeFinal(Request $request)
     {
         $request->validate([
             'titulo' => 'required|string|max:255',
             'tempo_limite' => 'nullable|integer|min:1',
-            'perguntas' => 'required|array',
+            'nota_minima' => 'nullable|numeric|min:0|max:100',
+            'tentativas' => 'nullable|integer|min:1',
+            'perguntas' => 'required|array|min:1',
+        ], [
+            'titulo.required' => 'Informe o título da prova final.',
+            'perguntas.required' => 'Adicione pelo menos uma pergunta na prova final.',
         ]);
 
         DB::beginTransaction();
 
         try {
-            $avaliacaoId = DB::table('avaliacoes')->insertGetId([
+            /*
+            |--------------------------------------------------------------------------
+            | IMPORTANTE
+            |--------------------------------------------------------------------------
+            | Antes o sistema sempre fazia INSERT de uma nova prova final.
+            | A tela do aluno buscava a primeira prova final encontrada.
+            | Resultado: você atualizava, aparecia sucesso, mas o aluno continuava vendo
+            | a prova antiga.
+            |
+            | Agora:
+            | - se veio avaliacao_id, atualiza aquela prova;
+            | - se não veio, procura uma prova final existente;
+            | - se não existir nenhuma, cria uma nova.
+            */
+
+            $avaliacaoFinal = null;
+
+            if ($request->filled('avaliacao_id')) {
+                $avaliacaoFinal = DB::table('avaliacoes')
+                    ->where('id', $request->avaliacao_id)
+                    ->where('tipo', 'final')
+                    ->first();
+            }
+
+            if (!$avaliacaoFinal) {
+                $avaliacaoFinal = DB::table('avaliacoes')
+                    ->where('tipo', 'final')
+                    ->orderBy('id', 'desc')
+                    ->first();
+            }
+
+            $dadosAvaliacao = [
                 'titulo' => $request->titulo,
-                'tempo_limite' => $request->tempo_limite,
+                'tempo_limite' => $request->tempo_limite ?? 60,
                 'tipo' => 'final',
                 'qtd_perguntas' => count($request->perguntas ?? []),
-                'created_at' => now(),
                 'updated_at' => now(),
-            ]);
+            ];
 
-            foreach ($request->perguntas as $pergunta) {
-                if (empty($pergunta['pergunta'])) {
-                    continue;
-                }
-
-                $perguntaId = DB::table('perguntas')->insertGetId([
-                    'avaliacao_id' => $avaliacaoId,
-                    'pergunta' => $pergunta['pergunta'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                $respostas = $pergunta['respostas'] ?? [];
-                $correta = isset($pergunta['correta']) ? (int) $pergunta['correta'] : null;
-
-                foreach ($respostas as $index => $resposta) {
-                    if (empty($resposta)) {
-                        continue;
-                    }
-
-                    DB::table('respostas')->insert([
-                        'pergunta_id' => $perguntaId,
-                        'resposta' => $resposta,
-                        'correta' => $correta === (int) $index,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
+            // Só grava esses campos se existirem na tabela, para evitar erro 500.
+            if (Schema::hasColumn('avaliacoes', 'nota_minima')) {
+                $dadosAvaliacao['nota_minima'] = $request->nota_minima ?? 70;
             }
+
+            if (Schema::hasColumn('avaliacoes', 'tentativas')) {
+                $dadosAvaliacao['tentativas'] = $request->tentativas ?? 2;
+            }
+
+            if ($avaliacaoFinal) {
+                $avaliacaoId = $avaliacaoFinal->id;
+
+                DB::table('avaliacoes')
+                    ->where('id', $avaliacaoId)
+                    ->update($dadosAvaliacao);
+
+                // Remove as perguntas antigas para salvar exatamente o que está no formulário.
+                $this->apagarPerguntasRespostasDaAvaliacao($avaliacaoId);
+
+                $mensagem = 'Prova final atualizada com sucesso!';
+            } else {
+                $dadosAvaliacao['created_at'] = now();
+
+                $avaliacaoId = DB::table('avaliacoes')->insertGetId($dadosAvaliacao);
+
+                $mensagem = 'Prova final criada com sucesso!';
+            }
+
+            $this->salvarPerguntasRespostas($avaliacaoId, $request->perguntas);
 
             DB::commit();
 
-            return back()->with('success', 'Prova final criada com sucesso!');
+            return redirect()
+                ->route('prova.final.criar')
+                ->with('success', $mensagem);
 
         } catch (\Throwable $e) {
             DB::rollBack();
 
             return back()
                 ->withInput()
-                ->with('error', 'Erro ao criar prova final: ' . $e->getMessage());
+                ->with('error',
+                    'Erro ao salvar prova final: ' . $e->getMessage() .
+                    ' | Arquivo: ' . $e->getFile() .
+                    ' | Linha: ' . $e->getLine()
+                );
         }
     }
 
@@ -327,48 +322,8 @@ class AvaliacaoController extends Controller
 
         $nota = ($acertos / $perguntas->count()) * 10;
 
-        if (DB::getSchemaBuilder()->hasTable('notas')) {
-            $notaExistente = DB::table('notas')
-                ->where('aluno_id', $alunoId)
-                ->where('avaliacao_id', $id)
-                ->first();
-
-            if ($notaExistente) {
-                DB::table('notas')
-                    ->where('id', $notaExistente->id)
-                    ->update([
-                        'nota' => $nota,
-                        'updated_at' => now(),
-                    ]);
-            } else {
-                DB::table('notas')->insert([
-                    'aluno_id' => $alunoId,
-                    'avaliacao_id' => $id,
-                    'nota' => $nota,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
-
-        if (DB::getSchemaBuilder()->hasTable('respostas_alunos')) {
-            foreach ($perguntas as $pergunta) {
-                if (isset($request->respostas[$pergunta->id])) {
-                    DB::table('respostas_alunos')->updateOrInsert(
-                        [
-                            'aluno_id' => $alunoId,
-                            'avaliacao_id' => $id,
-                            'pergunta_id' => $pergunta->id,
-                        ],
-                        [
-                            'resposta_id' => $request->respostas[$pergunta->id],
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]
-                    );
-                }
-            }
-        }
+        $this->salvarNota($alunoId, $id, $nota);
+        $this->salvarRespostasAluno($alunoId, $id, $perguntas, $request->respostas ?? []);
 
         return redirect()
             ->route('dashboard.aluno')
@@ -402,7 +357,7 @@ class AvaliacaoController extends Controller
 
         $nota = null;
 
-        if (DB::getSchemaBuilder()->hasTable('notas')) {
+        if (Schema::hasTable('notas')) {
             $nota = DB::table('notas')
                 ->where('aluno_id', $alunoId)
                 ->where('avaliacao_id', $id)
@@ -422,7 +377,7 @@ class AvaliacaoController extends Controller
 
             $respostaAlunoId = null;
 
-            if (DB::getSchemaBuilder()->hasTable('respostas_alunos')) {
+            if (Schema::hasTable('respostas_alunos')) {
                 $respostaAlunoId = DB::table('respostas_alunos')
                     ->where('aluno_id', $alunoId)
                     ->where('avaliacao_id', $id)
@@ -453,10 +408,18 @@ class AvaliacaoController extends Controller
             return redirect()->route('login');
         }
 
-        $modoTeste = $request->query('teste', false);
+        /*
+        |--------------------------------------------------------------------------
+        | BUSCAR A PROVA FINAL CORRETA
+        |--------------------------------------------------------------------------
+        | Antes usava first(), então muitas vezes carregava a prova antiga.
+        | Agora usa a mais recente, que é a que foi criada/atualizada por último.
+        */
 
         $avaliacao = DB::table('avaliacoes')
             ->where('tipo', 'final')
+            ->orderBy('updated_at', 'desc')
+            ->orderBy('id', 'desc')
             ->first();
 
         if (!$avaliacao) {
@@ -465,31 +428,22 @@ class AvaliacaoController extends Controller
                 ->with('error', 'Prova final ainda não foi criada.');
         }
 
-        $totalAulas = DB::table('aulas')->count();
-
-        $assistidas = DB::table('aulas_assistidas')
-            ->where('aluno_id', $alunoId)
-            ->where('assistido', true)
-            ->count();
-
-        if (!$modoTeste && $totalAulas > 0 && $assistidas < $totalAulas) {
-            return redirect()
-                ->route('dashboard.aluno')
-                ->with('error', 'Você precisa concluir todas as aulas.');
-        }
-
-        $avaliacao->perguntas = DB::table('perguntas')
+        $perguntas = DB::table('perguntas')
             ->where('avaliacao_id', $avaliacao->id)
             ->orderBy('id')
             ->get();
 
-        foreach ($avaliacao->perguntas as $pergunta) {
+        foreach ($perguntas as $pergunta) {
             $pergunta->respostas = DB::table('respostas')
                 ->where('pergunta_id', $pergunta->id)
                 ->orderBy('id')
                 ->get();
         }
 
+        $avaliacao->perguntas = $perguntas;
+
+        // A regra de 70% do curso atual está dentro da view dashboard.prova-final.
+        // O parâmetro ?teste=123 também é tratado na view.
         return view('dashboard.prova-final', compact('avaliacao'));
     }
 
@@ -504,7 +458,28 @@ class AvaliacaoController extends Controller
             return redirect()->route('login');
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | SEGURANÇA
+        |--------------------------------------------------------------------------
+        | Se o formulário não mandar avaliacao_id, usamos a prova final mais recente.
+        */
+
         $avaliacaoId = $request->avaliacao_id;
+
+        if (!$avaliacaoId) {
+            $avaliacaoId = DB::table('avaliacoes')
+                ->where('tipo', 'final')
+                ->orderBy('updated_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->value('id');
+        }
+
+        if (!$avaliacaoId) {
+            return redirect()
+                ->route('dashboard.aluno')
+                ->with('error', 'Prova final não encontrada.');
+        }
 
         $perguntas = DB::table('perguntas')
             ->where('avaliacao_id', $avaliacaoId)
@@ -535,29 +510,8 @@ class AvaliacaoController extends Controller
 
         $nota = ($acertos / $perguntas->count()) * 10;
 
-        if (DB::getSchemaBuilder()->hasTable('notas')) {
-            $notaExistente = DB::table('notas')
-                ->where('aluno_id', $alunoId)
-                ->where('avaliacao_id', $avaliacaoId)
-                ->first();
-
-            if ($notaExistente) {
-                DB::table('notas')
-                    ->where('id', $notaExistente->id)
-                    ->update([
-                        'nota' => $nota,
-                        'updated_at' => now(),
-                    ]);
-            } else {
-                DB::table('notas')->insert([
-                    'aluno_id' => $alunoId,
-                    'avaliacao_id' => $avaliacaoId,
-                    'nota' => $nota,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
+        $this->salvarNota($alunoId, $avaliacaoId, $nota);
+        $this->salvarRespostasAluno($alunoId, $avaliacaoId, $perguntas, $request->respostas ?? []);
 
         if ($nota >= 7) {
             return redirect()
@@ -568,5 +522,137 @@ class AvaliacaoController extends Controller
         return redirect()
             ->route('dashboard.aluno')
             ->with('error', 'Reprovado. Nota: ' . number_format($nota, 1));
+    }
+
+    // =========================
+    // FUNÇÃO AUXILIAR: APAGAR PERGUNTAS E RESPOSTAS
+    // =========================
+    private function apagarPerguntasRespostasDaAvaliacao($avaliacaoId)
+    {
+        $perguntasAntigas = DB::table('perguntas')
+            ->where('avaliacao_id', $avaliacaoId)
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($perguntasAntigas)) {
+            return;
+        }
+
+        if (Schema::hasTable('respostas_alunos')) {
+            DB::table('respostas_alunos')
+                ->whereIn('pergunta_id', $perguntasAntigas)
+                ->delete();
+        }
+
+        DB::table('respostas')
+            ->whereIn('pergunta_id', $perguntasAntigas)
+            ->delete();
+
+        DB::table('perguntas')
+            ->where('avaliacao_id', $avaliacaoId)
+            ->delete();
+    }
+
+    // =========================
+    // FUNÇÃO AUXILIAR: SALVAR PERGUNTAS E RESPOSTAS
+    // =========================
+    private function salvarPerguntasRespostas($avaliacaoId, $perguntas)
+    {
+        foreach ($perguntas as $pergunta) {
+            if (empty($pergunta['pergunta'])) {
+                continue;
+            }
+
+            $dadosPergunta = [
+                'avaliacao_id' => $avaliacaoId,
+                'pergunta' => $pergunta['pergunta'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            if (Schema::hasColumn('perguntas', 'peso')) {
+                $dadosPergunta['peso'] = $pergunta['peso'] ?? 10;
+            }
+
+            $perguntaId = DB::table('perguntas')->insertGetId($dadosPergunta);
+
+            $respostas = $pergunta['respostas'] ?? [];
+            $correta = isset($pergunta['correta']) ? (int) $pergunta['correta'] : null;
+
+            foreach ($respostas as $index => $resposta) {
+                if ($resposta === null || trim((string) $resposta) === '') {
+                    continue;
+                }
+
+                DB::table('respostas')->insert([
+                    'pergunta_id' => $perguntaId,
+                    'resposta' => $resposta,
+                    'correta' => $correta === (int) $index,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+    }
+
+    // =========================
+    // FUNÇÃO AUXILIAR: SALVAR NOTA
+    // =========================
+    private function salvarNota($alunoId, $avaliacaoId, $nota)
+    {
+        if (!Schema::hasTable('notas')) {
+            return;
+        }
+
+        $notaExistente = DB::table('notas')
+            ->where('aluno_id', $alunoId)
+            ->where('avaliacao_id', $avaliacaoId)
+            ->first();
+
+        if ($notaExistente) {
+            DB::table('notas')
+                ->where('id', $notaExistente->id)
+                ->update([
+                    'nota' => $nota,
+                    'updated_at' => now(),
+                ]);
+        } else {
+            DB::table('notas')->insert([
+                'aluno_id' => $alunoId,
+                'avaliacao_id' => $avaliacaoId,
+                'nota' => $nota,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+    }
+
+    // =========================
+    // FUNÇÃO AUXILIAR: SALVAR RESPOSTAS DO ALUNO
+    // =========================
+    private function salvarRespostasAluno($alunoId, $avaliacaoId, $perguntas, $respostasAluno)
+    {
+        if (!Schema::hasTable('respostas_alunos')) {
+            return;
+        }
+
+        foreach ($perguntas as $pergunta) {
+            if (!isset($respostasAluno[$pergunta->id])) {
+                continue;
+            }
+
+            DB::table('respostas_alunos')->updateOrInsert(
+                [
+                    'aluno_id' => $alunoId,
+                    'avaliacao_id' => $avaliacaoId,
+                    'pergunta_id' => $pergunta->id,
+                ],
+                [
+                    'resposta_id' => $respostasAluno[$pergunta->id],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
     }
 }
