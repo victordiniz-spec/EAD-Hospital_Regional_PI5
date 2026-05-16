@@ -123,55 +123,33 @@
         width: 100%;
     }
 
-    .certificado-wrapper {
+    /*
+    |--------------------------------------------------------------------------
+    | CERTIFICADO NA TELA
+    |--------------------------------------------------------------------------
+    */
+    #areaCertificado {
+        width: 850px;
+        min-width: 850px;
+        min-height: 590px;
+        margin: 0 auto;
         background: #ffffff;
         border: 7px solid #EAF5EF;
-        border-radius: 1rem;
+        border-radius: 16px;
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
         position: relative;
         overflow: hidden;
-        width: 850px;
-        height: 590px;
-        min-width: 850px;
-        margin: 0 auto;
-    }
-
-    .certificado-conteudo {
-        position: relative;
-        z-index: 10;
-        padding: 56px 80px;
-        text-align: center;
-        height: 100%;
-    }
-
-    .decoracao-certificado-superior {
-        position: absolute;
-        top: -64px;
-        right: -64px;
-        width: 208px;
-        height: 208px;
-        border-radius: 9999px;
-        border: 30px solid #EAF5EF;
-        opacity: 0.8;
-    }
-
-    .decoracao-certificado-inferior {
-        position: absolute;
-        bottom: -80px;
-        left: -80px;
-        width: 240px;
-        height: 240px;
-        border-radius: 9999px;
-        border: 34px solid #EAF5EF;
-        opacity: 0.8;
     }
 
     /*
     |--------------------------------------------------------------------------
     | IMPRESSÃO DO CERTIFICADO
     |--------------------------------------------------------------------------
-    | Força A4 paisagem, remove margens e imprime somente o certificado.
-    | Isso evita a segunda folha em branco.
+    | Corrigido para:
+    | - imprimir apenas o certificado;
+    | - ocupar uma única folha;
+    | - não deixar a página em branco;
+    | - remover sidebar, navbar, footer, botões e fundos da tela.
     */
     @page {
         size: A4 landscape;
@@ -183,10 +161,6 @@
         body {
             width: 297mm !important;
             height: 210mm !important;
-            min-width: 297mm !important;
-            min-height: 210mm !important;
-            max-width: 297mm !important;
-            max-height: 210mm !important;
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff !important;
@@ -205,19 +179,6 @@
             overflow: hidden !important;
         }
 
-        .nao-imprimir,
-        .nao-imprimir *,
-        aside,
-        nav,
-        header,
-        footer,
-        #toastContainer,
-        #btnVoltarTopo,
-        #modalAcessoTesteCertificado {
-            display: none !important;
-            visibility: hidden !important;
-        }
-
         body * {
             visibility: hidden !important;
         }
@@ -232,17 +193,15 @@
             position: fixed !important;
             left: 0 !important;
             top: 0 !important;
-            right: auto !important;
-            bottom: auto !important;
             width: 297mm !important;
             height: 210mm !important;
             min-width: 0 !important;
             min-height: 0 !important;
-            max-width: none !important;
-            max-height: none !important;
             margin: 0 !important;
-            padding: 5mm !important;
+            padding: 0 !important;
             background: #ffffff !important;
+            border: 0 !important;
+            border-radius: 0 !important;
             box-shadow: none !important;
             overflow: hidden !important;
             page-break-before: avoid !important;
@@ -253,86 +212,110 @@
             break-inside: avoid !important;
         }
 
-        .certificado-wrapper {
+        .nao-imprimir,
+        .nao-imprimir *,
+        aside,
+        nav,
+        header,
+        footer,
+        #toastContainer,
+        #btnVoltarTopo,
+        #modalAcessoTesteCertificado {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        .certificado-folha {
+            display: block !important;
+            position: relative !important;
             width: 287mm !important;
             height: 200mm !important;
-            min-width: 0 !important;
-            min-height: 0 !important;
-            max-width: none !important;
-            max-height: none !important;
-            margin: 0 !important;
-            border-width: 2.5mm !important;
+            margin: 5mm !important;
+            border: 2.5mm solid #EAF5EF !important;
             border-radius: 6mm !important;
-            box-shadow: none !important;
+            background: #ffffff !important;
             overflow: hidden !important;
+            box-shadow: none !important;
         }
 
-        .certificado-conteudo {
-            width: 100% !important;
-            height: 100% !important;
-            padding: 13mm 22mm 10mm !important;
-        }
-
-        .decoracao-certificado-superior {
+        .certificado-decoracao-superior {
+            position: absolute !important;
             top: -34mm !important;
             right: -28mm !important;
             width: 64mm !important;
             height: 64mm !important;
-            border-width: 9mm !important;
+            border-radius: 9999px !important;
+            border: 9mm solid #EAF5EF !important;
+            opacity: 0.9 !important;
         }
 
-        .decoracao-certificado-inferior {
+        .certificado-decoracao-inferior {
+            position: absolute !important;
             bottom: -38mm !important;
             left: -32mm !important;
             width: 76mm !important;
             height: 76mm !important;
-            border-width: 10mm !important;
+            border-radius: 9999px !important;
+            border: 10mm solid #EAF5EF !important;
+            opacity: 0.9 !important;
         }
 
-        .cert-marca {
+        .certificado-conteudo {
+            position: relative !important;
+            z-index: 10 !important;
+            width: 100% !important;
+            height: 100% !important;
+            padding: 13mm 22mm 10mm !important;
+            text-align: center !important;
+        }
+
+        .certificado-marca {
             font-size: 10px !important;
+            line-height: 1.2 !important;
             letter-spacing: 6px !important;
-            margin-bottom: 8mm !important;
+            margin: 0 0 8mm 0 !important;
         }
 
-        .cert-titulo {
+        .certificado-titulo {
             font-size: 34px !important;
             line-height: 1.15 !important;
             letter-spacing: 10px !important;
-            margin-top: 0 !important;
+            margin: 0 !important;
         }
 
-        .cert-subtitulo {
+        .certificado-subtitulo {
             font-size: 12px !important;
             margin-top: 11mm !important;
         }
 
-        .cert-nome-box {
+        .certificado-nome-box {
             width: 150mm !important;
             max-width: none !important;
-            margin-top: 6mm !important;
+            margin: 6mm auto 0 !important;
             padding-bottom: 3mm !important;
+            border-bottom: 1.4px solid #BFD8C5 !important;
         }
 
-        .cert-nome {
+        .certificado-nome {
             font-size: 21px !important;
             line-height: 1.2 !important;
         }
 
-        .cert-texto {
+        .certificado-texto {
             max-width: 235mm !important;
-            margin-top: 8mm !important;
+            margin: 8mm auto 0 !important;
             font-size: 12px !important;
             line-height: 1.75 !important;
         }
 
-        .cert-texto-menor {
-            margin-top: 4mm !important;
+        .certificado-texto-menor {
+            max-width: 235mm !important;
+            margin: 4mm auto 0 !important;
             font-size: 12px !important;
             line-height: 1.75 !important;
         }
 
-        .cert-rodape {
+        .certificado-rodape {
             position: absolute !important;
             left: 22mm !important;
             right: 22mm !important;
@@ -341,34 +324,34 @@
             grid-template-columns: 1fr 1fr !important;
             gap: 36mm !important;
             align-items: end !important;
-            margin-top: 0 !important;
+            margin: 0 !important;
         }
 
-        .cert-assinatura-espaco {
+        .certificado-assinatura-espaco {
             height: 19mm !important;
         }
 
-        .cert-responsavel {
+        .certificado-responsavel {
             font-size: 10px !important;
             line-height: 1.3 !important;
         }
 
-        .cert-cargo {
+        .certificado-cargo {
             font-size: 8px !important;
             margin-top: 1mm !important;
             line-height: 1.3 !important;
         }
 
-        .cert-dados p {
+        .certificado-dados p {
             font-size: 9px !important;
             line-height: 1.7 !important;
         }
 
-        .cert-data-label {
+        .certificado-data-label {
             font-size: 7px !important;
         }
 
-        .cert-data {
+        .certificado-data {
             font-size: 9px !important;
             margin-top: 1mm !important;
         }
@@ -593,100 +576,98 @@
             @else
 
                 <!-- CERTIFICADO LIBERADO -->
-                <div class="nao-imprimir bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6 overflow-x-auto">
+                <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6 overflow-x-auto">
 
-                    <div id="areaCertificado"
-                         class="bg-transparent mx-auto"
-                         style="width: 850px;">
+                    <div id="areaCertificado">
 
-                        <div class="certificado-wrapper">
+                        <div class="certificado-folha w-full h-full relative overflow-hidden">
 
-                            <div class="decoracao-certificado-superior"></div>
-                            <div class="decoracao-certificado-inferior"></div>
+                            <div class="certificado-decoracao-superior absolute -top-16 -right-16 w-52 h-52 rounded-full border-[30px] border-[#EAF5EF] opacity-80"></div>
+                            <div class="certificado-decoracao-inferior absolute -bottom-20 -left-20 w-60 h-60 rounded-full border-[34px] border-[#EAF5EF] opacity-80"></div>
 
-                            <div class="certificado-conteudo">
+                            <div class="certificado-conteudo relative z-10 px-20 py-14 text-center">
 
-                            <p class="cert-marca text-sm font-extrabold text-[#60756B] tracking-[0.25em] uppercase">
-                                Integrar ReSaúde
-                            </p>
-
-                            <h1 class="cert-titulo mt-7 text-4xl font-extrabold tracking-[0.22em] text-[#004D3A] leading-tight">
-                                CERTIFICADO DE<br>
-                                CONCLUSÃO
-                            </h1>
-
-                            <p class="cert-subtitulo mt-8 text-sm text-[#374151]">
-                                Certificamos que
-                            </p>
-
-                            <div class="cert-nome-box mt-5 mx-auto max-w-lg border-b-2 border-[#BFD8C5] pb-2">
-                                <p class="cert-nome text-2xl font-extrabold text-[#1F2937] tracking-wide">
-                                    {{ $aluno->name }}
+                                <p class="certificado-marca text-sm font-extrabold text-[#60756B] tracking-[0.25em] uppercase">
+                                    Integrar ReSaúde
                                 </p>
-                            </div>
 
-                            <p class="cert-texto mt-8 text-sm text-[#4B5563] leading-relaxed max-w-2xl mx-auto">
-                                concluiu com aproveitamento o curso
-                                <strong>{{ $nomeCurso }}</strong>,
-                                com carga horária total de
-                                <strong>{{ $cargaHoraria }} horas</strong>.
-                            </p>
+                                <h1 class="certificado-titulo mt-7 text-4xl font-extrabold tracking-[0.22em] text-[#004D3A] leading-tight">
+                                    CERTIFICADO DE<br>
+                                    CONCLUSÃO
+                                </h1>
 
-                            <p class="cert-texto-menor mt-3 text-sm text-[#4B5563] leading-relaxed max-w-2xl mx-auto">
-                                O aluno cumpriu todos os requisitos obrigatórios e obteve aproveitamento mínimo de 70% na prova final.
-                            </p>
+                                <p class="certificado-subtitulo mt-8 text-sm text-[#374151]">
+                                    Certificamos que
+                                </p>
 
-                            <div class="cert-rodape grid grid-cols-2 gap-14 mt-16 items-end">
-
-                                <!-- ASSINATURA MANUAL -->
-                                <div>
-                                    <div class="cert-assinatura-espaco h-16 flex items-end justify-center">
-                                        <span class="text-xs italic text-[#A5B7AB]">
-                                            Espaço para assinatura manual
-                                        </span>
-                                    </div>
-
-                                    <div class="border-t border-[#8A9B92] pt-2">
-                                        <p class="cert-responsavel text-xs font-bold text-[#374151] uppercase">
-                                            {{ $responsavel }}
-                                        </p>
-
-                                        <p class="cert-cargo text-[10px] text-[#60756B] mt-1 uppercase">
-                                            {{ $cargo }}
-                                        </p>
-                                    </div>
+                                <div class="certificado-nome-box mt-5 mx-auto max-w-lg border-b-2 border-[#BFD8C5] pb-2">
+                                    <p class="certificado-nome text-2xl font-extrabold text-[#1F2937] tracking-wide">
+                                        {{ $aluno->name }}
+                                    </p>
                                 </div>
 
-                                <!-- DADOS -->
-                                <div>
-                                    <div class="cert-dados text-left inline-block">
-                                        <p class="text-xs text-[#60756B]">
-                                            CPF:
-                                            <strong class="text-[#374151]">{{ $aluno->cpf }}</strong>
-                                        </p>
+                                <p class="certificado-texto mt-8 text-sm text-[#4B5563] leading-relaxed max-w-2xl mx-auto">
+                                    concluiu com aproveitamento o curso
+                                    <strong>{{ $nomeCurso }}</strong>,
+                                    com carga horária total de
+                                    <strong>{{ $cargaHoraria }} horas</strong>.
+                                </p>
 
-                                        <p class="text-xs text-[#60756B] mt-2">
-                                            Aproveitamento:
-                                            <strong class="text-[#374151]">{{ $notaFinal ?? 70 }}%</strong>
-                                        </p>
+                                <p class="certificado-texto-menor mt-3 text-sm text-[#4B5563] leading-relaxed max-w-2xl mx-auto">
+                                    O aluno cumpriu todos os requisitos obrigatórios e obteve aproveitamento mínimo de 70% na prova final.
+                                </p>
 
-                                        <div class="border-t border-[#8A9B92] mt-6 pt-2">
-                                            <p class="cert-data-label text-[10px] text-[#60756B] uppercase">
-                                                Data de emissão
+                                <div class="certificado-rodape grid grid-cols-2 gap-14 mt-16 items-end">
+
+                                    <!-- ASSINATURA MANUAL -->
+                                    <div>
+                                        <div class="certificado-assinatura-espaco h-16 flex items-end justify-center">
+                                            <span class="text-xs italic text-[#A5B7AB]">
+                                                Espaço para assinatura manual
+                                            </span>
+                                        </div>
+
+                                        <div class="border-t border-[#8A9B92] pt-2">
+                                            <p class="certificado-responsavel text-xs font-bold text-[#374151] uppercase">
+                                                {{ $responsavel }}
                                             </p>
 
-                                            <p class="cert-data text-xs font-bold text-[#374151] mt-1">
-                                                {{ now()->format('d/m/Y') }}
+                                            <p class="certificado-cargo text-[10px] text-[#60756B] mt-1 uppercase">
+                                                {{ $cargo }}
                                             </p>
                                         </div>
                                     </div>
+
+                                    <!-- DADOS -->
+                                    <div>
+                                        <div class="certificado-dados text-left inline-block">
+                                            <p class="text-xs text-[#60756B]">
+                                                CPF:
+                                                <strong class="text-[#374151]">{{ $aluno->cpf }}</strong>
+                                            </p>
+
+                                            <p class="text-xs text-[#60756B] mt-2">
+                                                Aproveitamento:
+                                                <strong class="text-[#374151]">{{ $notaFinal ?? 70 }}%</strong>
+                                            </p>
+
+                                            <div class="border-t border-[#8A9B92] mt-6 pt-2">
+                                                <p class="certificado-data-label text-[10px] text-[#60756B] uppercase">
+                                                    Data de emissão
+                                                </p>
+
+                                                <p class="certificado-data text-xs font-bold text-[#374151] mt-1">
+                                                    {{ now()->format('d/m/Y') }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
 
                             </div>
 
                         </div>
-
-                    </div>
 
                     </div>
 
