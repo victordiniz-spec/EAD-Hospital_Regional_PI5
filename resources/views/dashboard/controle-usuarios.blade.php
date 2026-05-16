@@ -9,9 +9,9 @@
 
     $usuariosAtivos = $usuarios->where('status', 'aprovado')->count();
 
-    $usuariosPendentes = $usuarios->filter(function ($user) {
-        return $user->status !== 'aprovado';
-    })->count();
+    $usuariosPendentes = $usuarios->where('status', 'pendente')->count();
+
+    $usuariosInutilizados = $usuarios->where('status', 'inutilizado')->count();
 
     $preceptoresAtivos = $usuarios->filter(function ($user) {
         return strtolower($user->tipo ?? '') === 'preceptor' && $user->status === 'aprovado';
@@ -48,7 +48,7 @@
 
         <section class="p-4 sm:p-6 lg:p-8">
 
-            <!-- CABEÇALHO CENTRALIZADO -->
+            <!-- CABEÇALHO -->
             <div class="mb-8">
 
                 <div class="max-w-4xl mx-auto text-center">
@@ -58,7 +58,7 @@
                     </h1>
 
                     <p class="text-base sm:text-lg text-[#60756B] mt-4 max-w-2xl mx-auto leading-relaxed">
-                        Administre acessos, perfis, datas de cadastro, aprovações e permissões da instituição.
+                        Administre acessos, perfis, datas de cadastro, aprovações, inutilizações e permissões da instituição.
                     </p>
 
                 </div>
@@ -68,7 +68,6 @@
 
                     <div class="flex flex-col xl:flex-row items-stretch justify-center gap-4">
 
-                        <!-- PESQUISA -->
                         <div class="relative flex-1 max-w-3xl">
                             <span class="absolute inset-y-0 left-6 flex items-center text-[#8A9B92]">
                                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -87,12 +86,11 @@
                                 type="text"
                                 id="pesquisaUsuarios"
                                 onkeyup="filtrarUsuarios()"
-                                placeholder="Pesquisar aluno, CPF, e-mail..."
+                                placeholder="Pesquisar aluno, CPF, e-mail, tipo ou status..."
                                 class="w-full h-[72px] bg-white border-2 border-[#00A63E] text-[#003C2F] placeholder-[#8A9B92] rounded-[26px] pl-17 pr-6 text-base sm:text-lg shadow-sm focus:outline-none focus:ring-4 focus:ring-green-100 focus:border-[#00A63E] transition"
                             >
                         </div>
 
-                        <!-- BOTÃO FILTROS -->
                         <button type="button"
                                 onclick="abrirModalFiltros()"
                                 class="h-[72px] bg-[#EAF5EF] border border-[#DCE7DE] text-[#004D3A] px-7 rounded-[26px] hover:bg-[#DFF1E5] transition flex items-center justify-center gap-3 text-base font-extrabold shadow-sm min-w-[230px]">
@@ -111,7 +109,6 @@
                             <span>Filtros Avançados</span>
                         </button>
 
-                        <!-- BOTÃO LIMPAR -->
                         <button type="button"
                                 onclick="limparPesquisa()"
                                 class="h-[72px] bg-white border border-[#DCE7DE] text-[#60756B] px-7 rounded-[26px] hover:bg-[#F8FBF8] transition flex items-center justify-center gap-3 text-base font-bold shadow-sm min-w-[160px]">
@@ -215,7 +212,23 @@
                                     }
 
                                     $tipoUser = strtolower($user->tipo ?? '');
-                                    $statusAtivo = $user->status === 'aprovado';
+                                    $statusUser = $user->status ?? 'pendente';
+
+                                    $statusAtivo = $statusUser === 'aprovado';
+                                    $statusPendente = $statusUser === 'pendente';
+                                    $statusInutilizado = $statusUser === 'inutilizado';
+
+                                    $statusFiltro = match ($statusUser) {
+                                        'aprovado' => 'ativo',
+                                        'inutilizado' => 'inutilizado',
+                                        default => 'pendente',
+                                    };
+
+                                    $statusTexto = match ($statusUser) {
+                                        'aprovado' => 'ATIVO',
+                                        'inutilizado' => 'INUTILIZADO',
+                                        default => 'PENDENTE',
+                                    };
 
                                     $dataCadastro = $user->created_at ? \Carbon\Carbon::parse($user->created_at) : null;
 
@@ -226,16 +239,17 @@
 
                                 <tr class="usuario-item hover:bg-[#F8FBF8] transition"
                                     data-tipo="{{ $tipoUser }}"
-                                    data-status="{{ $statusAtivo ? 'ativo' : 'inativo' }}"
+                                    data-status="{{ $statusFiltro }}"
                                     data-cadastro="{{ $dataCadastro ? $dataCadastro->format('Y-m-d') : '' }}"
                                     data-aceito="{{ $dataAceito ? $dataAceito->format('Y-m-d') : '' }}"
-                                    data-search="{{ strtolower($user->name . ' ' . $user->email . ' ' . $user->cpf . ' ' . $user->tipo . ' ' . $user->status . ' ' . ($dataCadastro ? $dataCadastro->format('d/m/Y') : '') . ' ' . ($dataAceito ? $dataAceito->format('d/m/Y') : '')) }}">
+                                    data-search="{{ strtolower($user->name . ' ' . $user->email . ' ' . $user->cpf . ' ' . $user->tipo . ' ' . $user->status . ' ' . $statusTexto . ' ' . ($dataCadastro ? $dataCadastro->format('d/m/Y') : '') . ' ' . ($dataAceito ? $dataAceito->format('d/m/Y') : '')) }}">
 
                                     <td class="py-6 px-6">
                                         <div class="flex items-center gap-4">
 
                                             <div class="w-12 h-12 rounded-full
                                                 @if($statusAtivo) bg-[#00A63E] text-white
+                                                @elseif($statusInutilizado) bg-red-100 text-red-700
                                                 @else bg-[#E1E7E2] text-[#60756B]
                                                 @endif
                                                 flex items-center justify-center font-extrabold shrink-0">
@@ -271,6 +285,11 @@
                                                 <span class="w-2 h-2 rounded-full bg-green-600"></span>
                                                 ATIVO
                                             </span>
+                                        @elseif($statusInutilizado)
+                                            <span class="inline-flex items-center gap-2 text-red-700 font-extrabold text-xs whitespace-nowrap">
+                                                <span class="w-2 h-2 rounded-full bg-red-600"></span>
+                                                INUTILIZADO
+                                            </span>
                                         @else
                                             <span class="inline-flex items-center gap-2 text-[#8A9B92] font-extrabold text-xs whitespace-nowrap">
                                                 <span class="w-2 h-2 rounded-full bg-[#AAB7AF]"></span>
@@ -288,6 +307,8 @@
                                             <span class="font-bold text-green-700">
                                                 {{ $dataAceito->format('d/m/Y H:i') }}
                                             </span>
+                                        @elseif($statusInutilizado)
+                                            <span class="text-red-600 font-bold">Acesso bloqueado</span>
                                         @else
                                             <span class="text-[#8A9B92]">Ainda não aceito</span>
                                         @endif
@@ -296,6 +317,7 @@
                                     <td class="text-right px-6">
                                         <div class="flex items-center justify-end gap-2">
 
+                                            <!-- EDITAR -->
                                             <button
                                                 onclick='abrirModalEditar(
                                                     @json($user->id),
@@ -318,6 +340,52 @@
                                                 </svg>
                                             </button>
 
+                                            <!-- INUTILIZAR / REATIVAR -->
+                                            @if($statusInutilizado)
+                                                <form action="{{ route('usuarios.reativar', $user->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    @method('PATCH')
+
+                                                    <button type="submit"
+                                                            onclick="return confirm('Deseja reativar este usuário? Ele voltará a ter acesso ao sistema.')"
+                                                            class="w-10 h-10 rounded-xl hover:bg-green-50 text-green-600 transition inline-flex items-center justify-center"
+                                                            title="Reativar usuário">
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                             class="w-5 h-5"
+                                                             fill="none"
+                                                             viewBox="0 0 24 24"
+                                                             stroke="currentColor">
+                                                            <path stroke-linecap="round"
+                                                                  stroke-linejoin="round"
+                                                                  stroke-width="1.8"
+                                                                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <form action="{{ route('usuarios.inutilizar', $user->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    @method('PATCH')
+
+                                                    <button type="submit"
+                                                            onclick="return confirm('Tem certeza que deseja inutilizar este usuário? Ele não conseguirá mais acessar o sistema.')"
+                                                            class="w-10 h-10 rounded-xl hover:bg-yellow-50 text-yellow-600 transition inline-flex items-center justify-center"
+                                                            title="Inutilizar usuário">
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                             class="w-5 h-5"
+                                                             fill="none"
+                                                             viewBox="0 0 24 24"
+                                                             stroke="currentColor">
+                                                            <path stroke-linecap="round"
+                                                                  stroke-linejoin="round"
+                                                                  stroke-width="1.8"
+                                                                  d="M18.364 18.364A9 9 0 0 1 5.636 5.636m12.728 12.728A9 9 0 0 0 5.636 5.636m12.728 12.728L5.636 5.636"/>
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            @endif
+
+                                            <!-- EXCLUIR -->
                                             <button type="button"
                                                     onclick='abrirModalExcluir(
                                                         @json($user->id),
@@ -385,7 +453,22 @@
                         }
 
                         $tipoUserMobile = strtolower($user->tipo ?? '');
-                        $statusAtivoMobile = $user->status === 'aprovado';
+                        $statusUserMobile = $user->status ?? 'pendente';
+
+                        $statusAtivoMobile = $statusUserMobile === 'aprovado';
+                        $statusInutilizadoMobile = $statusUserMobile === 'inutilizado';
+
+                        $statusFiltroMobile = match ($statusUserMobile) {
+                            'aprovado' => 'ativo',
+                            'inutilizado' => 'inutilizado',
+                            default => 'pendente',
+                        };
+
+                        $statusTextoMobile = match ($statusUserMobile) {
+                            'aprovado' => 'ATIVO',
+                            'inutilizado' => 'INUTILIZADO',
+                            default => 'PENDENTE',
+                        };
 
                         $dataCadastroMobile = $user->created_at ? \Carbon\Carbon::parse($user->created_at) : null;
 
@@ -396,15 +479,16 @@
 
                     <div class="usuario-item bg-white border border-[#E3EBE4] rounded-3xl p-5 shadow-sm"
                          data-tipo="{{ $tipoUserMobile }}"
-                         data-status="{{ $statusAtivoMobile ? 'ativo' : 'inativo' }}"
+                         data-status="{{ $statusFiltroMobile }}"
                          data-cadastro="{{ $dataCadastroMobile ? $dataCadastroMobile->format('Y-m-d') : '' }}"
                          data-aceito="{{ $dataAceitoMobile ? $dataAceitoMobile->format('Y-m-d') : '' }}"
-                         data-search="{{ strtolower($user->name . ' ' . $user->email . ' ' . $user->cpf . ' ' . $user->tipo . ' ' . $user->status . ' ' . ($dataCadastroMobile ? $dataCadastroMobile->format('d/m/Y') : '') . ' ' . ($dataAceitoMobile ? $dataAceitoMobile->format('d/m/Y') : '')) }}">
+                         data-search="{{ strtolower($user->name . ' ' . $user->email . ' ' . $user->cpf . ' ' . $user->tipo . ' ' . $user->status . ' ' . $statusTextoMobile . ' ' . ($dataCadastroMobile ? $dataCadastroMobile->format('d/m/Y') : '') . ' ' . ($dataAceitoMobile ? $dataAceitoMobile->format('d/m/Y') : '')) }}">
 
                         <div class="flex items-start gap-4">
 
                             <div class="w-12 h-12 rounded-full
                                 @if($statusAtivoMobile) bg-[#00A63E] text-white
+                                @elseif($statusInutilizadoMobile) bg-red-100 text-red-700
                                 @else bg-[#E1E7E2] text-[#60756B]
                                 @endif
                                 flex items-center justify-center font-extrabold shrink-0">
@@ -444,6 +528,10 @@
                                     <span class="text-green-700 font-bold">
                                         {{ $dataAceitoMobile->format('d/m/Y H:i') }}
                                     </span>
+                                @elseif($statusInutilizadoMobile)
+                                    <span class="text-red-600 font-bold">
+                                        Acesso bloqueado
+                                    </span>
                                 @else
                                     <span class="text-[#8A9B92] font-bold">
                                         Ainda não aceito
@@ -462,6 +550,11 @@
                                         <span class="w-2 h-2 bg-green-600 rounded-full"></span>
                                         ATIVO
                                     </span>
+                                @elseif($statusInutilizadoMobile)
+                                    <span class="inline-flex items-center gap-1 text-red-700 px-3 py-1 rounded-full text-[11px] font-extrabold">
+                                        <span class="w-2 h-2 bg-red-600 rounded-full"></span>
+                                        INUTILIZADO
+                                    </span>
                                 @else
                                     <span class="inline-flex items-center gap-1 text-[#8A9B92] px-3 py-1 rounded-full text-[11px] font-extrabold">
                                         <span class="w-2 h-2 bg-[#AAB7AF] rounded-full"></span>
@@ -474,41 +567,43 @@
                         </div>
 
                         <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+
                             <button
                                 onclick='abrirModalEditar(@json($user->id), @json($user->name), @json($user->email), @json($user->cpf))'
                                 class="w-full bg-[#004D3A] hover:bg-[#003C2F] text-white px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2 shadow-sm">
-
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="w-4 h-4"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round"
-                                          stroke-linejoin="round"
-                                          stroke-width="1.8"
-                                          d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931z"/>
-                                </svg>
-
                                 Editar
                             </button>
 
+                            @if($statusInutilizadoMobile)
+                                <form action="{{ route('usuarios.reativar', $user->id) }}" method="POST">
+                                    @csrf
+                                    @method('PATCH')
+
+                                    <button type="submit"
+                                            onclick="return confirm('Deseja reativar este usuário? Ele voltará a ter acesso ao sistema.')"
+                                            class="w-full bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2">
+                                        Reativar
+                                    </button>
+                                </form>
+                            @else
+                                <form action="{{ route('usuarios.inutilizar', $user->id) }}" method="POST">
+                                    @csrf
+                                    @method('PATCH')
+
+                                    <button type="submit"
+                                            onclick="return confirm('Tem certeza que deseja inutilizar este usuário? Ele não conseguirá mais acessar o sistema.')"
+                                            class="w-full bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200 px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2">
+                                        Inutilizar
+                                    </button>
+                                </form>
+                            @endif
+
                             <button
                                 onclick='abrirModalExcluir(@json($user->id), @json($user->name), @json($user->email))'
-                                class="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2">
-
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="w-4 h-4"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round"
-                                          stroke-linejoin="round"
-                                          stroke-width="1.8"
-                                          d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166M19.228 5.79 18.16 19.673A2.25 2.25 0 0 1 15.916 21.75H8.084A2.25 2.25 0 0 1 5.84 19.673L4.772 5.79"/>
-                                </svg>
-
+                                class="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2 sm:col-span-2">
                                 Excluir
                             </button>
+
                         </div>
 
                     </div>
@@ -537,30 +632,10 @@
                     </h2>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
 
                     <!-- TOTAL -->
                     <div class="bg-white rounded-3xl p-5 shadow-sm border border-[#E3EBE4] border-l-4 border-l-[#004D3A] hover:shadow-lg transition">
-
-                        <div class="flex items-start justify-between mb-5">
-                            <div class="w-12 h-12 rounded-2xl bg-[#EAF5EF] flex items-center justify-center text-[#004D3A]">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="w-6 h-6"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round"
-                                          stroke-linejoin="round"
-                                          stroke-width="1.8"
-                                          d="M18 18.72a8.94 8.94 0 0 0-6-2.22 8.94 8.94 0 0 0-6 2.22M15 11.25a3 3 0 1 0-6 0 3 3 0 0 0 6 0z"/>
-                                </svg>
-                            </div>
-
-                            <span class="text-[11px] font-bold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
-                                +{{ $totalUsuarios }}
-                            </span>
-                        </div>
-
                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
                             Total de usuários
                         </p>
@@ -569,60 +644,58 @@
                             {{ $totalUsuarios }}
                         </h3>
 
-                        <div class="mt-4 h-1.5 bg-[#E8EFE9] rounded-full overflow-hidden">
-                            <div class="h-full bg-[#004D3A] rounded-full" style="width: {{ $totalUsuarios > 0 ? 100 : 0 }}%;"></div>
-                        </div>
+                        <p class="text-xs text-[#60756B] mt-2">
+                            Todos os registros do sistema.
+                        </p>
                     </div>
 
-                    <!-- PRECEPTORES -->
+                    <!-- ATIVOS -->
                     <div class="bg-white rounded-3xl p-5 shadow-sm border border-[#E3EBE4] border-l-4 border-l-[#00A63E] hover:shadow-lg transition">
-
-                        <div class="flex items-start justify-between mb-5">
-                            <div class="w-12 h-12 rounded-2xl bg-[#EAF5EF] flex items-center justify-center text-[#00A63E]">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="w-6 h-6"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round"
-                                          stroke-linejoin="round"
-                                          stroke-width="1.8"
-                                          d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
-                                </svg>
-                            </div>
-                        </div>
-
                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                            Preceptores ativos
+                            Usuários ativos
                         </p>
 
-                        <h3 class="text-3xl font-extrabold mt-2 text-[#003C2F]">
-                            {{ $preceptoresAtivos }}
+                        <h3 class="text-3xl font-extrabold mt-2 text-green-700">
+                            {{ $usuariosAtivos }}
                         </h3>
 
                         <p class="text-xs text-[#60756B] mt-2">
-                            Profissionais aprovados.
+                            Usuários aprovados.
                         </p>
                     </div>
 
-                    <!-- RESIDENTES -->
+                    <!-- PENDENTES -->
+                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-[#E3EBE4] border-l-4 border-l-yellow-500 hover:shadow-lg transition">
+                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                            Pendentes
+                        </p>
+
+                        <h3 class="text-3xl font-extrabold mt-2 text-yellow-600">
+                            {{ $usuariosPendentes }}
+                        </h3>
+
+                        <p class="text-xs text-[#60756B] mt-2">
+                            Aguardando aprovação.
+                        </p>
+                    </div>
+
+                    <!-- INUTILIZADOS -->
+                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-[#E3EBE4] border-l-4 border-l-red-600 hover:shadow-lg transition">
+                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                            Inutilizados
+                        </p>
+
+                        <h3 class="text-3xl font-extrabold mt-2 text-red-600">
+                            {{ $usuariosInutilizados }}
+                        </h3>
+
+                        <p class="text-xs text-[#60756B] mt-2">
+                            Sem acesso ao sistema.
+                        </p>
+                    </div>
+
+                    <!-- ALUNOS / RESIDENTES ATIVOS -->
                     <div class="bg-white rounded-3xl p-5 shadow-sm border border-[#E3EBE4] border-l-4 border-l-[#7EDB90] hover:shadow-lg transition">
-
-                        <div class="flex items-start justify-between mb-5">
-                            <div class="w-12 h-12 rounded-2xl bg-[#EAF5EF] flex items-center justify-center text-[#00A63E]">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="w-6 h-6"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round"
-                                          stroke-linejoin="round"
-                                          stroke-width="1.8"
-                                          d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0zM4.5 20.25a8.25 8.25 0 0 1 15 0"/>
-                                </svg>
-                            </div>
-                        </div>
-
                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
                             Residentes ativos
                         </p>
@@ -633,39 +706,6 @@
 
                         <p class="text-xs text-[#60756B] mt-2">
                             Alunos liberados no sistema.
-                        </p>
-                    </div>
-
-                    <!-- PENDENTES -->
-                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-[#E3EBE4] border-l-4 border-l-red-500 hover:shadow-lg transition">
-
-                        <div class="flex items-start justify-between mb-5">
-                            <div class="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-600">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="w-6 h-6"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round"
-                                          stroke-linejoin="round"
-                                          stroke-width="1.8"
-                                          d="M12 9v3.75m0 3.75h.008v.008H12V16.5zm9-4.5a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
-                                </svg>
-                            </div>
-
-                            <span class="w-2 h-2 rounded-full bg-red-600"></span>
-                        </div>
-
-                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                            Solicitações pendentes
-                        </p>
-
-                        <h3 class="text-3xl font-extrabold mt-2 text-red-600">
-                            {{ $usuariosPendentes }}
-                        </h3>
-
-                        <p class="text-xs text-[#60756B] mt-2 underline">
-                            Revisar registros novos
                         </p>
                     </div>
 
@@ -796,7 +836,7 @@
         </h2>
 
         <p class="text-sm text-[#60756B] mt-3 text-center leading-relaxed">
-            Tem certeza que deseja excluir este usuário? Essa ação não poderá ser desfeita.
+            Tem certeza que deseja excluir este usuário? Essa ação removerá o usuário do banco e não poderá ser desfeita.
         </p>
 
         <div class="mt-5 bg-red-50 border border-red-100 rounded-2xl p-4">
@@ -892,7 +932,8 @@
                         class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] focus:outline-none focus:ring-2 focus:ring-[#00A63E]">
                     <option value="">Todos</option>
                     <option value="ativo">Ativos</option>
-                    <option value="inativo">Pendentes</option>
+                    <option value="pendente">Pendentes</option>
+                    <option value="inutilizado">Inutilizados</option>
                 </select>
             </div>
 

@@ -125,13 +125,20 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================
-    // ✔ APROVAÇÃO
+    // ✔ APROVAÇÃO / REJEIÇÃO / INUTILIZAÇÃO
     // =========================
+
     Route::post('/aprovar-usuario/{id}', [UserController::class, 'aprovar'])
         ->name('usuario.aprovar');
 
     Route::post('/rejeitar-usuario/{id}', [UserController::class, 'rejeitar'])
         ->name('usuario.rejeitar');
+
+    Route::patch('/usuarios/{id}/inutilizar', [UserController::class, 'inutilizar'])
+        ->name('usuarios.inutilizar');
+
+    Route::patch('/usuarios/{id}/reativar', [UserController::class, 'reativar'])
+        ->name('usuarios.reativar');
 
 
     // =========================

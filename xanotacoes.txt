@@ -35,7 +35,7 @@ git commit -m "descrição da alteração"
 git push origin main
 
 git add .
-git commit -m "descrição da alteração"
+git commit -m "arrumando tela de assitir video aulas"
 git push origin main
 
 ---------------------------------

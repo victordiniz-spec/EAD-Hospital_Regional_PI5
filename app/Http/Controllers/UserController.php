@@ -129,7 +129,6 @@ class UserController extends Controller
     // =========================
     public function salvarAluno(Request $request)
     {
-        // Remove máscara do CPF antes de validar
         $cpfLimpo = preg_replace('/\D/', '', $request->cpf);
 
         $request->merge([
@@ -182,7 +181,6 @@ class UserController extends Controller
             'tipo.in' => 'Tipo de usuário inválido.',
         ]);
 
-        // Segurança extra no backend: bloqueia senhas fracas, comuns ou com dados pessoais
         $erroSenha = $this->senhaInsegura(
             $request->senha,
             $request->nome,
@@ -269,7 +267,6 @@ class UserController extends Controller
             return back()->with('error', 'Código incorreto. Verifique seu e-mail e tente novamente.');
         }
 
-        // Segurança extra: verifica de novo antes de criar
         if (User::where('cpf', $dados['cpf'])->exists()) {
             Session::forget('cadastro_pendente');
             Session::forget('cadastro_email');
@@ -476,7 +473,6 @@ class UserController extends Controller
                 ->withErrors(['usuario' => 'Usuário não encontrado.']);
         }
 
-        // Reaproveita a mesma validação forte do cadastro
         $erroSenha = $this->senhaInsegura(
             $request->senha,
             $user->name,
@@ -549,8 +545,25 @@ class UserController extends Controller
             return back()->with('erro', 'CPF ou senha inválidos');
         }
 
+        if ($user->status === 'pendente') {
+            return back()->with('erro', 'Sua conta ainda está pendente. Aguarde aprovação do administrador.');
+        }
+
+        if ($user->status === 'inutilizado') {
+            return back()->with('erro',
+                "Seu acesso ao sistema foi inutilizado.
+
+Para verificar sua situação ou solicitar mais informações, entre em contato com a administração.
+
+E-mail: administracao@seudominio.com
+Telefone: (34) 00000-0000
+Endereço: Hospital Regional - Setor Administrativo
+Melhor horário para atendimento: segunda a sexta-feira, das 08h às 17h."
+            );
+        }
+
         if ($user->status !== 'aprovado') {
-            return back()->with('erro', 'Aguarde aprovação do administrador.');
+            return back()->with('erro', 'Seu usuário não está liberado para acessar o sistema.');
         }
 
         Auth::login($user);
@@ -578,14 +591,59 @@ class UserController extends Controller
 
     // =========================
     // REJEITAR USUÁRIO
+    // Exclui o usuário do banco.
     // =========================
     public function rejeitar($id)
     {
         $user = User::findOrFail($id);
 
+        if (auth()->id() == $user->id) {
+            return back()->with('error', 'Você não pode rejeitar/excluir o próprio usuário logado.');
+        }
+
         $user->delete();
 
-        return back()->with('success', 'Usuário rejeitado.');
+        return back()->with('success', 'Usuário rejeitado e excluído com sucesso.');
+    }
+
+    // =========================
+    // INUTILIZAR USUÁRIO
+    // Bloqueia o acesso, mas mantém o usuário no banco.
+    // =========================
+    public function inutilizar($id)
+    {
+        $user = User::findOrFail($id);
+
+        if (auth()->id() == $user->id) {
+            return back()->with('error', 'Você não pode inutilizar o próprio usuário logado.');
+        }
+
+        if ($user->status === 'inutilizado') {
+            return back()->with('error', 'Este usuário já está inutilizado.');
+        }
+
+        $user->status = 'inutilizado';
+        $user->save();
+
+        return back()->with('success', 'Usuário inutilizado com sucesso!');
+    }
+
+    // =========================
+    // REATIVAR USUÁRIO
+    // Volta o usuário para aprovado.
+    // =========================
+    public function reativar($id)
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->status === 'aprovado') {
+            return back()->with('error', 'Este usuário já está ativo/aprovado.');
+        }
+
+        $user->status = 'aprovado';
+        $user->save();
+
+        return back()->with('success', 'Usuário reativado com sucesso!');
     }
 
     // =========================
