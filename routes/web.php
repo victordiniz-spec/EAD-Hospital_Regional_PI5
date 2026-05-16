@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
@@ -10,112 +9,6 @@ use App\Http\Controllers\AulaController;
 use App\Http\Controllers\AvaliacaoController;
 use App\Http\Controllers\AvisoController;
 use App\Http\Controllers\CertificadoController;
-
-/*
-|--------------------------------------------------------------------------
-| FUNÇÕES DE APOIO
-|--------------------------------------------------------------------------
-| super_admin: acesso total
-| professor: área administrativa
-| residente/preceptor: área do aluno
-*/
-
-if (!function_exists('tipoUsuarioAtual')) {
-    function tipoUsuarioAtual(): ?string
-    {
-        return Auth::check() ? (Auth::user()->tipo ?? null) : null;
-    }
-}
-
-if (!function_exists('statusUsuarioAtual')) {
-    function statusUsuarioAtual(): ?string
-    {
-        return Auth::check() ? (Auth::user()->status ?? null) : null;
-    }
-}
-
-if (!function_exists('usuarioAprovado')) {
-    function usuarioAprovado(): bool
-    {
-        return Auth::check() && statusUsuarioAtual() === 'aprovado';
-    }
-}
-
-if (!function_exists('usuarioPodeProfessor')) {
-    function usuarioPodeProfessor(): bool
-    {
-        return usuarioAprovado() && in_array(tipoUsuarioAtual(), ['super_admin', 'professor']);
-    }
-}
-
-if (!function_exists('usuarioPodeAluno')) {
-    function usuarioPodeAluno(): bool
-    {
-        return usuarioAprovado() && in_array(tipoUsuarioAtual(), ['super_admin', 'residente', 'preceptor']);
-    }
-}
-
-/*
-|--------------------------------------------------------------------------
-| MIDDLEWARES LOCAIS
-|--------------------------------------------------------------------------
-*/
-
-$verificarAprovado = function ($request, $next) {
-    if (!Auth::check()) {
-        return redirect()->route('login');
-    }
-
-    if ((Auth::user()->status ?? null) !== 'aprovado') {
-        Auth::logout();
-
-        return redirect()
-            ->route('login')
-            ->with('error', 'Seu acesso ainda não está aprovado ou foi bloqueado. Entre em contato com a administração.');
-    }
-
-    return $next($request);
-};
-
-$somenteProfessor = function ($request, $next) {
-    if (!Auth::check()) {
-        return redirect()->route('login');
-    }
-
-    if ((Auth::user()->status ?? null) !== 'aprovado') {
-        Auth::logout();
-
-        return redirect()
-            ->route('login')
-            ->with('error', 'Seu acesso ainda não está aprovado ou foi bloqueado. Entre em contato com a administração.');
-    }
-
-    if (!in_array(Auth::user()->tipo, ['super_admin', 'professor'])) {
-        abort(403, 'Você não tem permissão para acessar esta área.');
-    }
-
-    return $next($request);
-};
-
-$somenteAluno = function ($request, $next) {
-    if (!Auth::check()) {
-        return redirect()->route('login');
-    }
-
-    if ((Auth::user()->status ?? null) !== 'aprovado') {
-        Auth::logout();
-
-        return redirect()
-            ->route('login')
-            ->with('error', 'Seu acesso ainda não está aprovado ou foi bloqueado. Entre em contato com a administração.');
-    }
-
-    if (!in_array(Auth::user()->tipo, ['super_admin', 'residente', 'preceptor'])) {
-        abort(403, 'Você não tem permissão para acessar esta área.');
-    }
-
-    return $next($request);
-};
 
 /*
 |--------------------------------------------------------------------------
@@ -128,7 +21,7 @@ Route::get('/', function () {
     if (Auth::check()) {
         $tipo = Auth::user()->tipo ?? null;
 
-        if (in_array($tipo, ['super_admin', 'professor'])) {
+        if (in_array($tipo, ['super_admin', 'admin', 'professor'])) {
             return redirect()->route('dashboard.professor');
         }
 
@@ -163,7 +56,10 @@ Route::post('/verificar-email-cadastro', [UserController::class, 'verificarCodig
 Route::post('/reenviar-codigo-cadastro', [UserController::class, 'reenviarCodigoCadastro'])
     ->name('cadastro.reenviar.codigo');
 
+
+// =========================
 // ESQUECI MINHA SENHA
+// =========================
 Route::get('/esqueci-minha-senha', [UserController::class, 'telaEsqueciSenha'])
     ->name('senha.esqueci');
 
@@ -179,16 +75,30 @@ Route::post('/redefinir-senha', [UserController::class, 'redefinirSenha'])
 Route::post('/reenviar-codigo-senha', [UserController::class, 'reenviarCodigoRedefinicaoSenha'])
     ->name('senha.reenviar.codigo');
 
+
 /*
 |--------------------------------------------------------------------------
-| REDIRECIONAMENTO GERAL PROTEGIDO
+| ROTAS PROTEGIDAS
+|--------------------------------------------------------------------------
+| IMPORTANTE:
+| Não use Closure dentro de Route::middleware([...]).
+| O Laravel Cloud estava falhando no build com:
+| "Object of class Closure could not be converted to string".
+|
+| Por isso, neste arquivo mantemos o middleware auth normal.
+| A regra principal de redirecionamento por tipo está no UserController::login().
+| As permissões mais finas podem ser colocadas depois em middlewares próprios.
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', $verificarAprovado])->group(function () {
-    Route::get('/dashboard', function () {
-        $tipo = Auth::user()->tipo ?? null;
+Route::middleware('auth')->group(function () {
 
-        if (in_array($tipo, ['super_admin', 'professor'])) {
+    // =========================
+    // REDIRECIONAMENTO GERAL
+    // =========================
+    Route::get('/dashboard', function () {
+        $tipo = auth()->user()->tipo ?? null;
+
+        if (in_array($tipo, ['super_admin', 'admin', 'professor'])) {
             return redirect()->route('dashboard.professor');
         }
 
@@ -198,72 +108,29 @@ Route::middleware(['auth', $verificarAprovado])->group(function () {
 
         abort(403, 'Tipo de usuário não reconhecido.');
     })->name('dashboard');
-});
 
-/*
-|--------------------------------------------------------------------------
-| ÁREA DO ALUNO
-|--------------------------------------------------------------------------
-| Acesso: super_admin, residente e preceptor.
-*/
-Route::middleware(['auth', $somenteAluno])->group(function () {
 
+    // =========================
+    // DASHBOARDS
+    // =========================
     Route::get('/dashboard-aluno', [DashboardController::class, 'aluno'])
         ->name('dashboard.aluno');
 
-    // VIDEOAULAS DO ALUNO
-    Route::get('/minhas-aulas', [AulaController::class, 'aluno'])
-        ->name('aluno.aulas');
-
-    Route::get('/assistir-aula/{id}', [AulaController::class, 'assistir'])
-        ->name('aulas.assistir');
-
-    // AVALIAÇÕES / PÓS-TESTES DO ALUNO
-    Route::get('/avaliacoes/{id}/resultado', [AvaliacaoController::class, 'resultado'])
-        ->name('avaliacoes.resultado');
-
-    Route::get('/avaliacoes/{id}', [AvaliacaoController::class, 'show'])
-        ->name('avaliacoes.show');
-
-    Route::post('/avaliacoes/{id}/submit', [AvaliacaoController::class, 'responder'])
-        ->name('avaliacoes.submit');
-
-    // PROVA FINAL DO ALUNO
-    Route::get('/prova-final', [AvaliacaoController::class, 'provaFinal'])
-        ->name('prova.final');
-
-    Route::post('/prova-final/responder', [AvaliacaoController::class, 'responderFinal'])
-        ->name('prova.final.responder');
-
-    // CERTIFICADO DO ALUNO
-    Route::get('/meu-certificado', [CertificadoController::class, 'aluno'])
-        ->name('certificado.aluno');
-
-    Route::get('/certificado/gerar/{id}', [CertificadoController::class, 'gerar'])
-        ->name('certificado.gerar');
-});
-
-/*
-|--------------------------------------------------------------------------
-| ÁREA ADMINISTRATIVA / PROFESSOR
-|--------------------------------------------------------------------------
-| Acesso: super_admin e professor.
-*/
-Route::middleware(['auth', $somenteProfessor])->group(function () {
-
-    // DASHBOARD PROFESSOR
     Route::get('/dashboard-professor', [DashboardController::class, 'professor'])
         ->name('dashboard.professor');
 
-    // USUÁRIOS
+
+    // =========================
+    // 👤 USUÁRIOS
+    // =========================
     Route::get('/controle-usuarios', [DashboardController::class, 'controleUsuarios'])
         ->name('controle.usuarios');
 
     Route::put('/usuarios/{id}', function ($id) {
         $user = \App\Models\User::findOrFail($id);
 
-        if ($user->tipo === 'super_admin' && (auth()->user()->tipo ?? null) !== 'super_admin') {
-            abort(403, 'Você não pode editar este usuário.');
+        if ($user->tipo === 'super_admin' && auth()->user()->tipo !== 'super_admin') {
+            abort(403, 'Você não pode editar o super administrador.');
         }
 
         $cpf = preg_replace('/\D/', '', request('cpf'));
@@ -295,7 +162,7 @@ Route::middleware(['auth', $somenteProfessor])->group(function () {
         }
 
         if ($user->tipo === 'super_admin') {
-            abort(403, 'O super administrador não pode ser excluído por esta tela.');
+            return back()->with('error', 'O super administrador não pode ser excluído por esta tela.');
         }
 
         $user->delete();
@@ -303,7 +170,11 @@ Route::middleware(['auth', $somenteProfessor])->group(function () {
         return back()->with('success', 'Usuário excluído com sucesso!');
     })->name('usuarios.destroy');
 
-    // APROVAÇÃO / REJEIÇÃO / INUTILIZAÇÃO
+
+    // =========================
+    // ✔ APROVAÇÃO / REJEIÇÃO / INUTILIZAÇÃO
+    // =========================
+
     Route::post('/aprovar-usuario/{id}', [UserController::class, 'aprovar'])
         ->name('usuario.aprovar');
 
@@ -316,7 +187,10 @@ Route::middleware(['auth', $somenteProfessor])->group(function () {
     Route::patch('/usuarios/{id}/reativar', [UserController::class, 'reativar'])
         ->name('usuarios.reativar');
 
-    // VIDEOAULAS / CURSOS / BIBLIOTECA
+
+    // =========================
+    // 🎥 VIDEOAULAS / CURSOS / BIBLIOTECA
+    // =========================
     Route::get('/videoaulas', [AulaController::class, 'index'])
         ->name('videoaulas');
 
@@ -347,27 +221,65 @@ Route::middleware(['auth', $somenteProfessor])->group(function () {
     Route::get('/banco-perguntas', [AulaController::class, 'bancoPerguntas'])
         ->name('banco.perguntas');
 
-    // CRIAR / EDITAR PÓS-TESTE
+
+    // =========================
+    // 🎬 VIDEOAULAS (ALUNO)
+    // =========================
+    Route::get('/minhas-aulas', [AulaController::class, 'aluno'])
+        ->name('aluno.aulas');
+
+    Route::get('/assistir-aula/{id}', [AulaController::class, 'assistir'])
+        ->name('aulas.assistir');
+
+
+    // =========================
+    // 📝 AVALIAÇÕES
+    // =========================
     Route::get('/avaliacoes/criar/{aula}', [AvaliacaoController::class, 'create'])
         ->name('avaliacoes.criar');
 
     Route::post('/avaliacoes', [AvaliacaoController::class, 'store'])
         ->name('avaliacoes.store');
 
-    // PROVA FINAL ADMIN
+    Route::get('/avaliacoes/{id}/resultado', [AvaliacaoController::class, 'resultado'])
+        ->name('avaliacoes.resultado');
+
+    Route::get('/avaliacoes/{id}', [AvaliacaoController::class, 'show'])
+        ->name('avaliacoes.show');
+
+    Route::post('/avaliacoes/{id}/submit', [AvaliacaoController::class, 'responder'])
+        ->name('avaliacoes.submit');
+
+
+    // =========================
+    // 📝 PROVA FINAL (ALUNO)
+    // =========================
+    Route::get('/prova-final', [AvaliacaoController::class, 'provaFinal'])
+        ->name('prova.final');
+
+    Route::post('/prova-final/responder', [AvaliacaoController::class, 'responderFinal'])
+        ->name('prova.final.responder');
+
+
+    // =========================
+    // 🛠️ PROVA FINAL (ADMIN)
+    // =========================
     Route::get('/prova-final/criar', [AvaliacaoController::class, 'createFinal'])
         ->name('prova.final.criar');
 
     Route::post('/prova-final/salvar', [AvaliacaoController::class, 'storeFinal'])
         ->name('prova.final.store');
 
-    // CERTIFICADOS ADMIN
+
+    // =========================
+    // 🎓 CERTIFICADOS
+    // =========================
     Route::get('/certificados/criar', function () {
         return view('dashboard.certificados.criar');
     })->name('certificados.criar');
 
     Route::post('/certificados', function () {
-        DB::table('certificados')->insert([
+        \Illuminate\Support\Facades\DB::table('certificados')->insert([
             'curso' => request('curso'),
             'carga_horaria' => request('carga_horaria'),
             'responsavel' => request('responsavel'),
@@ -380,11 +292,23 @@ Route::middleware(['auth', $somenteProfessor])->group(function () {
         return back()->with('success', 'Certificado salvo com sucesso!');
     })->name('certificados.store');
 
-    // ALUNOS
+    Route::get('/meu-certificado', [CertificadoController::class, 'aluno'])
+        ->name('certificado.aluno');
+
+    Route::get('/certificado/gerar/{id}', [CertificadoController::class, 'gerar'])
+        ->name('certificado.gerar');
+
+
+    // =========================
+    // 👨‍🎓 ALUNOS
+    // =========================
     Route::get('/alunos', [DashboardController::class, 'alunos'])
         ->name('alunos');
 
-    // AVISOS
+
+    // =========================
+    // 📢 AVISOS
+    // =========================
     Route::get('/avisos', [AvisoController::class, 'index'])
         ->name('avisos');
 
@@ -400,15 +324,23 @@ Route::middleware(['auth', $somenteProfessor])->group(function () {
     Route::delete('/avisos/{id}', [AvisoController::class, 'destroy'])
         ->name('avisos.destroy');
 
+
+    // =========================
     // FUTURO
+    // =========================
     Route::get('/postestes', fn() => view('dashboard.postestes'))
         ->name('postestes');
 
+
+    // =========================
     // DEBUG
+    // =========================
     Route::get('/gerar-senha', function () {
         return bcrypt('123456');
     });
+
 });
+
 
 /*
 |--------------------------------------------------------------------------
@@ -416,6 +348,7 @@ Route::middleware(['auth', $somenteProfessor])->group(function () {
 |--------------------------------------------------------------------------
 | Use apenas para testar as páginas criativas de erro.
 | Antes de entregar o sistema em produção final, pode remover essas rotas.
+|--------------------------------------------------------------------------
 */
 
 Route::get('/teste-404', function () {
