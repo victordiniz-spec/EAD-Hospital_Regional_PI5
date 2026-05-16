@@ -69,7 +69,7 @@
 
                 <div class="max-w-4xl mx-auto text-center">
 
-                    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-[#003C2F] tracking-tight leading-tight">
+                    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#003C2F] tracking-tight leading-tight">
                         Controle de Usuários
                     </h1>
 
