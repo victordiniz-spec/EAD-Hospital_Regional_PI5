@@ -2,7 +2,13 @@
 <button
     type="button"
     onclick="abrirSidebarAluno()"
-    class="lg:hidden fixed top-4 left-4 z-50 bg-white text-gray-800 p-3 rounded-xl shadow-lg border border-gray-200"
+    class="
+        lg:hidden fixed left-4 top-[88px] z-[9997]
+        bg-[#004D3A] text-white p-3 rounded-2xl shadow-2xl
+        border border-white/30
+        hover:bg-[#003C2F] transition
+    "
+    aria-label="Abrir menu"
 >
     <svg xmlns="http://www.w3.org/2000/svg"
          class="w-6 h-6"
@@ -20,14 +26,14 @@
 <div
     id="overlaySidebarAluno"
     onclick="fecharSidebarAluno()"
-    class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden lg:hidden">
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] hidden lg:hidden">
 </div>
 
 <!-- SIDEBAR -->
 <aside
     id="sidebarAluno"
     class="
-        fixed lg:static top-0 left-0 z-50
+        fixed lg:static top-0 left-0 z-[9999]
         w-64 bg-gray-100 text-gray-700 min-h-screen p-6
         flex flex-col justify-between
         transform -translate-x-full lg:translate-x-0
@@ -44,6 +50,7 @@
                 type="button"
                 onclick="fecharSidebarAluno()"
                 class="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-lg transition"
+                aria-label="Fechar menu"
             >
                 <svg xmlns="http://www.w3.org/2000/svg"
                      class="w-5 h-5"
@@ -72,6 +79,7 @@
 
             <!-- HOME -->
             <a href="{{ route('dashboard.aluno') }}"
+               onclick="fecharSidebarAluno()"
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                {{ request()->routeIs('dashboard.aluno') ? 'bg-green-600 text-white shadow' : 'hover:bg-gray-200' }}">
 
@@ -91,6 +99,7 @@
 
             <!-- VIDEO AULAS -->
             <a href="{{ route('aluno.aulas') }}"
+               onclick="fecharSidebarAluno()"
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                {{ request()->routeIs('aluno.aulas') || request()->routeIs('aluno.aulas.*')
                     ? 'bg-green-600 text-white shadow'
@@ -112,6 +121,7 @@
 
             <!-- PROVA FINAL -->
             <a href="{{ route('prova.final') }}"
+               onclick="fecharSidebarAluno()"
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                {{ request()->routeIs('prova.final') || request()->routeIs('prova.final.*')
                     ? 'bg-green-600 text-white shadow'
@@ -133,6 +143,7 @@
 
             <!-- CERTIFICADO -->
             <a href="{{ route('certificado.aluno') }}"
+               onclick="fecharSidebarAluno()"
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                {{ request()->routeIs('certificado.aluno')
                     ? 'bg-green-600 text-white shadow'
@@ -181,9 +192,9 @@
 
 <!-- MODAL DE CONFIRMAÇÃO DE SAIR -->
 <div id="modalSairAluno"
-     class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-[60]">
+     class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-[10000] px-4">
 
-    <div class="bg-white w-full max-w-sm mx-4 rounded-2xl shadow-2xl p-6 text-center">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center">
 
         <div class="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
             <svg xmlns="http://www.w3.org/2000/svg"
@@ -252,6 +263,8 @@
     }
 
     function abrirModalSairAluno() {
+        fecharSidebarAluno();
+
         const modal = document.getElementById('modalSairAluno');
 
         if (!modal) return;
