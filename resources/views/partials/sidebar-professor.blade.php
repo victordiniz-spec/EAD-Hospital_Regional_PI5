@@ -2,7 +2,12 @@
 <button
     type="button"
     onclick="abrirSidebarProfessor()"
-    class="lg:hidden fixed top-4 left-4 z-50 bg-white text-gray-800 p-3 rounded-xl shadow-lg border border-gray-200"
+    class="
+        lg:hidden fixed left-4 top-[88px] z-[9997]
+        bg-[#004D3A] text-white p-3 rounded-2xl shadow-2xl
+        border border-white/30
+        hover:bg-[#003C2F] transition
+    "
 >
     <svg xmlns="http://www.w3.org/2000/svg"
          class="w-6 h-6"
@@ -20,14 +25,14 @@
 <div
     id="overlaySidebarProfessor"
     onclick="fecharSidebarProfessor()"
-    class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden lg:hidden">
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] hidden lg:hidden">
 </div>
 
 <!-- SIDEBAR -->
 <aside
     id="sidebarProfessor"
     class="
-        fixed lg:static top-0 left-0 z-50
+        fixed lg:static top-0 left-0 z-[9999]
         w-64 bg-gray-100 text-gray-700 min-h-screen p-6
         flex flex-col justify-between
         transform -translate-x-full lg:translate-x-0
@@ -44,6 +49,7 @@
                 type="button"
                 onclick="fecharSidebarProfessor()"
                 class="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-lg transition"
+                aria-label="Fechar menu"
             >
                 <svg xmlns="http://www.w3.org/2000/svg"
                      class="w-5 h-5"
@@ -72,6 +78,7 @@
 
             <!-- HOME -->
             <a href="{{ route('dashboard.professor') }}"
+               onclick="fecharSidebarProfessor()"
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                {{ request()->routeIs('dashboard.professor') ? 'bg-green-600 text-white shadow' : 'hover:bg-gray-200' }}">
 
@@ -86,6 +93,7 @@
 
             <!-- VIDEOAULAS -->
             <a href="{{ route('videoaulas') }}"
+               onclick="fecharSidebarProfessor()"
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                {{ request()->routeIs('videoaulas') || request()->routeIs('aulas.*') ? 'bg-green-600 text-white shadow' : 'hover:bg-gray-200' }}">
 
@@ -100,6 +108,7 @@
 
             <!-- PROVAS -->
             <a href="{{ route('prova.final.criar') }}"
+               onclick="fecharSidebarProfessor()"
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                {{ request()->routeIs('prova.final.criar') ? 'bg-green-600 text-white shadow' : 'hover:bg-gray-200' }}">
 
@@ -114,6 +123,7 @@
 
             <!-- CERTIFICADOS -->
             <a href="{{ route('certificados.criar') }}"
+               onclick="fecharSidebarProfessor()"
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                {{ request()->routeIs('certificados.*') ? 'bg-green-600 text-white shadow' : 'hover:bg-gray-200' }}">
 
@@ -128,6 +138,7 @@
 
             <!-- USUÁRIOS -->
             <a href="{{ route('controle.usuarios') }}"
+               onclick="fecharSidebarProfessor()"
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                {{ request()->routeIs('controle.usuarios') ? 'bg-green-600 text-white shadow' : 'hover:bg-gray-200' }}">
 
@@ -142,6 +153,7 @@
 
             <!-- AVISOS -->
             <a href="{{ route('avisos') }}"
+               onclick="fecharSidebarProfessor()"
                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                {{ request()->routeIs('avisos') || request()->routeIs('avisos.*')
                     ? 'bg-green-600 text-white shadow'
@@ -191,9 +203,9 @@
 
 <!-- MODAL DE CONFIRMAÇÃO DE SAIR -->
 <div id="modalSair"
-     class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-[60]">
+     class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-[10000] px-4">
 
-    <div class="bg-white w-full max-w-sm mx-4 rounded-2xl shadow-2xl p-6 text-center">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center">
 
         <div class="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
             <svg xmlns="http://www.w3.org/2000/svg"
@@ -262,6 +274,8 @@
     }
 
     function abrirModalSair() {
+        fecharSidebarProfessor();
+
         const modal = document.getElementById('modalSair');
 
         if (!modal) return;
