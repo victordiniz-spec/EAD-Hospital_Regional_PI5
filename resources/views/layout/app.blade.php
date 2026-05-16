@@ -5,16 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Integrar ReSaúde')</title>
 
+    @php
+        /*
+        |--------------------------------------------------------------------------
+        | PÁGINAS SEM MODO ESCURO
+        |--------------------------------------------------------------------------
+        | Login, cadastro e recuperação de senha devem permanecer sempre claros,
+        | mesmo que o usuário tenha ativado modo escuro dentro do sistema.
+        */
+        $paginaSemModoEscuro = request()->routeIs(
+            'login',
+            'cadastro.*',
+            'salvar.aluno',
+            'senha.*'
+        ) || request()->is(
+            '/',
+            'cadastro-aluno',
+            'salvar-aluno',
+            'verificar-email-cadastro',
+            'reenviar-codigo-cadastro',
+            'esqueci-minha-senha',
+            'redefinir-senha',
+            'reenviar-codigo-senha'
+        );
+    @endphp
+
     {{-- Aplica o tema antes da tela carregar para não piscar --}}
     <script>
         (function () {
+            const paginaSemModoEscuro = @json($paginaSemModoEscuro);
+
+            /*
+            |--------------------------------------------------------------------------
+            | LOGIN / CADASTRO SEMPRE CLARO
+            |--------------------------------------------------------------------------
+            | Não apaga a preferência salva. Apenas impede que o dark seja aplicado
+            | nessas telas públicas.
+            */
+            if (paginaSemModoEscuro) {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('theme-light', 'sem-modo-escuro');
+                return;
+            }
+
             const temaSalvo = localStorage.getItem('tema_sistema');
 
             if (temaSalvo === 'dark') {
                 document.documentElement.classList.add('dark');
-                document.documentElement.classList.remove('theme-light');
+                document.documentElement.classList.remove('theme-light', 'sem-modo-escuro');
             } else {
-                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.remove('dark', 'sem-modo-escuro');
                 document.documentElement.classList.add('theme-light');
             }
         })();
@@ -200,6 +240,83 @@
 
         /*
         |--------------------------------------------------------------------------
+        | CORREÇÕES DO MODO ESCURO
+        |--------------------------------------------------------------------------
+        | Evita texto branco em fundo branco/claro ao passar o mouse.
+        */
+
+        html.sem-modo-escuro,
+        html.sem-modo-escuro body,
+        html.sem-modo-escuro #app,
+        html.sem-modo-escuro main,
+        html.sem-modo-escuro section {
+            background: #F3F7F3 !important;
+            color: #1F2937 !important;
+        }
+
+        html.sem-modo-escuro .dark {
+            color-scheme: light !important;
+        }
+
+        html.dark a:hover,
+        html.dark button:hover {
+            color: inherit;
+        }
+
+        html.dark .hover\:bg-white:hover,
+        html.dark .hover\:bg-gray-50:hover,
+        html.dark .hover\:bg-gray-100:hover,
+        html.dark .hover\:bg-\[\#F8FBF8\]:hover,
+        html.dark .hover\:bg-\[\#F1F6F2\]:hover,
+        html.dark .hover\:bg-\[\#EAF5EF\]:hover,
+        html.dark .hover\:bg-\[\#DCE7DE\]:hover {
+            background-color: #111C2E !important;
+            color: #F8FAFC !important;
+        }
+
+        html.dark .hover\:text-\[\#003C2F\]:hover,
+        html.dark .hover\:text-\[\#004D3A\]:hover,
+        html.dark .hover\:text-gray-700:hover,
+        html.dark .hover\:text-gray-800:hover,
+        html.dark .hover\:text-gray-900:hover {
+            color: #F8FAFC !important;
+        }
+
+        html.dark .group:hover .group-hover\:text-\[\#003C2F\],
+        html.dark .group:hover .group-hover\:text-\[\#004D3A\],
+        html.dark .group:hover .group-hover\:text-gray-800,
+        html.dark .group:hover .group-hover\:text-gray-900 {
+            color: #F8FAFC !important;
+        }
+
+        html.dark .hover\:border-\[\#00A63E\]\/40:hover,
+        html.dark .hover\:border-\[\#005543\]\/50:hover,
+        html.dark .hover\:border-blue-500\/40:hover,
+        html.dark .hover\:border-blue-500\/50:hover {
+            border-color: #00A63E !important;
+        }
+
+        html.dark .bg-white:hover,
+        html.dark .bg-\[\#F8FBF8\]:hover,
+        html.dark .bg-\[\#F1F6F2\]:hover,
+        html.dark .bg-\[\#EAF5EF\]:hover {
+            color: #F8FAFC !important;
+        }
+
+        html.dark .bg-white:hover *,
+        html.dark .bg-\[\#F8FBF8\]:hover *,
+        html.dark .bg-\[\#F1F6F2\]:hover *,
+        html.dark .bg-\[\#EAF5EF\]:hover * {
+            color: inherit;
+        }
+
+        html.dark input[type="radio"],
+        html.dark input[type="checkbox"] {
+            accent-color: #00A63E !important;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
         | TOAST GLOBAL
         |--------------------------------------------------------------------------
         */
@@ -367,13 +484,34 @@
     @endphp
 
     <script>
+        const paginaSemModoEscuroSistema = @json($paginaSemModoEscuro);
+
         function aplicarTemaSistema(tema) {
+            /*
+            |--------------------------------------------------------------------------
+            | LOGIN / CADASTRO
+            |--------------------------------------------------------------------------
+            | Nestas telas, o modo escuro não é aplicado visualmente, mas a preferência
+            | do usuário continua salva para quando ele entrar no sistema.
+            */
+            if (paginaSemModoEscuroSistema) {
+                localStorage.setItem('tema_sistema', tema === 'dark' ? 'dark' : 'light');
+
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('theme-light', 'sem-modo-escuro');
+
+                atualizarIconeTemaSistema();
+                atualizarBotaoVoltarTopo();
+
+                return;
+            }
+
             if (tema === 'dark') {
                 document.documentElement.classList.add('dark');
-                document.documentElement.classList.remove('theme-light');
+                document.documentElement.classList.remove('theme-light', 'sem-modo-escuro');
                 localStorage.setItem('tema_sistema', 'dark');
             } else {
-                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.remove('dark', 'sem-modo-escuro');
                 document.documentElement.classList.add('theme-light');
                 localStorage.setItem('tema_sistema', 'light');
             }
