@@ -234,6 +234,34 @@
                 transform: translateY(18px) scale(0.96);
             }
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | BOTÃO VOLTAR AO TOPO
+        |--------------------------------------------------------------------------
+        */
+        #btnVoltarTopo {
+            opacity: 0;
+            transform: translateY(18px) scale(0.92);
+            pointer-events: none;
+        }
+
+        #btnVoltarTopo.btn-topo-visivel {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        html.dark #btnVoltarTopo {
+            background: #00A63E !important;
+            color: #FFFFFF !important;
+            border-color: rgba(255, 255, 255, 0.18) !important;
+        }
+
+        html.dark #btnVoltarTopo:hover {
+            background: #008A35 !important;
+        }
+
     </style>
 </head>
 
@@ -253,6 +281,36 @@
     <div id="toastContainer"
          class="fixed bottom-5 right-5 z-[9999] flex flex-col gap-3 w-[calc(100%-40px)] sm:w-[390px] pointer-events-none">
     </div>
+
+    {{-- BOTÃO VOLTAR AO TOPO --}}
+    <button
+        type="button"
+        id="btnVoltarTopo"
+        onclick="voltarAoTopo()"
+        class="
+            fixed right-5 bottom-24 sm:bottom-5 z-[9998]
+            w-12 h-12 rounded-full
+            bg-[#004D3A] text-white
+            shadow-2xl border border-white/30
+            flex items-center justify-center
+            hover:bg-[#003C2F] hover:scale-105
+            transition-all duration-300
+        "
+        aria-label="Voltar ao topo"
+        title="Voltar ao topo"
+    >
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-6 h-6"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 15l7-7 7 7"/>
+        </svg>
+    </button>
+
 
     @php
         $toasts = [];
@@ -321,6 +379,7 @@
             }
 
             atualizarIconeTemaSistema();
+            atualizarBotaoVoltarTopo();
         }
 
         function alternarTemaSistema() {
@@ -466,6 +525,35 @@
             }
         `;
         document.head.appendChild(styleToastBarra);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | BOTÃO VOLTAR AO TOPO
+        |--------------------------------------------------------------------------
+        */
+        function atualizarBotaoVoltarTopo() {
+            const botao = document.getElementById('btnVoltarTopo');
+
+            if (!botao) return;
+
+            const scrollAtual = window.scrollY || document.documentElement.scrollTop || 0;
+
+            if (scrollAtual > 350) {
+                botao.classList.add('btn-topo-visivel');
+            } else {
+                botao.classList.remove('btn-topo-visivel');
+            }
+        }
+
+        function voltarAoTopo() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        window.addEventListener('scroll', atualizarBotaoVoltarTopo, { passive: true });
 
         document.addEventListener('DOMContentLoaded', function () {
             atualizarIconeTemaSistema();
