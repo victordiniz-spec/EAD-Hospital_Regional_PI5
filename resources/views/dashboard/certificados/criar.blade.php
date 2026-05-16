@@ -18,6 +18,69 @@
         min-height: 100vh;
         width: 100%;
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | IMPRESSÃO DO PREVIEW DO CERTIFICADO
+    |--------------------------------------------------------------------------
+    | Quando clicar em imprimir nesta tela, imprime apenas o certificado em
+    | uma folha A4 paisagem.
+    */
+    @page {
+        size: A4 landscape;
+        margin: 0;
+    }
+
+    @media print {
+        html,
+        body {
+            width: 297mm !important;
+            height: 210mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            overflow: hidden !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        body * {
+            visibility: hidden !important;
+        }
+
+        .certificado-preview-print,
+        .certificado-preview-print * {
+            visibility: visible !important;
+        }
+
+        .certificado-preview-print {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 297mm !important;
+            height: 210mm !important;
+            margin: 0 !important;
+            padding: 5mm !important;
+            background: #ffffff !important;
+            overflow: hidden !important;
+            page-break-after: avoid !important;
+            page-break-before: avoid !important;
+            page-break-inside: avoid !important;
+            break-after: avoid !important;
+            break-before: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .certificado-preview-print > div {
+            width: 287mm !important;
+            height: 200mm !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+    }
+
 </style>
 
 <div class="flex min-h-screen w-full bg-[#F3F7F3] text-[#003C2F] overflow-x-hidden">
@@ -300,7 +363,7 @@
                         </div>
 
                         <!-- CERTIFICADO PREVIEW -->
-                        <div class="bg-[#F8FBF8] rounded-3xl p-4 sm:p-6 shadow-inner overflow-x-auto">
+                        <div class="certificado-preview-print bg-[#F8FBF8] rounded-3xl p-4 sm:p-6 shadow-inner overflow-x-auto">
 
                             <div class="min-w-[720px] bg-white mx-auto rounded-2xl border-[6px] border-[#EAF5EF] shadow-sm relative overflow-hidden"
                                  style="width: 780px; min-height: 520px;">
