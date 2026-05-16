@@ -7,9 +7,43 @@
 @php
     use Illuminate\Support\Facades\DB;
 
+    /*
+    |--------------------------------------------------------------------------
+    | PROVA FINAL EXISTENTE
+    |--------------------------------------------------------------------------
+    | Esta tela agora carrega a prova final já cadastrada para edição.
+    | Se não houver prova final, abre o formulário em branco.
+    */
+
     $provaFinalExistente = DB::table('avaliacoes')
         ->where('tipo', 'final')
+        ->orderBy('id', 'desc')
         ->first();
+
+    $perguntasExistentes = collect();
+
+    if ($provaFinalExistente) {
+        $perguntasExistentes = DB::table('perguntas')
+            ->where('avaliacao_id', $provaFinalExistente->id)
+            ->orderBy('id')
+            ->get();
+
+        foreach ($perguntasExistentes as $perguntaExistente) {
+            $perguntaExistente->respostas = DB::table('respostas')
+                ->where('pergunta_id', $perguntaExistente->id)
+                ->orderBy('id')
+                ->get();
+        }
+    }
+
+    $totalPerguntasRender = $perguntasExistentes->count() > 0
+        ? $perguntasExistentes->count()
+        : 1;
+
+    $tituloProva = old('titulo', data_get($provaFinalExistente, 'titulo', 'Prova Final'));
+    $notaMinima = old('nota_minima', data_get($provaFinalExistente, 'nota_minima', 70));
+    $tempoLimite = old('tempo_limite', data_get($provaFinalExistente, 'tempo_limite', 60));
+    $tentativas = old('tentativas', data_get($provaFinalExistente, 'tentativas', 2));
 @endphp
 
 <style>
@@ -25,6 +59,13 @@
         background: #F3F7F3 !important;
         min-height: 100vh;
         width: 100%;
+    }
+
+    @media (max-width: 768px) {
+        .modal-scroll-mobile {
+            max-height: 88vh !important;
+            overflow-y: auto !important;
+        }
     }
 </style>
 
@@ -42,13 +83,18 @@
             <div class="mb-7 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
 
                 <div>
+                    <div class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest text-[#60756B] mb-2">
+                        <span>Administração</span>
+                        <span>›</span>
+                        <span class="text-[#004D3A]">Prova Final</span>
+                    </div>
 
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight">
                         Gerenciar Prova Final
                     </h1>
 
                     <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
-                        Configure a estrutura da avaliação final. Essa prova será liberada para o aluno após concluir todos os módulos.
+                        Configure ou edite a avaliação final. A prova será liberada ao aluno quando ele concluir pelo menos 70% do curso atual.
                     </p>
                 </div>
 
@@ -73,7 +119,7 @@
 
             </div>
 
-            <!-- AVISO FIXO SE JÁ EXISTE PROVA FINAL -->
+            <!-- PROVA FINAL EXISTENTE -->
             @if($provaFinalExistente)
                 <div class="mb-6 bg-white border border-[#BFD8C5] rounded-3xl shadow-sm p-5 sm:p-6">
 
@@ -96,11 +142,11 @@
 
                             <div>
                                 <h2 class="text-lg sm:text-xl font-extrabold text-[#003C2F]">
-                                    Já existe uma prova final criada
+                                    Prova final já cadastrada
                                 </h2>
 
                                 <p class="text-sm text-[#60756B] mt-1">
-                                    O sistema permite apenas uma prova final. Você pode editar a prova existente nesta tela ou revisar os dados antes de salvar novamente.
+                                    Os dados abaixo foram carregados da prova existente. Edite o que desejar e clique em <strong>Atualizar Prova</strong>.
                                 </p>
 
                                 <div class="mt-3 flex flex-wrap gap-2">
@@ -109,7 +155,11 @@
                                     </span>
 
                                     <span class="inline-flex items-center bg-[#F8FBF8] border border-[#E3EBE4] text-[#60756B] px-3 py-1 rounded-full text-xs font-bold">
-                                        {{ $provaFinalExistente->tempo_limite ?? 60 }} minutos
+                                        {{ $tempoLimite }} minutos
+                                    </span>
+
+                                    <span class="inline-flex items-center bg-[#F8FBF8] border border-[#E3EBE4] text-[#60756B] px-3 py-1 rounded-full text-xs font-bold">
+                                        {{ $perguntasExistentes->count() }} questão(ões)
                                     </span>
                                 </div>
                             </div>
@@ -118,14 +168,24 @@
 
                         <button
                             type="button"
-                            onclick="abrirAvisoProvaFinalExistente()"
+                            onclick="scrollParaFormularioProva()"
                             class="w-full lg:w-auto bg-[#004D3A] hover:bg-[#003C2F] text-white px-5 py-3 rounded-2xl font-extrabold text-sm transition shadow-sm"
                         >
-                            Ver aviso
+                            Editar prova existente
                         </button>
 
                     </div>
 
+                </div>
+            @else
+                <div class="mb-6 bg-yellow-50 border border-yellow-200 rounded-3xl shadow-sm p-5 sm:p-6">
+                    <h2 class="text-lg sm:text-xl font-extrabold text-yellow-800">
+                        Nenhuma prova final cadastrada
+                    </h2>
+
+                    <p class="text-sm text-yellow-700 mt-1">
+                        Preencha os dados abaixo para publicar a primeira prova final.
+                    </p>
                 </div>
             @endif
 
@@ -157,12 +217,19 @@
             <form action="{{ route('prova.final.store') }}" method="POST" id="formProvaFinal">
                 @csrf
 
+                @if($provaFinalExistente)
+                    <input type="hidden" name="avaliacao_id" value="{{ $provaFinalExistente->id }}">
+                    <input type="hidden" name="modo" value="editar">
+                @else
+                    <input type="hidden" name="modo" value="criar">
+                @endif
+
                 <div class="grid grid-cols-1 xl:grid-cols-12 gap-7">
 
                     <!-- CONFIGURAÇÕES -->
                     <aside class="xl:col-span-4 2xl:col-span-3">
 
-                        <div class="bg-white rounded-3xl border border-[#E3EBE4] shadow-sm p-5 sm:p-6 sticky top-6">
+                        <div id="configuracoesProvaFinal" class="bg-white rounded-3xl border border-[#E3EBE4] shadow-sm p-5 sm:p-6 sticky top-6">
 
                             <div class="flex items-start gap-3 mb-6">
 
@@ -200,8 +267,9 @@
                                 <input
                                     type="text"
                                     name="titulo"
-                                    value="{{ old('titulo', $provaFinalExistente->titulo ?? 'Prova Final') }}"
+                                    value="{{ $tituloProva }}"
                                     placeholder="Ex: Prova Final"
+                                    required
                                     class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
                                 >
                             </div>
@@ -217,7 +285,7 @@
                                         type="number"
                                         name="nota_minima"
                                         id="nota_minima"
-                                        value="{{ old('nota_minima', 70) }}"
+                                        value="{{ $notaMinima }}"
                                         min="0"
                                         max="100"
                                         class="w-full px-4 py-4 rounded-2xl border border-[#DCE7DE] bg-[#F1F6F2] text-[#003C2F] text-xl font-extrabold focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
@@ -261,7 +329,7 @@
                                     <input
                                         type="number"
                                         name="tempo_limite"
-                                        value="{{ old('tempo_limite', $provaFinalExistente->tempo_limite ?? 60) }}"
+                                        value="{{ $tempoLimite }}"
                                         min="1"
                                         class="w-24 px-3 py-2 rounded-xl bg-white border border-[#DCE7DE] text-[#004D3A] text-center font-extrabold focus:outline-none focus:ring-2 focus:ring-[#00A63E]"
                                     >
@@ -287,7 +355,7 @@
                                         type="number"
                                         name="tentativas"
                                         id="tentativas"
-                                        value="{{ old('tentativas', 2) }}"
+                                        value="{{ $tentativas }}"
                                         min="1"
                                         class="w-16 bg-transparent text-center text-lg font-extrabold text-[#004D3A] focus:outline-none"
                                     >
@@ -331,158 +399,356 @@
 
                         <div id="perguntas-container" class="space-y-5">
 
-                            <!-- PRIMEIRA QUESTÃO -->
-                            <div class="pergunta-bloco bg-white border border-[#E3EBE4] rounded-3xl shadow-sm overflow-hidden" data-index="0">
+                            @if($perguntasExistentes->count() > 0)
 
-                                <div class="bg-[#F8FBF8] border-b border-[#E3EBE4] px-5 sm:px-6 py-4 flex items-center justify-between gap-4">
+                                @foreach($perguntasExistentes as $indexPergunta => $perguntaExistente)
 
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-full bg-[#004D3A] text-white flex items-center justify-center text-sm font-extrabold numero-questao">
-                                            01
+                                    @php
+                                        $respostasDaPergunta = collect($perguntaExistente->respostas ?? []);
+
+                                        $respostasParaRenderizar = collect();
+
+                                        for ($i = 0; $i < 4; $i++) {
+                                            $respostasParaRenderizar->push($respostasDaPergunta->get($i));
+                                        }
+
+                                        $corretaIndex = 1;
+
+                                        foreach ($respostasParaRenderizar as $idxResposta => $respostaExistente) {
+                                            if ($respostaExistente && (int) data_get($respostaExistente, 'correta', 0) === 1) {
+                                                $corretaIndex = $idxResposta + 1;
+                                            }
+                                        }
+                                    @endphp
+
+                                    <div class="pergunta-bloco bg-white border border-[#E3EBE4] rounded-3xl shadow-sm overflow-hidden" data-index="{{ $indexPergunta }}">
+
+                                        <input type="hidden" name="perguntas[{{ $indexPergunta }}][id]" value="{{ $perguntaExistente->id }}">
+
+                                        <div class="bg-[#F8FBF8] border-b border-[#E3EBE4] px-5 sm:px-6 py-4 flex items-center justify-between gap-4">
+
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 rounded-full bg-[#004D3A] text-white flex items-center justify-center text-sm font-extrabold numero-questao">
+                                                    {{ str_pad($indexPergunta + 1, 2, '0', STR_PAD_LEFT) }}
+                                                </div>
+
+                                                <div>
+                                                    <p class="text-[11px] uppercase tracking-widest font-extrabold text-[#60756B]">
+                                                        Questão de múltipla escolha
+                                                    </p>
+
+                                                    <p class="text-xs text-[#8A9B92] mt-1">
+                                                        Configure pergunta, peso e alternativas.
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div class="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onclick="duplicarPergunta(this)"
+                                                    class="w-9 h-9 rounded-xl hover:bg-white text-[#60756B] hover:text-[#004D3A] transition flex items-center justify-center"
+                                                    title="Duplicar questão"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                         class="w-5 h-5"
+                                                         fill="none"
+                                                         viewBox="0 0 24 24"
+                                                         stroke="currentColor">
+                                                        <path stroke-linecap="round"
+                                                              stroke-linejoin="round"
+                                                              stroke-width="1.8"
+                                                              d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75A1.125 1.125 0 0 1 3.75 20.625v-9.75c0-.621.504-1.125 1.125-1.125H8.25m3-6h8.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-8.25A1.125 1.125 0 0 1 10.125 13.125v-8.25c0-.621.504-1.125 1.125-1.125z"/>
+                                                    </svg>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onclick="removerPergunta(this)"
+                                                    class="w-9 h-9 rounded-xl hover:bg-red-50 text-[#60756B] hover:text-red-600 transition flex items-center justify-center"
+                                                    title="Excluir questão"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                         class="w-5 h-5"
+                                                         fill="none"
+                                                         viewBox="0 0 24 24"
+                                                         stroke="currentColor">
+                                                        <path stroke-linecap="round"
+                                                              stroke-linejoin="round"
+                                                              stroke-width="1.8"
+                                                              d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="p-5 sm:p-6">
+
+                                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
+
+                                                <div class="lg:col-span-9">
+                                                    <label class="block text-[11px] font-extrabold text-[#60756B] uppercase tracking-widest mb-2">
+                                                        Texto da pergunta
+                                                    </label>
+
+                                                    <textarea
+                                                        name="perguntas[{{ $indexPergunta }}][pergunta]"
+                                                        rows="4"
+                                                        placeholder="Digite o texto da pergunta..."
+                                                        required
+                                                        class="w-full px-4 py-4 rounded-2xl border border-[#DCE7DE] bg-[#F1F6F2] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none"
+                                                    >{{ old("perguntas.$indexPergunta.pergunta", $perguntaExistente->pergunta ?? '') }}</textarea>
+                                                </div>
+
+                                                <div class="lg:col-span-3">
+                                                    <label class="block text-[11px] font-extrabold text-[#60756B] uppercase tracking-widest mb-2">
+                                                        Peso / pontos
+                                                    </label>
+
+                                                    <input
+                                                        type="number"
+                                                        name="perguntas[{{ $indexPergunta }}][peso]"
+                                                        value="{{ old("perguntas.$indexPergunta.peso", data_get($perguntaExistente, 'peso', 10)) }}"
+                                                        min="1"
+                                                        class="w-full px-4 py-4 rounded-2xl border border-[#DCE7DE] bg-[#F1F6F2] text-[#004D3A] text-xl text-center font-extrabold focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
+                                                    >
+                                                </div>
+
+                                            </div>
+
+                                            <div>
+                                                <label class="block text-[11px] font-extrabold text-[#60756B] uppercase tracking-widest mb-3">
+                                                    Alternativas e resposta correta
+                                                </label>
+
+                                                <div class="space-y-3 respostas-container">
+
+                                                    @foreach(['A', 'B', 'C', 'D'] as $i => $letra)
+                                                        @php
+                                                            $valorResposta = $i + 1;
+                                                            $respostaExistente = $respostasParaRenderizar->get($i);
+                                                            $respostaTexto = $respostaExistente->resposta ?? '';
+                                                            $respostaId = $respostaExistente->id ?? null;
+
+                                                            $respostaOld = old("perguntas.$indexPergunta.respostas.$valorResposta", $respostaTexto);
+                                                            $corretaOld = old("perguntas.$indexPergunta.correta", $corretaIndex);
+                                                        @endphp
+
+                                                        <div class="flex items-center gap-3 alternativa-item">
+
+                                                            @if($respostaId)
+                                                                <input type="hidden"
+                                                                       name="perguntas[{{ $indexPergunta }}][respostas_ids][{{ $valorResposta }}]"
+                                                                       value="{{ $respostaId }}">
+                                                            @endif
+
+                                                            <div class="w-10 h-10 rounded-full bg-[#E8EFE9] text-[#004D3A] flex items-center justify-center font-extrabold shrink-0">
+                                                                {{ $letra }}
+                                                            </div>
+
+                                                            <input
+                                                                type="text"
+                                                                name="perguntas[{{ $indexPergunta }}][respostas][{{ $valorResposta }}]"
+                                                                value="{{ $respostaOld }}"
+                                                                placeholder="Alternativa {{ $letra }}"
+                                                                required
+                                                                class="flex-1 px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F1F6F2] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
+                                                            >
+
+                                                            <label class="w-10 h-10 rounded-full border border-[#DCE7DE] bg-[#F8FBF8] flex items-center justify-center cursor-pointer hover:bg-green-50 transition shrink-0">
+                                                                <input
+                                                                    type="radio"
+                                                                    name="perguntas[{{ $indexPergunta }}][correta]"
+                                                                    value="{{ $valorResposta }}"
+                                                                    class="hidden peer"
+                                                                    {{ (int) $corretaOld === (int) $valorResposta ? 'checked' : '' }}
+                                                                >
+
+                                                                <span class="w-6 h-6 rounded-full border border-[#AFC5B5] flex items-center justify-center peer-checked:bg-[#00A63E] peer-checked:border-[#00A63E]">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                                         class="w-4 h-4 text-white hidden peer-checked:block"
+                                                                         fill="none"
+                                                                         viewBox="0 0 24 24"
+                                                                         stroke="currentColor">
+                                                                        <path stroke-linecap="round"
+                                                                              stroke-linejoin="round"
+                                                                              stroke-width="2.5"
+                                                                              d="m4.5 12.75 6 6 9-13.5"/>
+                                                                    </svg>
+                                                                </span>
+                                                            </label>
+
+                                                        </div>
+                                                    @endforeach
+
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                @endforeach
+
+                            @else
+
+                                <!-- PRIMEIRA QUESTÃO EM BRANCO -->
+                                <div class="pergunta-bloco bg-white border border-[#E3EBE4] rounded-3xl shadow-sm overflow-hidden" data-index="0">
+
+                                    <div class="bg-[#F8FBF8] border-b border-[#E3EBE4] px-5 sm:px-6 py-4 flex items-center justify-between gap-4">
+
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-full bg-[#004D3A] text-white flex items-center justify-center text-sm font-extrabold numero-questao">
+                                                01
+                                            </div>
+
+                                            <div>
+                                                <p class="text-[11px] uppercase tracking-widest font-extrabold text-[#60756B]">
+                                                    Questão de múltipla escolha
+                                                </p>
+
+                                                <p class="text-xs text-[#8A9B92] mt-1">
+                                                    Configure pergunta, peso e alternativas.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onclick="duplicarPergunta(this)"
+                                                class="w-9 h-9 rounded-xl hover:bg-white text-[#60756B] hover:text-[#004D3A] transition flex items-center justify-center"
+                                                title="Duplicar questão"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     class="w-5 h-5"
+                                                     fill="none"
+                                                     viewBox="0 0 24 24"
+                                                     stroke="currentColor">
+                                                    <path stroke-linecap="round"
+                                                          stroke-linejoin="round"
+                                                          stroke-width="1.8"
+                                                          d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75A1.125 1.125 0 0 1 3.75 20.625v-9.75c0-.621.504-1.125 1.125-1.125H8.25m3-6h8.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-8.25A1.125 1.125 0 0 1 10.125 13.125v-8.25c0-.621.504-1.125 1.125-1.125z"/>
+                                                </svg>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onclick="removerPergunta(this)"
+                                                class="w-9 h-9 rounded-xl hover:bg-red-50 text-[#60756B] hover:text-red-600 transition flex items-center justify-center"
+                                                title="Excluir questão"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     class="w-5 h-5"
+                                                     fill="none"
+                                                     viewBox="0 0 24 24"
+                                                     stroke="currentColor">
+                                                    <path stroke-linecap="round"
+                                                          stroke-linejoin="round"
+                                                          stroke-width="1.8"
+                                                          d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+
+                                    </div>
+
+                                    <div class="p-5 sm:p-6">
+
+                                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
+
+                                            <div class="lg:col-span-9">
+                                                <label class="block text-[11px] font-extrabold text-[#60756B] uppercase tracking-widest mb-2">
+                                                    Texto da pergunta
+                                                </label>
+
+                                                <textarea
+                                                    name="perguntas[0][pergunta]"
+                                                    rows="4"
+                                                    placeholder="Digite o texto da pergunta..."
+                                                    required
+                                                    class="w-full px-4 py-4 rounded-2xl border border-[#DCE7DE] bg-[#F1F6F2] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none"
+                                                >{{ old('perguntas.0.pergunta') }}</textarea>
+                                            </div>
+
+                                            <div class="lg:col-span-3">
+                                                <label class="block text-[11px] font-extrabold text-[#60756B] uppercase tracking-widest mb-2">
+                                                    Peso / pontos
+                                                </label>
+
+                                                <input
+                                                    type="number"
+                                                    name="perguntas[0][peso]"
+                                                    value="{{ old('perguntas.0.peso', 10) }}"
+                                                    min="1"
+                                                    class="w-full px-4 py-4 rounded-2xl border border-[#DCE7DE] bg-[#F1F6F2] text-[#004D3A] text-xl text-center font-extrabold focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
+                                                >
+                                            </div>
+
                                         </div>
 
                                         <div>
-                                            <p class="text-[11px] uppercase tracking-widest font-extrabold text-[#60756B]">
-                                                Questão de múltipla escolha
-                                            </p>
-
-                                            <p class="text-xs text-[#8A9B92] mt-1">
-                                                Configure pergunta, peso e alternativas.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex items-center gap-2">
-                                        <button
-                                            type="button"
-                                            onclick="duplicarPergunta(this)"
-                                            class="w-9 h-9 rounded-xl hover:bg-white text-[#60756B] hover:text-[#004D3A] transition flex items-center justify-center"
-                                            title="Duplicar questão"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 class="w-5 h-5"
-                                                 fill="none"
-                                                 viewBox="0 0 24 24"
-                                                 stroke="currentColor">
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      stroke-width="1.8"
-                                                      d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75A1.125 1.125 0 0 1 3.75 20.625v-9.75c0-.621.504-1.125 1.125-1.125H8.25m3-6h8.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-8.25A1.125 1.125 0 0 1 10.125 13.125v-8.25c0-.621.504-1.125 1.125-1.125z"/>
-                                            </svg>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onclick="removerPergunta(this)"
-                                            class="w-9 h-9 rounded-xl hover:bg-red-50 text-[#60756B] hover:text-red-600 transition flex items-center justify-center"
-                                            title="Excluir questão"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 class="w-5 h-5"
-                                                 fill="none"
-                                                 viewBox="0 0 24 24"
-                                                 stroke="currentColor">
-                                                <path stroke-linecap="round"
-                                                      stroke-linejoin="round"
-                                                      stroke-width="1.8"
-                                                      d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                </div>
-
-                                <div class="p-5 sm:p-6">
-
-                                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
-
-                                        <div class="lg:col-span-9">
-                                            <label class="block text-[11px] font-extrabold text-[#60756B] uppercase tracking-widest mb-2">
-                                                Texto da pergunta
+                                            <label class="block text-[11px] font-extrabold text-[#60756B] uppercase tracking-widest mb-3">
+                                                Alternativas e resposta correta
                                             </label>
 
-                                            <textarea
-                                                name="perguntas[0][pergunta]"
-                                                rows="4"
-                                                placeholder="Digite o texto da pergunta..."
-                                                class="w-full px-4 py-4 rounded-2xl border border-[#DCE7DE] bg-[#F1F6F2] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none"
-                                            >{{ old('perguntas.0.pergunta') }}</textarea>
-                                        </div>
+                                            <div class="space-y-3 respostas-container">
 
-                                        <div class="lg:col-span-3">
-                                            <label class="block text-[11px] font-extrabold text-[#60756B] uppercase tracking-widest mb-2">
-                                                Peso / pontos
-                                            </label>
+                                                @foreach(['A', 'B', 'C', 'D'] as $i => $letra)
+                                                    @php
+                                                        $valorResposta = $i + 1;
+                                                    @endphp
 
-                                            <input
-                                                type="number"
-                                                name="perguntas[0][peso]"
-                                                value="{{ old('perguntas.0.peso', 10) }}"
-                                                min="1"
-                                                class="w-full px-4 py-4 rounded-2xl border border-[#DCE7DE] bg-[#F1F6F2] text-[#004D3A] text-xl text-center font-extrabold focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
-                                            >
-                                        </div>
+                                                    <div class="flex items-center gap-3 alternativa-item">
 
-                                    </div>
+                                                        <div class="w-10 h-10 rounded-full bg-[#E8EFE9] text-[#004D3A] flex items-center justify-center font-extrabold shrink-0">
+                                                            {{ $letra }}
+                                                        </div>
 
-                                    <div>
-                                        <label class="block text-[11px] font-extrabold text-[#60756B] uppercase tracking-widest mb-3">
-                                            Alternativas e resposta correta
-                                        </label>
-
-                                        <div class="space-y-3 respostas-container">
-
-                                            @foreach(['A', 'B', 'C', 'D'] as $i => $letra)
-                                                @php
-                                                    $valorResposta = $i + 1;
-                                                @endphp
-
-                                                <div class="flex items-center gap-3 alternativa-item">
-
-                                                    <div class="w-10 h-10 rounded-full bg-[#E8EFE9] text-[#004D3A] flex items-center justify-center font-extrabold shrink-0">
-                                                        {{ $letra }}
-                                                    </div>
-
-                                                    <input
-                                                        type="text"
-                                                        name="perguntas[0][respostas][{{ $valorResposta }}]"
-                                                        value="{{ old("perguntas.0.respostas.$valorResposta") }}"
-                                                        placeholder="Alternativa {{ $letra }}"
-                                                        class="flex-1 px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F1F6F2] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
-                                                    >
-
-                                                    <label class="w-10 h-10 rounded-full border border-[#DCE7DE] bg-[#F8FBF8] flex items-center justify-center cursor-pointer hover:bg-green-50 transition shrink-0">
                                                         <input
-                                                            type="radio"
-                                                            name="perguntas[0][correta]"
-                                                            value="{{ $valorResposta }}"
-                                                            class="hidden peer"
-                                                            {{ old('perguntas.0.correta', 1) == $valorResposta ? 'checked' : '' }}
+                                                            type="text"
+                                                            name="perguntas[0][respostas][{{ $valorResposta }}]"
+                                                            value="{{ old("perguntas.0.respostas.$valorResposta") }}"
+                                                            placeholder="Alternativa {{ $letra }}"
+                                                            required
+                                                            class="flex-1 px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F1F6F2] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
                                                         >
 
-                                                        <span class="w-6 h-6 rounded-full border border-[#AFC5B5] flex items-center justify-center peer-checked:bg-[#00A63E] peer-checked:border-[#00A63E]">
-                                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                                 class="w-4 h-4 text-white hidden peer-checked:block"
-                                                                 fill="none"
-                                                                 viewBox="0 0 24 24"
-                                                                 stroke="currentColor">
-                                                                <path stroke-linecap="round"
-                                                                      stroke-linejoin="round"
-                                                                      stroke-width="2.5"
-                                                                      d="m4.5 12.75 6 6 9-13.5"/>
-                                                            </svg>
-                                                        </span>
-                                                    </label>
+                                                        <label class="w-10 h-10 rounded-full border border-[#DCE7DE] bg-[#F8FBF8] flex items-center justify-center cursor-pointer hover:bg-green-50 transition shrink-0">
+                                                            <input
+                                                                type="radio"
+                                                                name="perguntas[0][correta]"
+                                                                value="{{ $valorResposta }}"
+                                                                class="hidden peer"
+                                                                {{ old('perguntas.0.correta', 1) == $valorResposta ? 'checked' : '' }}
+                                                            >
 
-                                                </div>
-                                            @endforeach
+                                                            <span class="w-6 h-6 rounded-full border border-[#AFC5B5] flex items-center justify-center peer-checked:bg-[#00A63E] peer-checked:border-[#00A63E]">
+                                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                                     class="w-4 h-4 text-white hidden peer-checked:block"
+                                                                     fill="none"
+                                                                     viewBox="0 0 24 24"
+                                                                     stroke="currentColor">
+                                                                    <path stroke-linecap="round"
+                                                                          stroke-linejoin="round"
+                                                                          stroke-width="2.5"
+                                                                          d="m4.5 12.75 6 6 9-13.5"/>
+                                                                </svg>
+                                                            </span>
+                                                        </label>
 
+                                                    </div>
+                                                @endforeach
+
+                                            </div>
                                         </div>
+
                                     </div>
 
                                 </div>
 
-                            </div>
+                            @endif
 
                         </div>
 
@@ -517,7 +783,7 @@
 
                     <div>
                         <p class="font-extrabold text-[#003C2F]">
-                            Pronto para publicar?
+                            {{ $provaFinalExistente ? 'Pronto para atualizar?' : 'Pronto para publicar?' }}
                         </p>
 
                         <p class="text-sm text-[#60756B]">
@@ -557,7 +823,7 @@
 <!-- MODAL PROVA FINAL EXISTENTE -->
 @if($provaFinalExistente)
     <div id="modalProvaFinalExistente"
-         class="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+         class="fixed inset-0 z-[80] hidden items-center justify-center bg-black/50 backdrop-blur-sm px-4">
 
         <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-[#E3EBE4] overflow-hidden">
 
@@ -577,12 +843,11 @@
                 </div>
 
                 <h2 class="text-2xl font-extrabold text-[#003C2F] mb-2">
-                    Prova final já criada
+                    Prova final carregada
                 </h2>
 
                 <p class="text-sm text-[#60756B] leading-relaxed mb-5">
-                    Já existe uma prova final cadastrada no sistema.
-                    Como o curso permite apenas uma prova final, você pode editar a prova existente em vez de criar uma nova.
+                    A prova final existente foi carregada no formulário. Edite as informações e salve novamente.
                 </p>
 
                 <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 text-left mb-6">
@@ -596,27 +861,22 @@
                     </p>
 
                     <p class="text-xs text-[#60756B] mt-1">
+                        Questões:
+                        <strong>{{ $perguntasExistentes->count() }}</strong>
+                    </p>
+
+                    <p class="text-xs text-[#60756B] mt-1">
                         Tempo limite:
-                        <strong>{{ $provaFinalExistente->tempo_limite ?? 60 }} minutos</strong>
+                        <strong>{{ $tempoLimite }} minutos</strong>
                     </p>
 
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-3">
-
-                    <button type="button"
-                            onclick="fecharAvisoProvaFinal()"
-                            class="w-full px-5 py-3 rounded-2xl border border-[#DCE7DE] text-[#60756B] font-bold hover:bg-[#F8FBF8] transition">
-                        Continuar editando
-                    </button>
-
-                    <button type="button"
-                            onclick="editarProvaFinalExistente()"
-                            class="w-full px-5 py-3 rounded-2xl bg-[#004D3A] text-white font-bold hover:bg-[#003C2F] transition shadow">
-                        Entendi
-                    </button>
-
-                </div>
+                <button type="button"
+                        onclick="fecharAvisoProvaFinal()"
+                        class="w-full px-5 py-3 rounded-2xl bg-[#004D3A] text-white font-bold hover:bg-[#003C2F] transition shadow">
+                    Continuar editando
+                </button>
 
             </div>
 
@@ -628,9 +888,18 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    let contador = 1;
+    let contador = {{ $totalPerguntasRender }};
 
     const letras = ['A', 'B', 'C', 'D'];
+
+    function escapeHtmlProvaFinal(texto) {
+        return String(texto ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;');
+    }
 
     function fecharAvisoProvaFinal() {
         const modal = document.getElementById('modalProvaFinalExistente');
@@ -650,16 +919,17 @@
         modal.classList.add('flex');
     }
 
-    function editarProvaFinalExistente() {
-        fecharAvisoProvaFinal();
+    function scrollParaFormularioProva() {
+        const alvo = document.getElementById('configuracoesProvaFinal');
 
-        Swal.fire({
-            icon: 'success',
-            title: 'Modo edição ativado',
-            text: 'Você pode editar os dados da prova final nesta tela. Ao salvar, a prova existente deve ser atualizada pelo sistema.',
-            confirmButtonText: 'Entendi',
-            confirmButtonColor: '#004D3A'
-        });
+        if (alvo) {
+            alvo.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+
+        abrirAvisoProvaFinalExistente();
     }
 
     function templatePergunta(index) {
@@ -681,6 +951,7 @@
                         type="text"
                         name="perguntas[${index}][respostas][${valor}]"
                         placeholder="Alternativa ${letra}"
+                        required
                         class="flex-1 px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F1F6F2] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
                     >
 
@@ -785,6 +1056,7 @@
                                 name="perguntas[${index}][pergunta]"
                                 rows="4"
                                 placeholder="Digite o texto da pergunta..."
+                                required
                                 class="w-full px-4 py-4 rounded-2xl border border-[#DCE7DE] bg-[#F1F6F2] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none"
                             ></textarea>
                         </div>
@@ -824,6 +1096,8 @@
     function addPergunta() {
         const container = document.getElementById('perguntas-container');
 
+        if (!container) return;
+
         container.insertAdjacentHTML('beforeend', templatePergunta(contador));
 
         contador++;
@@ -857,6 +1131,7 @@
             if (result.isConfirmed) {
                 btn.closest('.pergunta-bloco').remove();
                 renumerarPerguntas();
+                reindexarPerguntas();
             }
         });
     }
@@ -910,8 +1185,50 @@
         });
     }
 
+    function reindexarPerguntas() {
+        const perguntas = document.querySelectorAll('.pergunta-bloco');
+
+        perguntas.forEach((bloco, index) => {
+            bloco.dataset.index = index;
+
+            const perguntaId = bloco.querySelector('input[name*="[id]"]');
+            const textarea = bloco.querySelector('textarea[name*="[pergunta]"]');
+            const peso = bloco.querySelector('input[name*="[peso]"]');
+            const respostas = bloco.querySelectorAll('.alternativa-item input[type="text"]');
+            const radios = bloco.querySelectorAll('.alternativa-item input[type="radio"]');
+            const idsRespostas = bloco.querySelectorAll('input[name*="[respostas_ids]"]');
+
+            if (perguntaId) {
+                perguntaId.name = `perguntas[${index}][id]`;
+            }
+
+            if (textarea) {
+                textarea.name = `perguntas[${index}][pergunta]`;
+            }
+
+            if (peso) {
+                peso.name = `perguntas[${index}][peso]`;
+            }
+
+            respostas.forEach((input, respostaIndex) => {
+                input.name = `perguntas[${index}][respostas][${respostaIndex + 1}]`;
+            });
+
+            radios.forEach((radio) => {
+                radio.name = `perguntas[${index}][correta]`;
+            });
+
+            idsRespostas.forEach((input, respostaIndex) => {
+                input.name = `perguntas[${index}][respostas_ids][${respostaIndex + 1}]`;
+            });
+        });
+    }
+
     function alterarTentativas(valor) {
         const input = document.getElementById('tentativas');
+
+        if (!input) return;
+
         const atual = parseInt(input.value || 1);
         const novo = Math.max(1, atual + valor);
 
@@ -922,6 +1239,8 @@
 
     if (form) {
         form.addEventListener('submit', function(e) {
+            reindexarPerguntas();
+
             const perguntas = document.querySelectorAll('.pergunta-bloco');
             const btn = document.getElementById('btnPublicar');
 
