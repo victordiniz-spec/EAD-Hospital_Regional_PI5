@@ -44,6 +44,10 @@
             max-height: 88vh !important;
             overflow-y: auto !important;
         }
+
+        .area-professor-videoaulas {
+            padding-top: 5rem !important;
+        }
     }
 </style>
 
@@ -55,7 +59,7 @@
 
         @include('partials.navbar')
 
-        <section class="p-4 sm:p-6 lg:p-8">
+        <section class="area-professor-videoaulas p-4 sm:p-6 lg:p-8">
 
             <!-- CABEÇALHO -->
             <div class="mb-7 flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
@@ -594,12 +598,6 @@
 
 </div>
 
-<!-- BOTÃO FLUTUANTE -->
-<button type="button"
-        onclick="abrirModalAula()"
-        class="fixed right-5 bottom-5 w-14 h-14 rounded-full bg-[#004D3A] text-white shadow-2xl flex items-center justify-center hover:bg-[#003C2F] transition z-40">
-    +
-</button>
 
 <!-- MODAL CRIAR AULA -->
 <div id="modalAula" class="fixed inset-0 hidden items-center justify-center z-50 px-3 sm:px-4"

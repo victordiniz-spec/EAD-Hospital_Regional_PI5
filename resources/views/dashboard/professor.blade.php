@@ -100,6 +100,58 @@
     .icone-seta-historico.aberto {
         transform: rotate(180deg);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | AJUSTES RESPONSIVOS DO DASHBOARD
+    |--------------------------------------------------------------------------
+    */
+    .grafico-engajamento {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .grafico-coluna {
+        min-width: 0;
+    }
+
+    @media (max-width: 640px) {
+        section {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+
+        .grafico-card-professor {
+            min-height: auto !important;
+            overflow: hidden !important;
+        }
+
+        .grafico-engajamento {
+            height: 250px !important;
+            gap: 0.35rem !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        .grafico-barra-professor {
+            height: 145px !important;
+            max-width: 30px !important;
+        }
+
+        .grafico-tooltip-professor {
+            display: none !important;
+        }
+
+        .grafico-legenda-professor {
+            gap: 0.75rem !important;
+            font-size: 11px !important;
+        }
+
+        .grafico-mes-professor {
+            font-size: 9px !important;
+        }
+    }
 </style>
 
 <div class="flex min-h-screen w-full bg-[#F3F7F3] text-[#003C2F] overflow-x-hidden">
@@ -322,7 +374,7 @@
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-7 mb-7">
 
                 <!-- DESEMPENHO REAL -->
-                <div class="xl:col-span-2 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-[#E3EBE4] min-h-[380px]">
+                <div class="xl:col-span-2 bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-[#E3EBE4] min-h-[380px] grafico-card-professor overflow-hidden">
 
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                         <div>
@@ -347,7 +399,7 @@
 
                     @if($totalAtividadesPeriodo > 0)
 
-                        <div class="h-72 flex items-end justify-between gap-3 px-1 sm:px-6 pt-6">
+                        <div class="grafico-engajamento h-72 grid grid-cols-6 items-end gap-1 sm:gap-3 px-0 sm:px-6 pt-6">
 
                             @foreach($dadosGrafico as $item)
 
@@ -365,15 +417,15 @@
                                         : 0;
                                 @endphp
 
-                                <div class="flex-1 flex flex-col items-center justify-end gap-3 h-full group">
+                                <div class="grafico-coluna min-w-0 flex flex-col items-center justify-end gap-2 sm:gap-3 h-full group">
 
-                                    <div class="text-center opacity-0 group-hover:opacity-100 transition bg-[#003C2F] text-white rounded-xl px-3 py-2 shadow-lg text-xs">
+                                    <div class="grafico-tooltip-professor text-center opacity-0 group-hover:opacity-100 transition bg-[#003C2F] text-white rounded-xl px-3 py-2 shadow-lg text-xs">
                                         <p class="font-bold">{{ $item['total'] }} total</p>
                                         <p>{{ $item['aulas'] }} aula(s)</p>
                                         <p>{{ $item['testes'] }} teste(s)</p>
                                     </div>
 
-                                    <div class="w-full max-w-[46px] bg-[#E8EFE9] rounded-full flex items-end overflow-hidden h-[190px] border border-[#DCE7DE]">
+                                    <div class="grafico-barra-professor w-full max-w-[30px] sm:max-w-[46px] bg-[#E8EFE9] rounded-full flex items-end overflow-hidden h-[145px] sm:h-[190px] border border-[#DCE7DE]">
 
                                         <div class="w-full flex flex-col justify-end" style="height: {{ $alturaTotal }}%;">
 
@@ -390,7 +442,7 @@
                                     </div>
 
                                     <div class="text-center">
-                                        <span class="block text-[10px] font-bold text-[#60756B]">
+                                        <span class="grafico-mes-professor block text-[10px] font-bold text-[#60756B]">
                                             {{ $item['mes'] }}
                                         </span>
 
@@ -405,7 +457,7 @@
 
                         </div>
 
-                        <div class="mt-5 flex flex-wrap items-center justify-center gap-4 text-xs text-[#60756B]">
+                        <div class="grafico-legenda-professor mt-5 flex flex-wrap items-center justify-center gap-4 text-xs text-[#60756B]">
                             <div class="flex items-center gap-2">
                                 <span class="w-3 h-3 rounded-full bg-[#004D3A]"></span>
                                 Aulas assistidas
@@ -856,21 +908,6 @@
     </main>
 
 </div>
-
-<!-- BOTÃO FLUTUANTE -->
-<button onclick="abrirModalAviso()"
-        class="fixed right-5 bottom-5 w-14 h-14 rounded-full bg-[#004D3A] text-white shadow-2xl flex items-center justify-center hover:bg-[#003C2F] transition z-40">
-    <svg xmlns="http://www.w3.org/2000/svg"
-         class="w-7 h-7"
-         fill="none"
-         viewBox="0 0 24 24"
-         stroke="currentColor">
-        <path stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4.5v15m7.5-7.5h-15"/>
-    </svg>
-</button>
 
 <!-- MODAL AVISO -->
 <div id="modalAviso" class="fixed inset-0 hidden items-center justify-center z-50"
