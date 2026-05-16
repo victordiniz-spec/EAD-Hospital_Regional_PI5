@@ -163,6 +163,28 @@
                 <span>Certificado</span>
             </a>
 
+            @if(auth()->check() && auth()->user()->tipo === 'super_admin')
+                <!-- VOLTAR AO PAINEL ADMIN -->
+                <a href="{{ route('dashboard.professor') }}"
+                   onclick="fecharSidebarAluno()"
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg transition
+                   bg-yellow-50 text-yellow-800 border border-yellow-200 hover:bg-yellow-100">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="w-5 h-5"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.5"
+                              d="M10.5 6h9.75M10.5 12h9.75M10.5 18h9.75M3.75 6h.008v.008H3.75V6zm0 6h.008v.008H3.75V12zm0 6h.008v.008H3.75V18z"/>
+                    </svg>
+
+                    <span>Painel Admin</span>
+                </a>
+            @endif
+
         </nav>
 
     </div>

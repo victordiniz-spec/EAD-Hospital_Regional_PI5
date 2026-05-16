@@ -174,6 +174,28 @@
                 <span>Avisos</span>
             </a>
 
+            @if(auth()->check() && auth()->user()->tipo === 'super_admin')
+                <!-- VER COMO ALUNO -->
+                <a href="{{ route('dashboard.aluno') }}"
+                   onclick="fecharSidebarProfessor()"
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg transition
+                   bg-yellow-50 text-yellow-800 border border-yellow-200 hover:bg-yellow-100">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="w-5 h-5"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.5"
+                              d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0zM4.5 20.25a8.25 8.25 0 0 1 15 0"/>
+                    </svg>
+
+                    <span>Ver como aluno</span>
+                </a>
+            @endif
+
         </nav>
 
     </div>

@@ -13,6 +13,12 @@ use Illuminate\Validation\Rule;
 class UserController extends Controller
 {
     // =========================
+    // TIPOS DE USUÁRIO DO SISTEMA
+    // =========================
+    private array $tiposAdministrativos = ['super_admin', 'admin', 'professor'];
+    private array $tiposAluno = ['residente', 'preceptor'];
+
+    // =========================
     // LIMPAR TEXTO PARA COMPARAÇÃO
     // =========================
     private function limparTextoSenha($texto)
@@ -125,6 +131,46 @@ class UserController extends Controller
     }
 
     // =========================
+    // REDIRECIONAR USUÁRIO PELO TIPO
+    // =========================
+    private function redirecionarPorTipo(User $user)
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | REGRAS DE ACESSO
+        |--------------------------------------------------------------------------
+        | super_admin: entra primeiro no painel do professor/admin.
+        | Depois, pela sidebar, poderá acessar a tela do aluno para testar.
+        |
+        | professor: entra no painel do professor/admin.
+        |
+        | residente/preceptor: entram no painel do aluno.
+        */
+
+        if (in_array($user->tipo, ['super_admin', 'admin', 'professor'])) {
+            return redirect()->route('dashboard.professor');
+        }
+
+        if (in_array($user->tipo, ['residente', 'preceptor'])) {
+            return redirect()->route('dashboard.aluno');
+        }
+
+        Auth::logout();
+
+        return redirect()
+            ->route('login')
+            ->with('erro', 'Tipo de usuário não reconhecido. Entre em contato com a administração.');
+    }
+
+    // =========================
+    // VERIFICAR SE O USUÁRIO É SUPER ADMIN
+    // =========================
+    private function usuarioEhSuperAdmin(?User $user): bool
+    {
+        return $user && $user->tipo === 'super_admin';
+    }
+
+    // =========================
     // CADASTRO - ENVIAR CÓDIGO
     // =========================
     public function salvarAluno(Request $request)
@@ -160,6 +206,13 @@ class UserController extends Controller
                 'regex:/[0-9]/',
             ],
 
+            /*
+            |--------------------------------------------------------------------------
+            | IMPORTANTE
+            |--------------------------------------------------------------------------
+            | O cadastro público só permite residente e preceptor.
+            | Professor e super_admin devem ser criados manualmente no banco.
+            */
             'tipo' => ['required', 'in:residente,preceptor'],
         ], [
             'nome.required' => 'Informe seu nome completo.',
@@ -535,6 +588,9 @@ class UserController extends Controller
         $request->validate([
             'cpf' => 'required',
             'password' => 'required'
+        ], [
+            'cpf.required' => 'Informe seu CPF.',
+            'password.required' => 'Informe sua senha.',
         ]);
 
         $cpf = preg_replace('/\D/', '', $request->cpf);
@@ -542,7 +598,7 @@ class UserController extends Controller
         $user = User::where('cpf', $cpf)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return back()->with('erro', 'CPF ou senha inválidos');
+            return back()->with('erro', 'CPF ou senha inválidos.');
         }
 
         if ($user->status === 'pendente') {
@@ -566,14 +622,23 @@ Melhor horário para atendimento: segunda a sexta-feira, das 08h às 17h."
             return back()->with('erro', 'Seu usuário não está liberado para acessar o sistema.');
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | SEGURANÇA DOS PAPÉIS
+        |--------------------------------------------------------------------------
+        | Só aceita os tipos definidos abaixo.
+        | Isso impede tipo desconhecido de entrar por erro de banco.
+        */
+        $tiposPermitidos = array_merge($this->tiposAdministrativos, $this->tiposAluno);
+
+        if (!in_array($user->tipo, $tiposPermitidos)) {
+            return back()->with('erro', 'Tipo de usuário inválido. Entre em contato com a administração.');
+        }
+
         Auth::login($user);
         $request->session()->regenerate();
 
-        if ($user->tipo === 'admin') {
-            return redirect('/dashboard-professor');
-        }
-
-        return redirect('/dashboard-aluno');
+        return $this->redirecionarPorTipo($user);
     }
 
     // =========================
@@ -582,6 +647,10 @@ Melhor horário para atendimento: segunda a sexta-feira, das 08h às 17h."
     public function aprovar($id)
     {
         $user = User::findOrFail($id);
+
+        if ($this->usuarioEhSuperAdmin($user)) {
+            return back()->with('error', 'O super administrador não precisa de aprovação e não pode ser alterado por esta ação.');
+        }
 
         $user->status = 'aprovado';
         $user->save();
@@ -601,6 +670,10 @@ Melhor horário para atendimento: segunda a sexta-feira, das 08h às 17h."
             return back()->with('error', 'Você não pode rejeitar/excluir o próprio usuário logado.');
         }
 
+        if ($this->usuarioEhSuperAdmin($user)) {
+            return back()->with('error', 'O super administrador não pode ser rejeitado ou excluído por esta ação.');
+        }
+
         $user->delete();
 
         return back()->with('success', 'Usuário rejeitado e excluído com sucesso.');
@@ -616,6 +689,10 @@ Melhor horário para atendimento: segunda a sexta-feira, das 08h às 17h."
 
         if (auth()->id() == $user->id) {
             return back()->with('error', 'Você não pode inutilizar o próprio usuário logado.');
+        }
+
+        if ($this->usuarioEhSuperAdmin($user)) {
+            return back()->with('error', 'O super administrador não pode ser inutilizado por esta ação.');
         }
 
         if ($user->status === 'inutilizado') {
@@ -635,6 +712,10 @@ Melhor horário para atendimento: segunda a sexta-feira, das 08h às 17h."
     public function reativar($id)
     {
         $user = User::findOrFail($id);
+
+        if ($this->usuarioEhSuperAdmin($user)) {
+            return back()->with('error', 'O super administrador já possui acesso total e não pode ser alterado por esta ação.');
+        }
 
         if ($user->status === 'aprovado') {
             return back()->with('error', 'Este usuário já está ativo/aprovado.');
