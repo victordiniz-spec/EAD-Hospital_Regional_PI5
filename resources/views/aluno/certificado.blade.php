@@ -106,6 +106,52 @@
     $cargaHoraria = $modeloCertificado->carga_horaria ?? 40;
     $responsavel = $modeloCertificado->responsavel ?? 'Responsável pelo Curso';
     $cargo = $modeloCertificado->cargo ?? 'Coordenação do Curso';
+
+    // =========================
+    // REGISTRO DE CERTIFICADO EMITIDO
+    // =========================
+    // Quando o certificado estiver liberado, registra uma única vez no histórico.
+    // Essa tabela alimenta a área "Certificados Emitidos" no painel do professor.
+    $certificadoEmitido = null;
+    $codigoValidacaoCertificado = null;
+    $dataEmissaoCertificado = now();
+
+    if ($certificadoLiberado && $modeloCertificado && DB::getSchemaBuilder()->hasTable('certificados_emitidos')) {
+        $certificadoEmitido = DB::table('certificados_emitidos')
+            ->where('aluno_id', $alunoId)
+            ->where('certificado_modelo_id', $modeloCertificado->id)
+            ->first();
+
+        if (!$certificadoEmitido) {
+            $codigoValidacaoCertificado = strtoupper(uniqid('CERT-'));
+
+            DB::table('certificados_emitidos')->insert([
+                'aluno_id' => $alunoId,
+                'certificado_modelo_id' => $modeloCertificado->id,
+                'aluno_nome' => $aluno->name,
+                'email' => $aluno->email,
+                'cpf' => $aluno->cpf,
+                'curso' => $modeloCertificado->curso ?? 'Integrar ReSaúde',
+                'carga_horaria' => $modeloCertificado->carga_horaria ?? 40,
+                'nota_final' => $notaFinal,
+                'codigo_validacao' => $codigoValidacaoCertificado,
+                'data_emissao' => $dataEmissaoCertificado,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $certificadoEmitido = DB::table('certificados_emitidos')
+                ->where('codigo_validacao', $codigoValidacaoCertificado)
+                ->first();
+        }
+
+        if ($certificadoEmitido) {
+            $codigoValidacaoCertificado = $certificadoEmitido->codigo_validacao;
+            $dataEmissaoCertificado = $certificadoEmitido->data_emissao
+                ? \Carbon\Carbon::parse($certificadoEmitido->data_emissao)
+                : now();
+        }
+    }
 @endphp
 
 <style>
@@ -657,9 +703,16 @@
                                                 </p>
 
                                                 <p class="certificado-data text-xs font-bold text-[#374151] mt-1">
-                                                    {{ now()->format('d/m/Y') }}
+                                                    {{ $dataEmissaoCertificado ? \Carbon\Carbon::parse($dataEmissaoCertificado)->format('d/m/Y') : now()->format('d/m/Y') }}
                                                 </p>
                                             </div>
+
+                                            @if($codigoValidacaoCertificado)
+                                                <p class="text-[10px] text-[#8A9B92] mt-4 break-all">
+                                                    Código:
+                                                    <strong class="text-[#60756B]">{{ $codigoValidacaoCertificado }}</strong>
+                                                </p>
+                                            @endif
                                         </div>
                                     </div>
 

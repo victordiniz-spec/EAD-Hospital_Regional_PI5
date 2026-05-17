@@ -60,7 +60,7 @@
                 <div class="space-y-2 text-sm text-white/75">
                     <p>
                         <span class="font-bold text-white">E-mail:</span>
-                        administracao@hospital.com
+                        victornascimento311@gmail.com
                     </p>
 
                     <p>

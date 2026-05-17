@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
@@ -275,11 +276,49 @@ Route::middleware('auth')->group(function () {
     // 🎓 CERTIFICADOS
     // =========================
     Route::get('/certificados/criar', function () {
-        return view('dashboard.certificados.criar');
+        /*
+        |--------------------------------------------------------------------------
+        | CERTIFICADOS EMITIDOS
+        |--------------------------------------------------------------------------
+        | Esta tela continua configurando o modelo do certificado.
+        | Agora também busca o histórico real da tabela certificados_emitidos.
+        */
+        $certificados = collect();
+
+        if (DB::getSchemaBuilder()->hasTable('certificados_emitidos')) {
+            $certificados = DB::table('certificados_emitidos')
+                ->select(
+                    'id',
+                    'aluno_id',
+                    'aluno_nome',
+                    'email',
+                    'cpf',
+                    'curso',
+                    'carga_horaria',
+                    'nota_final',
+                    'codigo_validacao',
+                    'data_emissao',
+                    'created_at',
+                    'updated_at'
+                )
+                ->orderByDesc('data_emissao')
+                ->orderByDesc('created_at')
+                ->get();
+        }
+
+        return view('dashboard.certificados.criar', compact('certificados'));
     })->name('certificados.criar');
 
     Route::post('/certificados', function () {
-        \Illuminate\Support\Facades\DB::table('certificados')->insert([
+        /*
+        |--------------------------------------------------------------------------
+        | CONFIGURAÇÃO DO MODELO DE CERTIFICADO
+        |--------------------------------------------------------------------------
+        | Mantém o funcionamento atual: cada atualização cria um novo modelo.
+        | Depois, se quiser, podemos alterar para atualizar sempre o último modelo
+        | em vez de inserir vários registros.
+        */
+        DB::table('certificados')->insert([
             'curso' => request('curso'),
             'carga_horaria' => request('carga_horaria'),
             'responsavel' => request('responsavel'),
