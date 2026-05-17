@@ -806,15 +806,56 @@
 
                     <div>
                         <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
-                            Tempo limite
+                            Tempo limite do pós-teste
                         </label>
 
-                        <input type="number"
+                        @php
+                            $tempoLimiteAulaOld = old('avaliacao.tempo_limite');
+                            $tempoLimiteAulaOldInt = $tempoLimiteAulaOld ? (int) $tempoLimiteAulaOld : 0;
+                            $tempoLimiteAulaHorasOld = $tempoLimiteAulaOldInt > 0 ? intdiv($tempoLimiteAulaOldInt, 60) : '';
+                            $tempoLimiteAulaMinutosOld = $tempoLimiteAulaOldInt > 0 ? ($tempoLimiteAulaOldInt % 60) : '';
+                        @endphp
+
+                        <input type="hidden"
                                name="avaliacao[tempo_limite]"
-                               value="{{ old('avaliacao.tempo_limite') }}"
-                               placeholder="Tempo em minutos"
-                               min="1"
-                               class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                               id="tempoLimiteTotalAula"
+                               value="{{ old('avaliacao.tempo_limite') }}">
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <input type="number"
+                                       id="tempoLimiteHorasAula"
+                                       value="{{ $tempoLimiteAulaHorasOld }}"
+                                       min="0"
+                                       max="23"
+                                       placeholder="Horas"
+                                       oninput="atualizarTempoLimiteAula()"
+                                       class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+
+                                <p class="text-[11px] text-[#8A9B92] mt-1">
+                                    Hora(s)
+                                </p>
+                            </div>
+
+                            <div>
+                                <input type="number"
+                                       id="tempoLimiteMinutosAula"
+                                       value="{{ $tempoLimiteAulaMinutosOld }}"
+                                       min="0"
+                                       max="59"
+                                       placeholder="Minutos"
+                                       oninput="atualizarTempoLimiteAula()"
+                                       class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+
+                                <p class="text-[11px] text-[#8A9B92] mt-1">
+                                    Minuto(s)
+                                </p>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-[#8A9B92] mt-1">
+                            Exemplo: 1 hora e 30 minutos será salvo como 90 minutos.
+                        </p>
                     </div>
                 </div>
 
@@ -1110,12 +1151,39 @@
                             Tempo limite
                         </label>
 
-                        <input type="number"
+                        <input type="hidden"
                                name="avaliacao[tempo_limite]"
-                               id="miniTesteTempo"
-                               min="1"
-                               placeholder="Minutos"
-                               class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                               id="miniTesteTempo">
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <input type="number"
+                                       id="miniTesteTempoHoras"
+                                       min="0"
+                                       max="23"
+                                       placeholder="Horas"
+                                       oninput="atualizarTempoLimiteMiniTeste()"
+                                       class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+
+                                <p class="text-[11px] text-[#8A9B92] mt-1">
+                                    Hora(s)
+                                </p>
+                            </div>
+
+                            <div>
+                                <input type="number"
+                                       id="miniTesteTempoMinutos"
+                                       min="0"
+                                       max="59"
+                                       placeholder="Minutos"
+                                       oninput="atualizarTempoLimiteMiniTeste()"
+                                       class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+
+                                <p class="text-[11px] text-[#8A9B92] mt-1">
+                                    Minuto(s)
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -1178,6 +1246,82 @@
     let perguntaIndex = 0;
     let perguntasImportadas = new Set();
     let miniTestePerguntaIndex = 0;
+
+    /*
+    |--------------------------------------------------------------------------
+    | TEMPO DO PÓS-TESTE
+    |--------------------------------------------------------------------------
+    | O banco continua recebendo o tempo em minutos, mas na tela o professor
+    | preenche horas e minutos separadamente.
+    */
+    function limitarNumeroTempo(valor, maximo) {
+        let numero = parseInt(valor, 10);
+
+        if (isNaN(numero) || numero < 0) {
+            return 0;
+        }
+
+        if (maximo !== null && numero > maximo) {
+            return maximo;
+        }
+
+        return numero;
+    }
+
+    function calcularTempoTotalMinutos(horasInput, minutosInput) {
+        const horas = limitarNumeroTempo(horasInput ? horasInput.value : 0, 23);
+        const minutos = limitarNumeroTempo(minutosInput ? minutosInput.value : 0, 59);
+
+        if (horasInput && horasInput.value !== '') {
+            horasInput.value = horas;
+        }
+
+        if (minutosInput && minutosInput.value !== '') {
+            minutosInput.value = minutos;
+        }
+
+        const total = (horas * 60) + minutos;
+
+        return total > 0 ? total : '';
+    }
+
+    function preencherTempoPorMinutos(totalMinutos, horasInput, minutosInput, hiddenInput) {
+        const total = parseInt(totalMinutos, 10);
+
+        if (!total || total <= 0) {
+            if (horasInput) horasInput.value = '';
+            if (minutosInput) minutosInput.value = '';
+            if (hiddenInput) hiddenInput.value = '';
+            return;
+        }
+
+        const horas = Math.floor(total / 60);
+        const minutos = total % 60;
+
+        if (horasInput) horasInput.value = horas;
+        if (minutosInput) minutosInput.value = minutos;
+        if (hiddenInput) hiddenInput.value = total;
+    }
+
+    function atualizarTempoLimiteAula() {
+        const horasInput = document.getElementById('tempoLimiteHorasAula');
+        const minutosInput = document.getElementById('tempoLimiteMinutosAula');
+        const hiddenInput = document.getElementById('tempoLimiteTotalAula');
+
+        if (!hiddenInput) return;
+
+        hiddenInput.value = calcularTempoTotalMinutos(horasInput, minutosInput);
+    }
+
+    function atualizarTempoLimiteMiniTeste() {
+        const horasInput = document.getElementById('miniTesteTempoHoras');
+        const minutosInput = document.getElementById('miniTesteTempoMinutos');
+        const hiddenInput = document.getElementById('miniTesteTempo');
+
+        if (!hiddenInput) return;
+
+        hiddenInput.value = calcularTempoTotalMinutos(horasInput, minutosInput);
+    }
 
     function abrirModalAula() {
         document.body.classList.add('modal-aberto');
@@ -1298,10 +1442,12 @@
         const nomeAulaTexto = document.getElementById('miniTesteNomeAula');
         const tituloInput = document.getElementById('miniTesteTitulo');
         const tempoInput = document.getElementById('miniTesteTempo');
+        const tempoHorasInput = document.getElementById('miniTesteTempoHoras');
+        const tempoMinutosInput = document.getElementById('miniTesteTempoMinutos');
         const container = document.getElementById('miniTestePerguntasContainer');
         const btnSalvar = document.getElementById('btnSalvarMiniTeste');
 
-        if (!modal || !aulaIdInput || !cursoIdInput || !nomeAulaTexto || !tituloInput || !tempoInput || !container) {
+        if (!modal || !aulaIdInput || !cursoIdInput || !nomeAulaTexto || !tituloInput || !tempoInput || !tempoHorasInput || !tempoMinutosInput || !container) {
             alert('Modal de pós-teste não encontrado na página.');
             return;
         }
@@ -1316,9 +1462,12 @@
             ? avaliacao.titulo
             : 'Pós-teste - ' + (nomeAula || 'Aula');
 
-        tempoInput.value = avaliacao && avaliacao.tempo_limite
-            ? avaliacao.tempo_limite
-            : '';
+        preencherTempoPorMinutos(
+            avaliacao && avaliacao.tempo_limite ? avaliacao.tempo_limite : '',
+            tempoHorasInput,
+            tempoMinutosInput,
+            tempoInput
+        );
 
         container.innerHTML = '';
 
@@ -1989,6 +2138,8 @@
 
     if (formAula) {
         formAula.addEventListener('submit', function () {
+            atualizarTempoLimiteAula();
+
             const btnSalvar = document.getElementById('btnSalvarAula');
 
             if (btnSalvar) {
@@ -2015,6 +2166,8 @@
 
     if (formMiniTeste) {
         formMiniTeste.addEventListener('submit', function () {
+            atualizarTempoLimiteMiniTeste();
+
             const btn = document.getElementById('btnSalvarMiniTeste');
 
             if (btn) {
@@ -2032,6 +2185,8 @@
             fecharModalMiniTeste();
         }
     });
+
+    atualizarTempoLimiteAula();
 
     @if ($errors->any() || session('error'))
         abrirModalAula();
