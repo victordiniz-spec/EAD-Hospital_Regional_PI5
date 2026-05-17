@@ -22,6 +22,109 @@
     $totalAulasComTeste = count($idsAulas) > 0
         ? DB::table('avaliacoes')->whereIn('aula_id', $idsAulas)->distinct('aula_id')->count('aula_id')
         : 0;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | MODELOS PRONTOS PARA REUTILIZAR NO POPUP
+    |--------------------------------------------------------------------------
+    | Estes dados permitem escolher curso, módulo, aula ou pós-teste já criado
+    | e puxar as informações automaticamente para o formulário de nova aula.
+    */
+    $temCursoIdEmAulas = DB::getSchemaBuilder()->hasColumn('aulas', 'curso_id');
+
+    $modelosCursos = DB::table('cursos')
+        ->select('id', 'nome', 'descricao')
+        ->orderBy('nome')
+        ->get();
+
+    $modelosModulos = DB::table('modulos')
+        ->select('id', 'nome', 'curso_id')
+        ->orderBy('nome')
+        ->get();
+
+    $modelosAulas = DB::table('aulas')
+        ->select($temCursoIdEmAulas
+            ? ['id', 'titulo', 'descricao', 'video_url', 'modulo_id', 'curso_id']
+            : ['id', 'titulo', 'descricao', 'video_url', 'modulo_id']
+        )
+        ->orderBy('titulo')
+        ->get()
+        ->map(function ($aula) use ($temCursoIdEmAulas) {
+            $avaliacao = DB::table('avaliacoes')
+                ->where('aula_id', $aula->id)
+                ->where(function ($query) {
+                    $query->where('tipo', 'normal')
+                          ->orWhere('tipo', 'pos_teste')
+                          ->orWhere('tipo', 'pós-teste')
+                          ->orWhereNull('tipo');
+                })
+                ->orderByDesc('id')
+                ->first();
+
+            $perguntas = collect();
+
+            if ($avaliacao) {
+                $perguntas = DB::table('perguntas')
+                    ->where('avaliacao_id', $avaliacao->id)
+                    ->orderBy('id')
+                    ->get()
+                    ->map(function ($pergunta) {
+                        $pergunta->respostas = DB::table('respostas')
+                            ->where('pergunta_id', $pergunta->id)
+                            ->orderBy('id')
+                            ->get()
+                            ->values();
+
+                        return $pergunta;
+                    })
+                    ->values();
+            }
+
+            return [
+                'id' => $aula->id,
+                'titulo' => $aula->titulo,
+                'descricao' => $aula->descricao,
+                'video_url' => $aula->video_url,
+                'modulo_id' => $aula->modulo_id,
+                'curso_id' => $temCursoIdEmAulas ? ($aula->curso_id ?? null) : null,
+                'avaliacao' => $avaliacao,
+                'perguntas' => $perguntas,
+            ];
+        })
+        ->values();
+
+    $modelosAvaliacoes = DB::table('avaliacoes')
+        ->whereNotNull('aula_id')
+        ->where(function ($query) {
+            $query->where('tipo', 'normal')
+                  ->orWhere('tipo', 'pos_teste')
+                  ->orWhere('tipo', 'pós-teste')
+                  ->orWhereNull('tipo');
+        })
+        ->orderBy('titulo')
+        ->get()
+        ->map(function ($avaliacao) {
+            $perguntas = DB::table('perguntas')
+                ->where('avaliacao_id', $avaliacao->id)
+                ->orderBy('id')
+                ->get()
+                ->map(function ($pergunta) {
+                    $pergunta->respostas = DB::table('respostas')
+                        ->where('pergunta_id', $pergunta->id)
+                        ->orderBy('id')
+                        ->get()
+                        ->values();
+
+                    return $pergunta;
+                })
+                ->values();
+
+            $avaliacao->perguntas = $perguntas;
+
+            return $avaliacao;
+        })
+        ->values();
 @endphp
 
 <style>
@@ -653,6 +756,121 @@
             <form action="{{ route('aulas.store') }}" method="POST" id="formAula">
                 @csrf
 
+                <!-- USAR MODELOS PRONTOS -->
+                <div class="mb-5 border border-[#DCE7DE] rounded-3xl p-4 bg-[#EAF5EF]">
+                    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 mb-4">
+                        <div>
+                            <p class="text-[11px] uppercase tracking-widest text-[#004D3A] font-extrabold">
+                                Reutilizar conteúdo pronto
+                            </p>
+
+                            <h3 class="text-lg font-extrabold text-[#003C2F] mt-1">
+                                Puxar dados de curso, módulo, aula ou pós-teste já criado
+                            </h3>
+
+                            <p class="text-xs text-[#60756B] mt-1 leading-relaxed">
+                                Escolha um modelo abaixo para preencher automaticamente o formulário. Depois você pode editar antes de salvar.
+                            </p>
+                        </div>
+
+                        <button type="button"
+                                onclick="limparModelosProntosAula()"
+                                class="bg-white border border-[#DCE7DE] text-[#004D3A] px-4 py-3 rounded-2xl text-xs font-extrabold hover:bg-[#F8FBF8] transition shrink-0">
+                            Limpar modelos
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-widest font-extrabold text-[#60756B] mb-1.5">
+                                Modelo de curso
+                            </label>
+
+                            <select id="modeloCursoSelect"
+                                    onchange="aplicarModeloCurso(this.value)"
+                                    class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer">
+                                <option value="">Selecionar curso pronto</option>
+
+                                @foreach($modelosCursos as $modeloCurso)
+                                    <option value="{{ $modeloCurso->id }}">
+                                        {{ $modeloCurso->nome }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            <p class="text-[11px] text-[#8A9B92] mt-1">
+                                Preenche nome e descrição do curso.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-widest font-extrabold text-[#60756B] mb-1.5">
+                                Modelo de módulo
+                            </label>
+
+                            <select id="modeloModuloSelect"
+                                    onchange="aplicarModeloModulo(this.value)"
+                                    class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer">
+                                <option value="">Selecionar módulo pronto</option>
+
+                                @foreach($modelosModulos as $modeloModulo)
+                                    <option value="{{ $modeloModulo->id }}">
+                                        {{ $modeloModulo->nome }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            <p class="text-[11px] text-[#8A9B92] mt-1">
+                                Preenche o nome do módulo.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-widest font-extrabold text-[#60756B] mb-1.5">
+                                Modelo de aula
+                            </label>
+
+                            <select id="modeloAulaSelect"
+                                    onchange="aplicarModeloAula(this.value)"
+                                    class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer">
+                                <option value="">Selecionar aula pronta</option>
+
+                                @foreach($modelosAulas as $modeloAula)
+                                    <option value="{{ $modeloAula['id'] }}">
+                                        {{ $modeloAula['titulo'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            <p class="text-[11px] text-[#8A9B92] mt-1">
+                                Preenche título, descrição, vídeo e pós-teste da aula.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-widest font-extrabold text-[#60756B] mb-1.5">
+                                Modelo de pós-teste
+                            </label>
+
+                            <select id="modeloPosTesteSelect"
+                                    onchange="aplicarModeloPosTeste(this.value)"
+                                    class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition cursor-pointer">
+                                <option value="">Selecionar pós-teste pronto</option>
+
+                                @foreach($modelosAvaliacoes as $modeloAvaliacao)
+                                    <option value="{{ $modeloAvaliacao->id }}">
+                                        {{ $modeloAvaliacao->titulo ?? 'Pós-teste sem título' }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            <p class="text-[11px] text-[#8A9B92] mt-1">
+                                Preenche tempo, título, perguntas e alternativas.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="mb-5 border border-[#E3EBE4] rounded-3xl p-4 bg-[#F8FBF8]">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -1242,9 +1460,33 @@
     let perguntasImportadas = new Set();
     let miniTestePerguntaIndex = 0;
 
+
+    const modelosCursosProntos = @json($modelosCursos);
+    const modelosModulosProntos = @json($modelosModulos);
+    const modelosAulasProntas = @json($modelosAulas);
+    const modelosPosTestesProntos = @json($modelosAvaliacoes);
+
+    function buscarModeloPorId(lista, id) {
+        return (lista || []).find((item) => String(item.id) === String(id));
+    }
+
+    function campoFormularioAula(seletor) {
+        const form = document.getElementById('formAula');
+        return form ? form.querySelector(seletor) : null;
+    }
+
+    function preencherCampo(seletor, valor) {
+        const campo = campoFormularioAula(seletor);
+
+        if (campo) {
+            campo.value = valor ?? '';
+            campo.dispatchEvent(new Event('input', { bubbles: true }));
+            campo.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
     function normalizarNumeroTempo(valor) {
         const numero = parseInt(valor);
-
         return Number.isNaN(numero) || numero < 0 ? 0 : numero;
     }
 
@@ -1259,6 +1501,17 @@
         }
 
         return minutos;
+    }
+
+    function preencherTempoCriacaoPorMinutos(totalMinutos) {
+        const total = normalizarNumeroTempo(totalMinutos);
+        const horasInput = document.getElementById('tempoLimiteHorasCriar');
+        const minutosInput = document.getElementById('tempoLimiteMinutosCriar');
+
+        if (horasInput) horasInput.value = total > 0 ? Math.floor(total / 60) : '';
+        if (minutosInput) minutosInput.value = total > 0 ? total % 60 : '';
+
+        atualizarTempoLimiteCriar();
     }
 
     function atualizarTempoLimiteCriar() {
@@ -1289,6 +1542,129 @@
         totalInput.value = total > 0 ? total : '';
     }
 
+    function selecionarValor(seletor, valor) {
+        if (valor === null || valor === undefined || valor === '') return;
+
+        const campo = campoFormularioAula(seletor);
+
+        if (!campo) return;
+
+        const existe = Array.from(campo.options || []).some((option) => String(option.value) === String(valor));
+
+        if (existe) {
+            campo.value = valor;
+            campo.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
+    function aplicarModeloCurso(id) {
+        const curso = buscarModeloPorId(modelosCursosProntos, id);
+        if (!curso) return;
+
+        selecionarValor('select[name="curso_id"]', curso.id);
+        preencherCampo('input[name="novo_curso"]', curso.nome || '');
+        preencherCampo('textarea[name="descricao_curso"]', curso.descricao || '');
+    }
+
+    function aplicarModeloModulo(id) {
+        const modulo = buscarModeloPorId(modelosModulosProntos, id);
+        if (!modulo) return;
+
+        selecionarValor('select[name="curso_id"]', modulo.curso_id);
+        preencherCampo('input[name="novo_modulo"]', modulo.nome || '');
+    }
+
+    function aplicarModeloAula(id) {
+        const aula = buscarModeloPorId(modelosAulasProntas, id);
+        if (!aula) return;
+
+        selecionarValor('select[name="curso_id"]', aula.curso_id);
+        selecionarValor('select[name="modulo_id"]', aula.modulo_id);
+
+        preencherCampo('input[name="titulo"]', aula.titulo || '');
+        preencherCampo('textarea[name="descricao"]', aula.descricao || '');
+        preencherCampo('input[name="video_url"]', aula.video_url || '');
+
+        if (aula.avaliacao) {
+            preencherPosTesteCriacao(aula.avaliacao, aula.perguntas || []);
+        }
+    }
+
+    function aplicarModeloPosTeste(id) {
+        const avaliacao = buscarModeloPorId(modelosPosTestesProntos, id);
+        if (!avaliacao) return;
+
+        preencherPosTesteCriacao(avaliacao, avaliacao.perguntas || []);
+    }
+
+    function preencherPosTesteCriacao(avaliacao, perguntas) {
+        preencherCampo('input[name="avaliacao[titulo]"]', avaliacao && avaliacao.titulo ? avaliacao.titulo : '');
+        preencherTempoCriacaoPorMinutos(avaliacao && avaliacao.tempo_limite ? avaliacao.tempo_limite : 0);
+        preencherPerguntasCriacao(perguntas || []);
+    }
+
+    function preencherPerguntasCriacao(perguntas) {
+        const container = document.getElementById('perguntas-container');
+
+        if (!container) return;
+
+        container.innerHTML = '';
+        perguntaIndex = 0;
+
+        if (!perguntas || perguntas.length === 0) {
+            return;
+        }
+
+        perguntas.forEach((pergunta, indexPergunta) => {
+            addPergunta();
+
+            const card = document.getElementById(`pergunta-${indexPergunta}`);
+            const inputPergunta = card ? card.querySelector('.input-pergunta') : null;
+            const respostasContainer = document.getElementById(`respostas-${indexPergunta}`);
+
+            if (inputPergunta) {
+                inputPergunta.value = pergunta.pergunta || '';
+            }
+
+            if (respostasContainer) {
+                respostasContainer.innerHTML = '';
+
+                const respostas = pergunta.respostas && pergunta.respostas.length > 0
+                    ? pergunta.respostas
+                    : [
+                        { resposta: '', correta: true },
+                        { resposta: '', correta: false },
+                        { resposta: '', correta: false },
+                        { resposta: '', correta: false }
+                    ];
+
+                respostas.forEach((resposta, indexResposta) => {
+                    addResposta(indexPergunta);
+
+                    const respostaCard = document.getElementById(`resposta-${indexPergunta}-${indexResposta}`);
+                    const inputResposta = respostaCard ? respostaCard.querySelector('.input-resposta') : null;
+                    const radio = respostaCard ? respostaCard.querySelector('input[type="radio"]') : null;
+
+                    if (inputResposta) {
+                        inputResposta.value = resposta.resposta || '';
+                    }
+
+                    if (radio && (resposta.correta == 1 || resposta.correta === true)) {
+                        radio.checked = true;
+                    }
+                });
+            }
+        });
+
+        reindexarPerguntas();
+    }
+
+    function limparModelosProntosAula() {
+        ['modeloCursoSelect', 'modeloModuloSelect', 'modeloAulaSelect', 'modeloPosTesteSelect'].forEach((id) => {
+            const campo = document.getElementById(id);
+            if (campo) campo.value = '';
+        });
+    }
 
     function abrirModalAula() {
         document.body.classList.add('modal-aberto');
@@ -1414,7 +1790,7 @@
         const container = document.getElementById('miniTestePerguntasContainer');
         const btnSalvar = document.getElementById('btnSalvarMiniTeste');
 
-        if (!modal || !aulaIdInput || !cursoIdInput || !nomeAulaTexto || !tituloInput || !tempoInput || !tempoHorasInput || !tempoMinutosInput || !container) {
+        if (!modal || !aulaIdInput || !cursoIdInput || !nomeAulaTexto || !tituloInput || !tempoInput || !container) {
             alert('Modal de pós-teste não encontrado na página.');
             return;
         }
@@ -1433,9 +1809,13 @@
             ? parseInt(avaliacao.tempo_limite)
             : 0;
 
-        tempoHorasInput.value = tempoTotalSalvo > 0 ? Math.floor(tempoTotalSalvo / 60) : '';
-        tempoMinutosInput.value = tempoTotalSalvo > 0 ? tempoTotalSalvo % 60 : '';
-        atualizarTempoLimiteMiniTeste();
+        if (tempoHorasInput && tempoMinutosInput) {
+            tempoHorasInput.value = tempoTotalSalvo > 0 ? Math.floor(tempoTotalSalvo / 60) : '';
+            tempoMinutosInput.value = tempoTotalSalvo > 0 ? tempoTotalSalvo % 60 : '';
+            atualizarTempoLimiteMiniTeste();
+        } else {
+            tempoInput.value = tempoTotalSalvo > 0 ? tempoTotalSalvo : '';
+        }
 
         container.innerHTML = '';
 
@@ -1544,7 +1924,6 @@
 
         if (!container) return;
 
-        const letras = ['A', 'B', 'C', 'D', 'E'];
         const texto = respostaDados && respostaDados.resposta ? respostaDados.resposta : '';
         const correta = respostaDados && (respostaDados.correta == 1 || respostaDados.correta === true);
 
@@ -1559,7 +1938,7 @@
                    class="w-4 h-4 accent-[#004D3A] cursor-pointer">
 
             <span class="text-xs font-extrabold text-[#60756B] w-5">
-                ${letras[respostaIndex] ?? respostaIndex + 1}
+                ${typeof letraAlternativa === 'function' ? letraAlternativa(respostaIndex) : String.fromCharCode(65 + respostaIndex)}
             </span>
 
             <input type="text"
@@ -2106,6 +2485,8 @@
 
     if (formAula) {
         formAula.addEventListener('submit', function () {
+            atualizarTempoLimiteCriar();
+
             const btnSalvar = document.getElementById('btnSalvarAula');
 
             if (btnSalvar) {
@@ -2132,6 +2513,8 @@
 
     if (formMiniTeste) {
         formMiniTeste.addEventListener('submit', function () {
+            atualizarTempoLimiteMiniTeste();
+
             const btn = document.getElementById('btnSalvarMiniTeste');
 
             if (btn) {
@@ -2173,21 +2556,6 @@
             if (idModal === 'modalBancoPerguntas') fecharBancoPerguntas();
         });
     });
-
-
-    const formAulaTempo = document.getElementById('formAula');
-    if (formAulaTempo) {
-        formAulaTempo.addEventListener('submit', function () {
-            atualizarTempoLimiteCriar();
-        });
-    }
-
-    const formMiniTesteTempo = document.getElementById('formMiniTeste');
-    if (formMiniTesteTempo) {
-        formMiniTesteTempo.addEventListener('submit', function () {
-            atualizarTempoLimiteMiniTeste();
-        });
-    }
 
 </script>
 
