@@ -9,6 +9,14 @@
         ? (int) $avaliacao->tempo_limite
         : 0;
 
+    $tempoMinimo = isset($avaliacao->tempo_minimo) && $avaliacao->tempo_minimo
+        ? (int) $avaliacao->tempo_minimo
+        : 0;
+
+    $inicioAvaliacaoJs = isset($inicioAvaliacao) && $inicioAvaliacao
+        ? \Carbon\Carbon::parse($inicioAvaliacao)->timestamp * 1000
+        : now()->timestamp * 1000;
+
     $totalPerguntas = $perguntas->count();
 @endphp
 
@@ -112,7 +120,7 @@
             </div>
 
             <div class="p-5 sm:p-6">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                     <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-4">
                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
@@ -132,6 +140,22 @@
                         <h3 class="text-2xl font-extrabold text-[#003C2F] mt-1">
                             Pós-teste
                         </h3>
+                    </div>
+
+                    <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-4">
+                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                            Tempo mínimo
+                        </p>
+
+                        <h3 class="text-2xl font-extrabold text-[#003C2F] mt-1">
+                            {{ $tempoMinimo > 0 ? $tempoMinimo . ' min' : 'Livre' }}
+                        </h3>
+
+                        @if($tempoMinimo > 0)
+                            <p id="textoTempoMinimo" class="text-[11px] text-[#60756B] mt-1 font-bold">
+                                Aguarde para finalizar.
+                            </p>
+                        @endif
                     </div>
 
                     <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-4">
@@ -273,6 +297,7 @@
                             </div>
 
                             <button type="button"
+                                    id="btnFinalizarPosTeste"
                                     onclick="confirmarEnvioPosTeste()"
                                     class="w-full sm:w-auto bg-[#005543] hover:bg-[#004636] text-white px-7 py-3 rounded-2xl font-extrabold transition shadow-sm">
                                 Finalizar pós-teste
@@ -320,8 +345,22 @@
 
     let finalizandoFormulario = false;
     const tempoLimiteMinutos = {{ $tempoLimite }};
+    const tempoMinimoMinutos = {{ $tempoMinimo }};
+    const inicioAvaliacaoMs = {{ $inicioAvaliacaoJs }};
     const totalPerguntas = {{ $totalPerguntas }};
     const form = document.getElementById('formPosTeste');
+
+    @if(session('error'))
+        Swal.fire({
+            icon: 'warning',
+            title: 'Atenção',
+            text: @json(session('error')),
+            confirmButtonColor: '#005543',
+            background: '#ffffff',
+            color: '#0f172a'
+        });
+    @endif
+
 
     function confirmarSaidaBonito() {
         Swal.fire({
@@ -381,6 +420,62 @@
         if (barra) barra.style.width = percentual + '%';
     }
 
+    function segundosDesdeInicio() {
+        return Math.floor((Date.now() - inicioAvaliacaoMs) / 1000);
+    }
+
+    function segundosRestantesTempoMinimo() {
+        if (tempoMinimoMinutos <= 0) {
+            return 0;
+        }
+
+        const minimoSegundos = tempoMinimoMinutos * 60;
+        const restantes = minimoSegundos - segundosDesdeInicio();
+
+        return restantes > 0 ? restantes : 0;
+    }
+
+    function formatarTempo(segundos) {
+        const minutos = Math.floor(segundos / 60);
+        const resto = segundos % 60;
+
+        return String(minutos).padStart(2, '0') + ':' + String(resto).padStart(2, '0');
+    }
+
+    function atualizarTempoMinimoVisual() {
+        const restantes = segundosRestantesTempoMinimo();
+        const texto = document.getElementById('textoTempoMinimo');
+        const botao = document.getElementById('btnFinalizarPosTeste');
+
+        if (tempoMinimoMinutos <= 0) {
+            return;
+        }
+
+        if (restantes > 0) {
+            if (texto) {
+                texto.innerText = 'Libera em ' + formatarTempo(restantes);
+            }
+
+            if (botao) {
+                botao.innerText = 'Aguarde ' + formatarTempo(restantes);
+                botao.classList.add('bg-gray-400', 'hover:bg-gray-400');
+                botao.classList.remove('bg-[#005543]', 'hover:bg-[#004636]');
+            }
+        } else {
+            if (texto) {
+                texto.innerText = 'Tempo mínimo atingido.';
+                texto.classList.remove('text-[#60756B]');
+                texto.classList.add('text-green-700');
+            }
+
+            if (botao) {
+                botao.innerText = 'Finalizar pós-teste';
+                botao.classList.remove('bg-gray-400', 'hover:bg-gray-400');
+                botao.classList.add('bg-[#005543]', 'hover:bg-[#004636]');
+            }
+        }
+    }
+
     function confirmarEnvioPosTeste() {
         if (!form) return;
 
@@ -395,6 +490,31 @@
                 icon: 'warning',
                 title: 'Ainda faltam respostas',
                 text: 'Responda todas as questões antes de finalizar o pós-teste.',
+                confirmButtonColor: '#005543',
+                background: '#ffffff',
+                color: '#0f172a'
+            });
+            return;
+        }
+
+        const restantesMinimo = segundosRestantesTempoMinimo();
+
+        if (restantesMinimo > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Tempo mínimo não atingido',
+                html: `
+                    <div style="text-align:center;">
+                        <p style="color:#475569; font-size:15px; line-height:1.6;">
+                            Este pós-teste exige permanência mínima de
+                            <strong>${tempoMinimoMinutos} minuto(s)</strong>.
+                        </p>
+                        <p style="color:#dc2626; font-size:16px; font-weight:800; margin-top:12px;">
+                            Aguarde mais ${formatarTempo(restantesMinimo)} para finalizar.
+                        </p>
+                    </div>
+                `,
+                confirmButtonText: 'Continuar respondendo',
                 confirmButtonColor: '#005543',
                 background: '#ffffff',
                 color: '#0f172a'
@@ -501,6 +621,11 @@
     });
 
     atualizarProgressoRespostas();
+    atualizarTempoMinimoVisual();
+
+    if (tempoMinimoMinutos > 0) {
+        setInterval(atualizarTempoMinimoVisual, 1000);
+    }
 </script>
 
 @endsection

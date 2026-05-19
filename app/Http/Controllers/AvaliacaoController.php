@@ -315,7 +315,9 @@ class AvaliacaoController extends Controller
                 ->values();
         }
 
-        return view('avaliacoes.show', compact('avaliacao', 'perguntas'));
+        $inicioAvaliacao = session()->get($chaveInicio);
+
+        return view('avaliacoes.show', compact('avaliacao', 'perguntas', 'inicioAvaliacao'));
     }
 
     // =========================
@@ -349,7 +351,9 @@ class AvaliacaoController extends Controller
         $validacaoTempo = $this->validarTempoAvaliacao($avaliacao, $id, $alunoId);
 
         if ($validacaoTempo !== true) {
-            return back()->with('error', $validacaoTempo);
+            return back()
+                ->withInput()
+                ->with('error', $validacaoTempo);
         }
 
         $perguntas = DB::table('perguntas')
