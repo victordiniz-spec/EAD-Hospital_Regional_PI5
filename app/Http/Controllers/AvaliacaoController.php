@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Carbon;
 
 class AvaliacaoController extends Controller
 {
@@ -76,9 +77,24 @@ class AvaliacaoController extends Controller
         $request->validate([
             'avaliacao.titulo' => 'required|string|max:255',
             'avaliacao.tempo_limite' => 'nullable|integer|min:1',
+            'avaliacao.tempo_minimo' => 'nullable|integer|min:0',
             'aula_id' => 'required|integer',
             'perguntas' => 'required|array|min:1',
         ]);
+
+        $tempoMinimo = isset($request->avaliacao['tempo_minimo'])
+            ? (int) $request->avaliacao['tempo_minimo']
+            : 0;
+
+        $tempoMaximo = isset($request->avaliacao['tempo_limite'])
+            ? (int) $request->avaliacao['tempo_limite']
+            : null;
+
+        if ($tempoMaximo && $tempoMinimo > $tempoMaximo) {
+            return back()
+                ->withInput()
+                ->with('error', 'O tempo mínimo não pode ser maior que o tempo máximo do pós-teste.');
+        }
 
         DB::beginTransaction();
 
@@ -102,6 +118,10 @@ class AvaliacaoController extends Controller
                 'tipo' => 'normal',
                 'updated_at' => now(),
             ];
+
+            if (Schema::hasColumn('avaliacoes', 'tempo_minimo')) {
+                $dadosAvaliacao['tempo_minimo'] = $request->avaliacao['tempo_minimo'] ?? 0;
+            }
 
             if ($avaliacaoExistente) {
                 $avaliacaoId = $avaliacaoExistente->id;
@@ -166,21 +186,6 @@ class AvaliacaoController extends Controller
         DB::beginTransaction();
 
         try {
-            /*
-            |--------------------------------------------------------------------------
-            | IMPORTANTE
-            |--------------------------------------------------------------------------
-            | Antes o sistema sempre fazia INSERT de uma nova prova final.
-            | A tela do aluno buscava a primeira prova final encontrada.
-            | Resultado: você atualizava, aparecia sucesso, mas o aluno continuava vendo
-            | a prova antiga.
-            |
-            | Agora:
-            | - se veio avaliacao_id, atualiza aquela prova;
-            | - se não veio, procura uma prova final existente;
-            | - se não existir nenhuma, cria uma nova.
-            */
-
             $avaliacaoFinal = null;
 
             if ($request->filled('avaliacao_id')) {
@@ -205,7 +210,6 @@ class AvaliacaoController extends Controller
                 'updated_at' => now(),
             ];
 
-            // Só grava esses campos se existirem na tabela, para evitar erro 500.
             if (Schema::hasColumn('avaliacoes', 'nota_minima')) {
                 $dadosAvaliacao['nota_minima'] = $request->nota_minima ?? 70;
             }
@@ -221,7 +225,6 @@ class AvaliacaoController extends Controller
                     ->where('id', $avaliacaoId)
                     ->update($dadosAvaliacao);
 
-                // Remove as perguntas antigas para salvar exatamente o que está no formulário.
                 $this->apagarPerguntasRespostasDaAvaliacao($avaliacaoId);
 
                 $mensagem = 'Prova final atualizada com sucesso!';
@@ -256,9 +259,16 @@ class AvaliacaoController extends Controller
 
     // =========================
     // MOSTRAR AVALIAÇÃO NORMAL / PÓS-TESTE
+    // PERGUNTAS E ALTERNATIVAS EMBARALHADAS POR ALUNO
     // =========================
     public function show($id)
     {
+        $alunoId = auth()->id();
+
+        if (!$alunoId) {
+            return redirect()->route('login');
+        }
+
         $avaliacao = DB::table('avaliacoes')->where('id', $id)->first();
 
         if (!$avaliacao) {
@@ -267,16 +277,42 @@ class AvaliacaoController extends Controller
                 ->with('error', 'Pós-teste não encontrado.');
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | REGISTRA O INÍCIO DO PÓS-TESTE NA SESSÃO
+        |--------------------------------------------------------------------------
+        | Isso permite validar tempo mínimo e tempo máximo no servidor.
+        | Mesmo que o aluno tente burlar o JavaScript, o controller confere.
+        */
+        $chaveInicio = $this->chaveInicioAvaliacao($id, $alunoId);
+
+        if (!session()->has($chaveInicio)) {
+            session()->put($chaveInicio, now()->toDateTimeString());
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | EMBARALHAMENTO
+        |--------------------------------------------------------------------------
+        | Cada aluno recebe uma ordem diferente.
+        | O mesmo aluno mantém a mesma ordem se atualizar a página.
+        */
         $perguntas = DB::table('perguntas')
             ->where('avaliacao_id', $id)
-            ->orderBy('id')
-            ->get();
+            ->get()
+            ->sortBy(function ($pergunta) use ($alunoId, $id) {
+                return md5('pergunta-' . $alunoId . '-' . $id . '-' . $pergunta->id);
+            })
+            ->values();
 
         foreach ($perguntas as $pergunta) {
             $pergunta->respostas = DB::table('respostas')
                 ->where('pergunta_id', $pergunta->id)
-                ->orderBy('id')
-                ->get();
+                ->get()
+                ->sortBy(function ($resposta) use ($alunoId, $id, $pergunta) {
+                    return md5('resposta-' . $alunoId . '-' . $id . '-' . $pergunta->id . '-' . $resposta->id);
+                })
+                ->values();
         }
 
         return view('avaliacoes.show', compact('avaliacao', 'perguntas'));
@@ -291,6 +327,29 @@ class AvaliacaoController extends Controller
 
         if (!$alunoId) {
             return redirect()->route('login');
+        }
+
+        $avaliacao = DB::table('avaliacoes')
+            ->where('id', $id)
+            ->first();
+
+        if (!$avaliacao) {
+            return redirect()
+                ->route('dashboard.aluno')
+                ->with('error', 'Pós-teste não encontrado.');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDA TEMPO MÍNIMO E TEMPO MÁXIMO
+        |--------------------------------------------------------------------------
+        | tempo_minimo e tempo_limite estão em minutos.
+        | tempo_minimo só funciona se existir a coluna na tabela avaliacoes.
+        */
+        $validacaoTempo = $this->validarTempoAvaliacao($avaliacao, $id, $alunoId);
+
+        if ($validacaoTempo !== true) {
+            return back()->with('error', $validacaoTempo);
         }
 
         $perguntas = DB::table('perguntas')
@@ -324,6 +383,8 @@ class AvaliacaoController extends Controller
 
         $this->salvarNota($alunoId, $id, $nota);
         $this->salvarRespostasAluno($alunoId, $id, $perguntas, $request->respostas ?? []);
+
+        session()->forget($this->chaveInicioAvaliacao($id, $alunoId));
 
         return redirect()
             ->route('dashboard.aluno')
@@ -408,14 +469,6 @@ class AvaliacaoController extends Controller
             return redirect()->route('login');
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | BUSCAR A PROVA FINAL CORRETA
-        |--------------------------------------------------------------------------
-        | Antes usava first(), então muitas vezes carregava a prova antiga.
-        | Agora usa a mais recente, que é a que foi criada/atualizada por último.
-        */
-
         $avaliacao = DB::table('avaliacoes')
             ->where('tipo', 'final')
             ->orderBy('updated_at', 'desc')
@@ -430,20 +483,24 @@ class AvaliacaoController extends Controller
 
         $perguntas = DB::table('perguntas')
             ->where('avaliacao_id', $avaliacao->id)
-            ->orderBy('id')
-            ->get();
+            ->get()
+            ->sortBy(function ($pergunta) use ($alunoId, $avaliacao) {
+                return md5('final-pergunta-' . $alunoId . '-' . $avaliacao->id . '-' . $pergunta->id);
+            })
+            ->values();
 
         foreach ($perguntas as $pergunta) {
             $pergunta->respostas = DB::table('respostas')
                 ->where('pergunta_id', $pergunta->id)
-                ->orderBy('id')
-                ->get();
+                ->get()
+                ->sortBy(function ($resposta) use ($alunoId, $avaliacao, $pergunta) {
+                    return md5('final-resposta-' . $alunoId . '-' . $avaliacao->id . '-' . $pergunta->id . '-' . $resposta->id);
+                })
+                ->values();
         }
 
         $avaliacao->perguntas = $perguntas;
 
-        // A regra de 70% do curso atual está dentro da view dashboard.prova-final.
-        // O parâmetro ?teste=123 também é tratado na view.
         return view('dashboard.prova-final', compact('avaliacao'));
     }
 
@@ -457,13 +514,6 @@ class AvaliacaoController extends Controller
         if (!$alunoId) {
             return redirect()->route('login');
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | SEGURANÇA
-        |--------------------------------------------------------------------------
-        | Se o formulário não mandar avaliacao_id, usamos a prova final mais recente.
-        */
 
         $avaliacaoId = $request->avaliacao_id;
 
@@ -654,5 +704,63 @@ class AvaliacaoController extends Controller
                 ]
             );
         }
+    }
+
+    // =========================
+    // FUNÇÃO AUXILIAR: CHAVE DE INÍCIO DA AVALIAÇÃO
+    // =========================
+    private function chaveInicioAvaliacao($avaliacaoId, $alunoId)
+    {
+        return 'avaliacao_inicio_' . $avaliacaoId . '_aluno_' . $alunoId;
+    }
+
+    // =========================
+    // FUNÇÃO AUXILIAR: VALIDAR TEMPO MÍNIMO E TEMPO MÁXIMO
+    // =========================
+    private function validarTempoAvaliacao($avaliacao, $avaliacaoId, $alunoId)
+    {
+        $chaveInicio = $this->chaveInicioAvaliacao($avaliacaoId, $alunoId);
+
+        if (!session()->has($chaveInicio)) {
+            session()->put($chaveInicio, now()->toDateTimeString());
+            return 'Não foi possível confirmar o tempo de início do pós-teste. Abra o pós-teste novamente e tente finalizar depois.';
+        }
+
+        $inicio = Carbon::parse(session()->get($chaveInicio));
+        $agora = now();
+
+        $segundosDecorridos = $inicio->diffInSeconds($agora);
+        $minutosDecorridos = floor($segundosDecorridos / 60);
+
+        $tempoMinimo = 0;
+
+        if (Schema::hasColumn('avaliacoes', 'tempo_minimo') && isset($avaliacao->tempo_minimo)) {
+            $tempoMinimo = (int) $avaliacao->tempo_minimo;
+        }
+
+        $tempoMaximo = isset($avaliacao->tempo_limite) && $avaliacao->tempo_limite
+            ? (int) $avaliacao->tempo_limite
+            : 0;
+
+        if ($tempoMinimo > 0 && $segundosDecorridos < ($tempoMinimo * 60)) {
+            $faltamSegundos = ($tempoMinimo * 60) - $segundosDecorridos;
+            $faltamMinutos = ceil($faltamSegundos / 60);
+
+            return 'Você precisa permanecer pelo menos ' . $tempoMinimo . ' minuto(s) no pós-teste antes de finalizar. Aguarde mais aproximadamente ' . $faltamMinutos . ' minuto(s).';
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | TEMPO MÁXIMO
+        |--------------------------------------------------------------------------
+        | Damos uma tolerância de 60 segundos para evitar erro por atraso de rede.
+        */
+        if ($tempoMaximo > 0 && $segundosDecorridos > (($tempoMaximo * 60) + 60)) {
+            session()->forget($chaveInicio);
+
+            return 'O tempo máximo do pós-teste foi ultrapassado. Abra novamente e tente responder dentro do tempo definido.';
+        }
+
+        return true;
     }
 }

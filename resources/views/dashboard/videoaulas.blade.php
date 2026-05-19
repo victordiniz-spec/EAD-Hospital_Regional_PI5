@@ -1009,7 +1009,7 @@
                     </p>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
                     <div>
                         <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
                             Título do pós-teste
@@ -1020,11 +1020,61 @@
                                value="{{ old('avaliacao.titulo') }}"
                                placeholder="Ex: Pós-teste da Aula 01"
                                class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+
+                        <p class="text-xs text-[#8A9B92] mt-1">
+                            Se deixar vazio, a aula será criada sem pós-teste.
+                        </p>
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
-                            Tempo limite
+                            Tempo mínimo para enviar
+                        </label>
+
+                        <input type="hidden"
+                               name="avaliacao[tempo_minimo]"
+                               id="tempoMinimoTotalCriar"
+                               value="{{ old('avaliacao.tempo_minimo') }}">
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] uppercase tracking-widest font-extrabold text-[#8A9B92] mb-1">
+                                    Hora(s)
+                                </label>
+
+                                <input type="number"
+                                       id="tempoMinimoHorasCriar"
+                                       value="{{ old('avaliacao.tempo_minimo') ? floor(old('avaliacao.tempo_minimo') / 60) : '' }}"
+                                       placeholder="0"
+                                       min="0"
+                                       oninput="atualizarTempoMinimoCriar()"
+                                       class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] uppercase tracking-widest font-extrabold text-[#8A9B92] mb-1">
+                                    Minuto(s)
+                                </label>
+
+                                <input type="number"
+                                       id="tempoMinimoMinutosCriar"
+                                       value="{{ old('avaliacao.tempo_minimo') ? old('avaliacao.tempo_minimo') % 60 : '' }}"
+                                       placeholder="0"
+                                       min="0"
+                                       max="59"
+                                       oninput="atualizarTempoMinimoCriar()"
+                                       class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-[#8A9B92] mt-1">
+                            O aluno só conseguirá finalizar depois desse tempo.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                            Tempo máximo para responder
                         </label>
 
                         <input type="hidden"
@@ -1341,9 +1391,9 @@
 
             <div class="p-5 sm:p-7">
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
 
-                    <div class="md:col-span-2">
+                    <div>
                         <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
                             Título do pós-teste
                         </label>
@@ -1358,7 +1408,50 @@
 
                     <div>
                         <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
-                            Tempo limite
+                            Tempo mínimo para enviar
+                        </label>
+
+                        <input type="hidden"
+                               name="avaliacao[tempo_minimo]"
+                               id="miniTesteTempoMinimo">
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] uppercase tracking-widest font-extrabold text-[#8A9B92] mb-1">
+                                    Hora(s)
+                                </label>
+
+                                <input type="number"
+                                       id="miniTesteTempoMinimoHoras"
+                                       min="0"
+                                       placeholder="0"
+                                       oninput="atualizarTempoMinimoMiniTeste()"
+                                       class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] uppercase tracking-widest font-extrabold text-[#8A9B92] mb-1">
+                                    Minuto(s)
+                                </label>
+
+                                <input type="number"
+                                       id="miniTesteTempoMinimoMinutos"
+                                       min="0"
+                                       max="59"
+                                       placeholder="0"
+                                       oninput="atualizarTempoMinimoMiniTeste()"
+                                       class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-[#8A9B92] mt-1">
+                            O aluno só poderá finalizar depois desse tempo.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
+                            Tempo máximo para responder
                         </label>
 
                         <input type="hidden"
@@ -1514,6 +1607,31 @@
         atualizarTempoLimiteCriar();
     }
 
+    function preencherTempoMinimoCriacaoPorMinutos(totalMinutos) {
+        const total = normalizarNumeroTempo(totalMinutos);
+        const horasInput = document.getElementById('tempoMinimoHorasCriar');
+        const minutosInput = document.getElementById('tempoMinimoMinutosCriar');
+
+        if (horasInput) horasInput.value = total > 0 ? Math.floor(total / 60) : '';
+        if (minutosInput) minutosInput.value = total > 0 ? total % 60 : '';
+
+        atualizarTempoMinimoCriar();
+    }
+
+    function atualizarTempoMinimoCriar() {
+        const horasInput = document.getElementById('tempoMinimoHorasCriar');
+        const minutosInput = document.getElementById('tempoMinimoMinutosCriar');
+        const totalInput = document.getElementById('tempoMinimoTotalCriar');
+
+        if (!totalInput) return;
+
+        const horas = normalizarNumeroTempo(horasInput ? horasInput.value : 0);
+        const minutos = limitarMinutos(minutosInput);
+        const total = (horas * 60) + minutos;
+
+        totalInput.value = total > 0 ? total : 0;
+    }
+
     function atualizarTempoLimiteCriar() {
         const horasInput = document.getElementById('tempoLimiteHorasCriar');
         const minutosInput = document.getElementById('tempoLimiteMinutosCriar');
@@ -1526,6 +1644,20 @@
         const total = (horas * 60) + minutos;
 
         totalInput.value = total > 0 ? total : '';
+    }
+
+    function atualizarTempoMinimoMiniTeste() {
+        const horasInput = document.getElementById('miniTesteTempoMinimoHoras');
+        const minutosInput = document.getElementById('miniTesteTempoMinimoMinutos');
+        const totalInput = document.getElementById('miniTesteTempoMinimo');
+
+        if (!totalInput) return;
+
+        const horas = normalizarNumeroTempo(horasInput ? horasInput.value : 0);
+        const minutos = limitarMinutos(minutosInput);
+        const total = (horas * 60) + minutos;
+
+        totalInput.value = total > 0 ? total : 0;
     }
 
     function atualizarTempoLimiteMiniTeste() {
@@ -1599,6 +1731,7 @@
 
     function preencherPosTesteCriacao(avaliacao, perguntas) {
         preencherCampo('input[name="avaliacao[titulo]"]', avaliacao && avaliacao.titulo ? avaliacao.titulo : '');
+        preencherTempoMinimoCriacaoPorMinutos(avaliacao && avaliacao.tempo_minimo ? avaliacao.tempo_minimo : 0);
         preencherTempoCriacaoPorMinutos(avaliacao && avaliacao.tempo_limite ? avaliacao.tempo_limite : 0);
         preencherPerguntasCriacao(perguntas || []);
     }
@@ -1787,6 +1920,9 @@
         const tempoInput = document.getElementById('miniTesteTempo');
         const tempoHorasInput = document.getElementById('miniTesteTempoHoras');
         const tempoMinutosInput = document.getElementById('miniTesteTempoMinutos');
+        const tempoMinimoInput = document.getElementById('miniTesteTempoMinimo');
+        const tempoMinimoHorasInput = document.getElementById('miniTesteTempoMinimoHoras');
+        const tempoMinimoMinutosInput = document.getElementById('miniTesteTempoMinimoMinutos');
         const container = document.getElementById('miniTestePerguntasContainer');
         const btnSalvar = document.getElementById('btnSalvarMiniTeste');
 
@@ -1804,6 +1940,18 @@
         tituloInput.value = avaliacao && avaliacao.titulo
             ? avaliacao.titulo
             : 'Pós-teste - ' + (nomeAula || 'Aula');
+
+        const tempoMinimoSalvo = avaliacao && avaliacao.tempo_minimo
+            ? parseInt(avaliacao.tempo_minimo)
+            : 0;
+
+        if (tempoMinimoHorasInput && tempoMinimoMinutosInput) {
+            tempoMinimoHorasInput.value = tempoMinimoSalvo > 0 ? Math.floor(tempoMinimoSalvo / 60) : '';
+            tempoMinimoMinutosInput.value = tempoMinimoSalvo > 0 ? tempoMinimoSalvo % 60 : '';
+            atualizarTempoMinimoMiniTeste();
+        } else if (tempoMinimoInput) {
+            tempoMinimoInput.value = tempoMinimoSalvo > 0 ? tempoMinimoSalvo : 0;
+        }
 
         const tempoTotalSalvo = avaliacao && avaliacao.tempo_limite
             ? parseInt(avaliacao.tempo_limite)
@@ -2481,11 +2629,38 @@
         });
     }
 
+    function validarTempoMinimoMaximo(tempoMinimoId, tempoMaximoId) {
+        const minimoInput = document.getElementById(tempoMinimoId);
+        const maximoInput = document.getElementById(tempoMaximoId);
+
+        const minimo = minimoInput && minimoInput.value !== '' ? parseInt(minimoInput.value) : 0;
+        const maximo = maximoInput && maximoInput.value !== '' ? parseInt(maximoInput.value) : 0;
+
+        if (maximo > 0 && minimo > maximo) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Tempo inválido',
+                text: 'O tempo mínimo não pode ser maior que o tempo máximo do pós-teste.',
+                confirmButtonColor: '#004D3A'
+            });
+
+            return false;
+        }
+
+        return true;
+    }
+
     const formAula = document.getElementById('formAula');
 
     if (formAula) {
-        formAula.addEventListener('submit', function () {
+        formAula.addEventListener('submit', function (event) {
+            atualizarTempoMinimoCriar();
             atualizarTempoLimiteCriar();
+
+            if (!validarTempoMinimoMaximo('tempoMinimoTotalCriar', 'tempoLimiteTotalCriar')) {
+                event.preventDefault();
+                return;
+            }
 
             const btnSalvar = document.getElementById('btnSalvarAula');
 
@@ -2512,8 +2687,14 @@
     const formMiniTeste = document.getElementById('formMiniTeste');
 
     if (formMiniTeste) {
-        formMiniTeste.addEventListener('submit', function () {
+        formMiniTeste.addEventListener('submit', function (event) {
+            atualizarTempoMinimoMiniTeste();
             atualizarTempoLimiteMiniTeste();
+
+            if (!validarTempoMinimoMaximo('miniTesteTempoMinimo', 'miniTesteTempo')) {
+                event.preventDefault();
+                return;
+            }
 
             const btn = document.getElementById('btnSalvarMiniTeste');
 
