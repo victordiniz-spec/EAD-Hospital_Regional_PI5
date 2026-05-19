@@ -3,10 +3,10 @@
     type="button"
     onclick="abrirSidebarAluno()"
     class="
-        lg:hidden fixed left-4 top-[88px] z-[9997]
+        lg:hidden fixed left-4 top-[calc(env(safe-area-inset-top)+16px)] z-[9997]
         bg-[#004D3A] text-white p-3 rounded-2xl shadow-2xl
-        border border-white/30
-        hover:bg-[#003C2F] transition
+        border border-white/40
+        hover:bg-[#003C2F] active:scale-95 transition
     "
     aria-label="Abrir menu"
 >
