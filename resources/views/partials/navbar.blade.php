@@ -1,6 +1,6 @@
 <nav class="w-full bg-white/90 backdrop-blur border-b border-[#E3EBE4] px-4 sm:px-6 lg:px-8 py-3 flex justify-end items-center shadow-sm relative z-50">
 
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2 sm:gap-3 max-w-full">
 
         @php
             use Illuminate\Support\Facades\DB;
@@ -21,11 +21,14 @@
             $tipoFormatado = match ($tipoUsuario) {
                 'residente' => 'Residente',
                 'preceptor' => 'Preceptor',
+                'professor' => 'Preceptor',
                 'admin' => 'Administrador',
-                default => ucfirst($tipoUsuario),
+                'administrador' => 'Administrador',
+                'super_admin' => 'Super Administrador',
+                default => ucfirst(str_replace('_', ' ', $tipoUsuario)),
             };
 
-            $mostrarAvisosAluno = in_array($tipoUsuario, ['residente', 'preceptor']);
+            $mostrarAvisosAluno = in_array($tipoUsuario, ['residente', 'preceptor', 'aluno']);
 
             $avisosNavbar = collect();
 
@@ -60,19 +63,23 @@
             }
 
             $idsAvisosNavbar = $avisosNavbar->pluck('id')->values()->toArray();
+
+            $primeiroNome = $partes[0] ?? $nome;
+            $ultimoNome = count($partes) > 1 ? $partes[count($partes) - 1] : '';
+            $nomeMobile = trim($primeiroNome . ' ' . $ultimoNome);
         @endphp
 
         @if($mostrarAvisosAluno)
             <!-- NOTIFICAÇÕES DE AVISOS -->
-            <div class="relative">
+            <div class="relative shrink-0">
 
                 <button type="button"
                         onclick="toggleDropdownAvisosNavbar()"
-                        class="relative w-11 h-11 rounded-full bg-[#F8FBF8] border border-[#DCE7DE] flex items-center justify-center text-[#004D3A] hover:bg-[#EAF5EF] transition shadow-sm"
+                        class="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#F8FBF8] border border-[#DCE7DE] flex items-center justify-center text-[#004D3A] hover:bg-[#EAF5EF] transition shadow-sm"
                         title="Avisos">
 
                     <svg xmlns="http://www.w3.org/2000/svg"
-                         class="w-6 h-6"
+                         class="w-5 h-5 sm:w-6 sm:h-6"
                          fill="none"
                          viewBox="0 0 24 24"
                          stroke="currentColor">
@@ -90,7 +97,7 @@
 
                 <!-- DROPDOWN AVISOS -->
                 <div id="dropdownAvisosNavbar"
-                     class="hidden absolute right-0 mt-3 w-[340px] sm:w-[390px] bg-white border border-[#E3EBE4] rounded-3xl shadow-2xl overflow-hidden z-[999]">
+                     class="hidden fixed sm:absolute right-3 sm:right-0 top-[72px] sm:top-auto sm:mt-3 w-[calc(100vw-24px)] sm:w-[390px] bg-white border border-[#E3EBE4] rounded-3xl shadow-2xl overflow-hidden z-[999]">
 
                     <div class="p-5 border-b border-[#E3EBE4] bg-[#F8FBF8]">
 
@@ -189,35 +196,39 @@
         @endif
 
         <!-- NOME E TIPO DO USUÁRIO -->
-        <div class="text-right hidden sm:block">
-            <p class="text-sm font-semibold text-[#003C2F] leading-tight">
-                {{ $nome }}
+        <button type="button"
+                onclick="toggleMenuPerfilNavbar()"
+                class="text-right min-w-0 max-w-[150px] sm:max-w-[260px] hover:bg-[#F8FBF8] px-2 py-1.5 rounded-2xl transition">
+
+            <p class="text-xs sm:text-sm font-extrabold text-[#003C2F] leading-tight truncate">
+                <span class="sm:hidden">{{ $nomeMobile }}</span>
+                <span class="hidden sm:inline">{{ $nome }}</span>
             </p>
 
-            <p class="text-xs text-[#6B7C73]">
+            <p class="text-[10px] sm:text-xs text-[#6B7C73] font-bold truncate">
                 {{ $tipoFormatado }}
             </p>
-        </div>
+        </button>
 
         <!-- MENU DO PERFIL -->
-        <div class="relative">
+        <div class="relative shrink-0">
 
             <button type="button"
                     onclick="toggleMenuPerfilNavbar()"
-                    class="w-11 h-11 rounded-full bg-[#00A63E] flex items-center justify-center text-white font-bold shadow-md ring-4 ring-green-100 hover:scale-105 transition"
+                    class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#00A63E] flex items-center justify-center text-white font-bold shadow-md ring-4 ring-green-100 hover:scale-105 transition"
                     title="Menu do perfil">
                 {{ $iniciais }}
             </button>
 
             <div id="menuPerfilNavbar"
-                 class="hidden absolute right-0 mt-3 w-[280px] bg-white border border-[#E3EBE4] rounded-3xl shadow-2xl overflow-hidden z-[999]">
+                 class="hidden fixed sm:absolute right-3 sm:right-0 top-[72px] sm:top-auto sm:mt-3 w-[calc(100vw-24px)] sm:w-[300px] bg-white border border-[#E3EBE4] rounded-3xl shadow-2xl overflow-hidden z-[999]">
 
                 <!-- TOPO DO MENU -->
                 <div class="p-5 bg-[#F8FBF8] border-b border-[#E3EBE4]">
 
                     <div class="flex items-center gap-3">
 
-                        <div class="w-12 h-12 rounded-full bg-[#00A63E] text-white flex items-center justify-center font-extrabold shadow">
+                        <div class="w-12 h-12 rounded-full bg-[#00A63E] text-white flex items-center justify-center font-extrabold shadow shrink-0">
                             {{ $iniciais }}
                         </div>
 
@@ -226,7 +237,7 @@
                                 {{ $nome }}
                             </p>
 
-                            <p class="text-xs text-[#60756B]">
+                            <p class="text-xs text-[#60756B] font-bold">
                                 {{ $tipoFormatado }}
                             </p>
                         </div>
@@ -389,6 +400,13 @@
             if (!dropdown) return;
 
             dropdown.classList.toggle('hidden');
+
+            const menuPerfil = document.getElementById('menuPerfilNavbar');
+
+            if (menuPerfil) {
+                menuPerfil.classList.add('hidden');
+            }
+
             atualizarAvisosNavbar();
         }
 
