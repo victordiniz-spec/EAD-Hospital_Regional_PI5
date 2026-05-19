@@ -983,6 +983,7 @@
                     <textarea name="descricao"
                               placeholder="Descreva brevemente o conteúdo da aula..."
                               rows="3"
+                              required
                               class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none">{{ old('descricao') }}</textarea>
                 </div>
 
@@ -1005,7 +1006,7 @@
                     </h3>
 
                     <p class="text-xs text-[#60756B] mt-1">
-                        Opcional. Você pode criar perguntas novas ou importar perguntas antigas.
+                        Obrigatório. Para salvar a aula, preencha o pós-teste, o tempo e marque uma alternativa correta em cada pergunta.
                     </p>
                 </div>
 
@@ -1019,6 +1020,7 @@
                                name="avaliacao[titulo]"
                                value="{{ old('avaliacao.titulo') }}"
                                placeholder="Ex: Pós-teste da Aula 01"
+                               required
                                class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
 
                         <p class="text-xs text-[#8A9B92] mt-1">
@@ -2333,6 +2335,7 @@
                 type="text"
                 name="perguntas[${perguntaIndex}][pergunta]"
                 placeholder="Digite o enunciado da questão aqui..."
+                required
                 class="input-pergunta w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition mb-3"
             >
 
@@ -2392,6 +2395,7 @@
                 type="text"
                 name="perguntas[${index}][respostas][]"
                 placeholder="Texto da alternativa ${letra}..."
+                required
                 class="input-resposta flex-1 text-sm text-[#003C2F] bg-transparent placeholder-[#8A9B92] focus:outline-none"
             >
 
@@ -2629,6 +2633,201 @@
         });
     }
 
+
+    function mostrarErroValidacao(titulo, texto, elemento = null) {
+        if (elemento && typeof elemento.focus === 'function') {
+            setTimeout(() => elemento.focus(), 150);
+        }
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: titulo,
+                text: texto,
+                confirmButtonText: 'Entendi',
+                confirmButtonColor: '#004D3A'
+            });
+        } else {
+            alert(titulo + '\n\n' + texto);
+        }
+    }
+
+    function valorCampo(campo) {
+        return campo && campo.value ? campo.value.trim() : '';
+    }
+
+    function marcarCampoErro(campo) {
+        if (!campo) return;
+
+        campo.classList.add('ring-2', 'ring-red-400', 'border-red-400');
+
+        setTimeout(() => {
+            campo.classList.remove('ring-2', 'ring-red-400', 'border-red-400');
+        }, 3500);
+    }
+
+    function existePerguntaImportada() {
+        return document.querySelectorAll('input[name="perguntas_importadas[]"]').length > 0;
+    }
+
+    function validarPerguntasDoContainer(containerId, nomeExibicao = 'pós-teste') {
+        const container = document.getElementById(containerId);
+
+        if (!container) {
+            return { valido: true };
+        }
+
+        const cards = Array.from(container.querySelectorAll('.pergunta-card, .mini-teste-card'));
+
+        if (cards.length === 0) {
+            return {
+                valido: false,
+                titulo: 'Adicione uma pergunta',
+                texto: 'Para salvar o ' + nomeExibicao + ', adicione pelo menos uma pergunta ou importe uma pergunta antiga.'
+            };
+        }
+
+        for (let i = 0; i < cards.length; i++) {
+            const card = cards[i];
+            const inputPergunta = card.querySelector('input[name*="[pergunta]"]');
+            const radios = Array.from(card.querySelectorAll('input[type="radio"]'));
+            const alternativas = Array.from(card.querySelectorAll('input[name*="[respostas]"]'));
+            const alternativasPreenchidas = alternativas.filter((input) => valorCampo(input) !== '');
+            const radioMarcado = radios.some((radio) => radio.checked);
+
+            if (!inputPergunta || valorCampo(inputPergunta) === '') {
+                marcarCampoErro(inputPergunta);
+                return {
+                    valido: false,
+                    titulo: 'Pergunta incompleta',
+                    texto: 'Preencha o enunciado da pergunta ' + (i + 1) + '.',
+                    elemento: inputPergunta
+                };
+            }
+
+            if (alternativasPreenchidas.length < 2) {
+                const primeiraVazia = alternativas.find((input) => valorCampo(input) === '') || alternativas[0];
+                marcarCampoErro(primeiraVazia);
+                return {
+                    valido: false,
+                    titulo: 'Alternativas incompletas',
+                    texto: 'A pergunta ' + (i + 1) + ' precisa ter pelo menos 2 alternativas preenchidas.',
+                    elemento: primeiraVazia
+                };
+            }
+
+            if (!radioMarcado) {
+                const primeiroRadio = radios[0];
+                if (primeiroRadio) marcarCampoErro(primeiroRadio);
+                return {
+                    valido: false,
+                    titulo: 'Alternativa correta não selecionada',
+                    texto: 'Marque a alternativa correta da pergunta ' + (i + 1) + ' antes de salvar.',
+                    elemento: primeiroRadio
+                };
+            }
+
+            const indiceMarcado = radios.find((radio) => radio.checked)?.value;
+            const alternativaMarcada = alternativas[parseInt(indiceMarcado ?? '-1')];
+
+            if (!alternativaMarcada || valorCampo(alternativaMarcada) === '') {
+                marcarCampoErro(alternativaMarcada);
+                return {
+                    valido: false,
+                    titulo: 'Alternativa correta vazia',
+                    texto: 'A alternativa marcada como correta na pergunta ' + (i + 1) + ' precisa estar preenchida.',
+                    elemento: alternativaMarcada
+                };
+            }
+        }
+
+        return { valido: true };
+    }
+
+    function validarCriacaoAulaCompleta() {
+        const form = document.getElementById('formAula');
+        if (!form) return true;
+
+        const cursoExistente = form.querySelector('select[name="curso_id"]');
+        const novoCurso = form.querySelector('input[name="novo_curso"]');
+        const moduloExistente = form.querySelector('select[name="modulo_id"]');
+        const novoModulo = form.querySelector('input[name="novo_modulo"]');
+        const tituloAula = form.querySelector('input[name="titulo"]');
+        const descricaoAula = form.querySelector('textarea[name="descricao"]');
+        const videoAula = form.querySelector('input[name="video_url"]');
+        const tituloTeste = form.querySelector('input[name="avaliacao[titulo]"]');
+        const tempoMaximo = document.getElementById('tempoLimiteTotalCriar');
+        const perguntasNovas = document.querySelectorAll('#perguntas-container .pergunta-card').length;
+        const temImportadas = existePerguntaImportada();
+
+        if (valorCampo(cursoExistente) === '' && valorCampo(novoCurso) === '') {
+            marcarCampoErro(cursoExistente);
+            marcarCampoErro(novoCurso);
+            return { valido: false, titulo: 'Curso obrigatório', texto: 'Selecione um curso existente ou informe o nome de um novo curso.', elemento: cursoExistente || novoCurso };
+        }
+
+        if (valorCampo(moduloExistente) === '' && valorCampo(novoModulo) === '') {
+            marcarCampoErro(moduloExistente);
+            marcarCampoErro(novoModulo);
+            return { valido: false, titulo: 'Módulo obrigatório', texto: 'Selecione um módulo existente ou informe o nome de um novo módulo.', elemento: moduloExistente || novoModulo };
+        }
+
+        if (valorCampo(tituloAula) === '') {
+            marcarCampoErro(tituloAula);
+            return { valido: false, titulo: 'Título obrigatório', texto: 'Informe o título da videoaula.', elemento: tituloAula };
+        }
+
+        if (valorCampo(descricaoAula) === '') {
+            marcarCampoErro(descricaoAula);
+            return { valido: false, titulo: 'Descrição obrigatória', texto: 'Informe uma descrição para a aula.', elemento: descricaoAula };
+        }
+
+        if (valorCampo(videoAula) === '') {
+            marcarCampoErro(videoAula);
+            return { valido: false, titulo: 'Vídeo obrigatório', texto: 'Cole o link do vídeo da aula.', elemento: videoAula };
+        }
+
+        if (valorCampo(tituloTeste) === '') {
+            marcarCampoErro(tituloTeste);
+            return { valido: false, titulo: 'Pós-teste obrigatório', texto: 'Informe o título do pós-teste.', elemento: tituloTeste };
+        }
+
+        if (!tempoMaximo || valorCampo(tempoMaximo) === '' || parseInt(tempoMaximo.value) <= 0) {
+            const tempoCampo = document.getElementById('tempoLimiteMinutosCriar') || document.getElementById('tempoLimiteHorasCriar');
+            marcarCampoErro(tempoCampo);
+            return { valido: false, titulo: 'Tempo máximo obrigatório', texto: 'Informe o tempo máximo do pós-teste.', elemento: tempoCampo };
+        }
+
+        if (perguntasNovas === 0 && !temImportadas) {
+            return { valido: false, titulo: 'Perguntas obrigatórias', texto: 'Adicione pelo menos uma pergunta nova ou importe uma pergunta antiga para o pós-teste.' };
+        }
+
+        if (perguntasNovas > 0) {
+            const validacaoPerguntas = validarPerguntasDoContainer('perguntas-container', 'pós-teste da aula');
+            if (!validacaoPerguntas.valido) return validacaoPerguntas;
+        }
+
+        return { valido: true };
+    }
+
+    function validarMiniTesteCompleto() {
+        const titulo = document.getElementById('miniTesteTitulo');
+        const tempoMaximo = document.getElementById('miniTesteTempo');
+
+        if (valorCampo(titulo) === '') {
+            marcarCampoErro(titulo);
+            return { valido: false, titulo: 'Título obrigatório', texto: 'Informe o título do pós-teste.', elemento: titulo };
+        }
+
+        if (!tempoMaximo || valorCampo(tempoMaximo) === '' || parseInt(tempoMaximo.value) <= 0) {
+            const tempoCampo = document.getElementById('miniTesteTempoMinutos') || document.getElementById('miniTesteTempoHoras') || tempoMaximo;
+            marcarCampoErro(tempoCampo);
+            return { valido: false, titulo: 'Tempo máximo obrigatório', texto: 'Informe o tempo máximo do pós-teste.', elemento: tempoCampo };
+        }
+
+        return validarPerguntasDoContainer('miniTestePerguntasContainer', 'pós-teste');
+    }
+
     function validarTempoMinimoMaximo(tempoMinimoId, tempoMaximoId) {
         const minimoInput = document.getElementById(tempoMinimoId);
         const maximoInput = document.getElementById(tempoMaximoId);
@@ -2656,6 +2855,13 @@
         formAula.addEventListener('submit', function (event) {
             atualizarTempoMinimoCriar();
             atualizarTempoLimiteCriar();
+
+            const validacaoAula = validarCriacaoAulaCompleta();
+            if (!validacaoAula.valido) {
+                event.preventDefault();
+                mostrarErroValidacao(validacaoAula.titulo, validacaoAula.texto, validacaoAula.elemento || null);
+                return;
+            }
 
             if (!validarTempoMinimoMaximo('tempoMinimoTotalCriar', 'tempoLimiteTotalCriar')) {
                 event.preventDefault();
@@ -2690,6 +2896,13 @@
         formMiniTeste.addEventListener('submit', function (event) {
             atualizarTempoMinimoMiniTeste();
             atualizarTempoLimiteMiniTeste();
+
+            const validacaoMiniTeste = validarMiniTesteCompleto();
+            if (!validacaoMiniTeste.valido) {
+                event.preventDefault();
+                mostrarErroValidacao(validacaoMiniTeste.titulo, validacaoMiniTeste.texto, validacaoMiniTeste.elemento || null);
+                return;
+            }
 
             if (!validarTempoMinimoMaximo('miniTesteTempoMinimo', 'miniTesteTempo')) {
                 event.preventDefault();
