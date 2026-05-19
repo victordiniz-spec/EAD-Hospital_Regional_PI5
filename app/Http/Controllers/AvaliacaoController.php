@@ -315,9 +315,7 @@ class AvaliacaoController extends Controller
                 ->values();
         }
 
-        $inicioAvaliacao = session()->get($chaveInicio);
-
-        return view('avaliacoes.show', compact('avaliacao', 'perguntas', 'inicioAvaliacao'));
+        return view('avaliacoes.show', compact('avaliacao', 'perguntas'));
     }
 
     // =========================
@@ -351,9 +349,7 @@ class AvaliacaoController extends Controller
         $validacaoTempo = $this->validarTempoAvaliacao($avaliacao, $id, $alunoId);
 
         if ($validacaoTempo !== true) {
-            return back()
-                ->withInput()
-                ->with('error', $validacaoTempo);
+            return back()->with('error', $validacaoTempo);
         }
 
         $perguntas = DB::table('perguntas')
@@ -393,6 +389,36 @@ class AvaliacaoController extends Controller
         return redirect()
             ->route('dashboard.aluno')
             ->with('success', 'Você concluiu o pós-teste. Nota: ' . number_format($nota, 1));
+    }
+
+    // =========================
+    // REINICIAR TEMPO DO PÓS-TESTE
+    // =========================
+    public function resetarTempo(Request $request, $id)
+    {
+        $alunoId = auth()->id();
+
+        if (!$alunoId) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuário não autenticado.'
+                ], 401);
+            }
+
+            return redirect()->route('login');
+        }
+
+        session()->forget($this->chaveInicioAvaliacao($id, $alunoId));
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Tempo do pós-teste reiniciado com sucesso.'
+            ]);
+        }
+
+        return back()->with('success', 'Tempo do pós-teste reiniciado. Ao abrir novamente, o tempo começará do zero.');
     }
 
     // =========================

@@ -13,10 +13,6 @@
         ? (int) $avaliacao->tempo_minimo
         : 0;
 
-    $inicioAvaliacaoJs = isset($inicioAvaliacao) && $inicioAvaliacao
-        ? \Carbon\Carbon::parse($inicioAvaliacao)->timestamp * 1000
-        : now()->timestamp * 1000;
-
     $totalPerguntas = $perguntas->count();
 @endphp
 
@@ -99,7 +95,7 @@
                             </div>
 
                             <p class="text-xs text-white/70 mt-1">
-                                Limite: {{ $tempoLimite }} minuto(s)
+                                Mínimo: {{ $tempoMinimo }} minuto(s) • Máximo: {{ $tempoLimite }} minuto(s)
                             </p>
                         @else
                             <p class="text-[11px] uppercase tracking-widest text-white/70 font-extrabold">
@@ -120,7 +116,7 @@
             </div>
 
             <div class="p-5 sm:p-6">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
                     <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-4">
                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
@@ -140,22 +136,6 @@
                         <h3 class="text-2xl font-extrabold text-[#003C2F] mt-1">
                             Pós-teste
                         </h3>
-                    </div>
-
-                    <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-4">
-                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                            Tempo mínimo
-                        </p>
-
-                        <h3 class="text-2xl font-extrabold text-[#003C2F] mt-1">
-                            {{ $tempoMinimo > 0 ? $tempoMinimo . ' min' : 'Livre' }}
-                        </h3>
-
-                        @if($tempoMinimo > 0)
-                            <p id="textoTempoMinimo" class="text-[11px] text-[#60756B] mt-1 font-bold">
-                                Aguarde para finalizar.
-                            </p>
-                        @endif
                     </div>
 
                     <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-4">
@@ -299,7 +279,7 @@
                             <button type="button"
                                     id="btnFinalizarPosTeste"
                                     onclick="confirmarEnvioPosTeste()"
-                                    class="w-full sm:w-auto bg-[#005543] hover:bg-[#004636] text-white px-7 py-3 rounded-2xl font-extrabold transition shadow-sm">
+                                    class="w-full sm:w-auto bg-[#005543] hover:bg-[#004636] text-white px-7 py-3 rounded-2xl font-extrabold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
                                 Finalizar pós-teste
                             </button>
 
@@ -344,11 +324,18 @@
     document.body.classList.add('prova-em-andamento');
 
     let finalizandoFormulario = false;
+    let saiuConfirmado = false;
+    let tempoMinimoLiberado = false;
+    let avisoSaidaAberto = false;
+
     const tempoLimiteMinutos = {{ $tempoLimite }};
     const tempoMinimoMinutos = {{ $tempoMinimo }};
-    const inicioAvaliacaoMs = {{ $inicioAvaliacaoJs }};
     const totalPerguntas = {{ $totalPerguntas }};
+    const avaliacaoId = {{ $avaliacao->id }};
+    const csrfToken = '{{ csrf_token() }}';
+    const rotaResetarTempo = '/avaliacoes/' + avaliacaoId + '/resetar-tempo';
     const form = document.getElementById('formPosTeste');
+    const btnFinalizarPosTeste = document.getElementById('btnFinalizarPosTeste');
 
     @if(session('error'))
         Swal.fire({
@@ -361,23 +348,62 @@
         });
     @endif
 
+    async function resetarTempoPosTeste() {
+        try {
+            await fetch(rotaResetarTempo, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ motivo: 'saida_do_pos_teste' }),
+                keepalive: true
+            });
+        } catch (e) {}
+    }
+
+    function resetarAlternativasMarcadas() {
+        document.querySelectorAll('input[type="radio"]').forEach((radio) => {
+            radio.checked = false;
+        });
+
+        document.querySelectorAll('.opcao-resposta').forEach((label) => {
+            label.classList.remove('selecionada');
+        });
+
+        atualizarProgressoRespostas();
+    }
+
+    function mensagemSaidaReinicio() {
+        return `
+            <div style="text-align:center;">
+                <p style="color:#475569; font-size:15px; line-height:1.6; margin-bottom:10px;">
+                    Tem certeza que deseja sair do pós-teste?
+                </p>
+                <p style="color:#dc2626; font-size:14px; line-height:1.6; font-weight:700;">
+                    Se sair agora, o tempo mínimo e o tempo máximo serão reiniciados.
+                    As alternativas marcadas também serão apagadas.
+                </p>
+                <p style="color:#64748b; font-size:13px; line-height:1.5; margin-top:10px;">
+                    Ao entrar novamente, o pós-teste começará do zero.
+                </p>
+            </div>
+        `;
+    }
 
     function confirmarSaidaBonito() {
+        if (avisoSaidaAberto) return;
+
+        avisoSaidaAberto = true;
+
         Swal.fire({
             icon: 'warning',
-            title: 'Deseja sair do pós-teste?',
-            html: `
-                <div style="text-align: center;">
-                    <p style="color:#475569; font-size:15px; line-height:1.6; margin-bottom: 10px;">
-                        Se você sair agora, suas respostas não serão enviadas.
-                    </p>
-                    <p style="color:#64748b; font-size:14px; line-height:1.5;">
-                        Ao voltar para o pós-teste, o tempo será reiniciado.
-                    </p>
-                </div>
-            `,
+            title: 'Sair do pós-teste?',
+            html: mensagemSaidaReinicio(),
             showCancelButton: true,
-            confirmButtonText: 'Sim, sair',
+            confirmButtonText: 'Sim, sair e reiniciar',
             cancelButtonText: 'Continuar respondendo',
             confirmButtonColor: '#dc2626',
             cancelButtonColor: '#005543',
@@ -389,9 +415,16 @@
                 confirmButton: 'rounded-2xl',
                 cancelButton: 'rounded-2xl'
             }
-        }).then((result) => {
+        }).then(async (result) => {
+            avisoSaidaAberto = false;
+
             if (result.isConfirmed) {
                 finalizandoFormulario = true;
+                saiuConfirmado = true;
+
+                resetarAlternativasMarcadas();
+                await resetarTempoPosTeste();
+
                 window.location.href = "{{ route('aluno.aulas') }}";
             }
         });
@@ -420,64 +453,75 @@
         if (barra) barra.style.width = percentual + '%';
     }
 
-    function segundosDesdeInicio() {
-        return Math.floor((Date.now() - inicioAvaliacaoMs) / 1000);
-    }
-
     function segundosRestantesTempoMinimo() {
         if (tempoMinimoMinutos <= 0) {
             return 0;
         }
 
-        const minimoSegundos = tempoMinimoMinutos * 60;
-        const restantes = minimoSegundos - segundosDesdeInicio();
+        const minimoEmSegundos = tempoMinimoMinutos * 60;
+        const decorrido = window.tempoMinimoDecorridoSegundos !== undefined
+            ? window.tempoMinimoDecorridoSegundos
+            : 0;
 
-        return restantes > 0 ? restantes : 0;
+        return Math.max(0, minimoEmSegundos - decorrido);
     }
 
     function formatarTempo(segundos) {
         const minutos = Math.floor(segundos / 60);
-        const resto = segundos % 60;
+        const restoSegundos = segundos % 60;
 
-        return String(minutos).padStart(2, '0') + ':' + String(resto).padStart(2, '0');
+        return String(minutos).padStart(2, '0') + ':' + String(restoSegundos).padStart(2, '0');
     }
 
-    function atualizarTempoMinimoVisual() {
-        const restantes = segundosRestantesTempoMinimo();
-        const texto = document.getElementById('textoTempoMinimo');
-        const botao = document.getElementById('btnFinalizarPosTeste');
+    function verificarLiberacaoTempoMinimo() {
+        if (!btnFinalizarPosTeste) return;
 
         if (tempoMinimoMinutos <= 0) {
+            tempoMinimoLiberado = true;
+            btnFinalizarPosTeste.disabled = false;
+            btnFinalizarPosTeste.innerText = 'Finalizar pós-teste';
             return;
         }
 
-        if (restantes > 0) {
-            if (texto) {
-                texto.innerText = 'Libera em ' + formatarTempo(restantes);
-            }
+        const restante = segundosRestantesTempoMinimo();
 
-            if (botao) {
-                botao.innerText = 'Aguarde ' + formatarTempo(restantes);
-                botao.classList.add('bg-gray-400', 'hover:bg-gray-400');
-                botao.classList.remove('bg-[#005543]', 'hover:bg-[#004636]');
-            }
+        if (restante > 0) {
+            tempoMinimoLiberado = false;
+            btnFinalizarPosTeste.disabled = true;
+            btnFinalizarPosTeste.innerText = 'Aguarde ' + formatarTempo(restante);
         } else {
-            if (texto) {
-                texto.innerText = 'Tempo mínimo atingido.';
-                texto.classList.remove('text-[#60756B]');
-                texto.classList.add('text-green-700');
-            }
-
-            if (botao) {
-                botao.innerText = 'Finalizar pós-teste';
-                botao.classList.remove('bg-gray-400', 'hover:bg-gray-400');
-                botao.classList.add('bg-[#005543]', 'hover:bg-[#004636]');
-            }
+            tempoMinimoLiberado = true;
+            btnFinalizarPosTeste.disabled = false;
+            btnFinalizarPosTeste.innerText = 'Finalizar pós-teste';
         }
     }
 
     function confirmarEnvioPosTeste() {
         if (!form) return;
+
+        if (!tempoMinimoLiberado) {
+            const restante = segundosRestantesTempoMinimo();
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'Tempo mínimo não atingido',
+                html: `
+                    <div style="text-align:center;">
+                        <p style="color:#475569; font-size:15px; line-height:1.6;">
+                            Você precisa permanecer pelo menos <strong>${tempoMinimoMinutos} minuto(s)</strong> no pós-teste antes de finalizar.
+                        </p>
+                        <p style="color:#dc2626; font-size:16px; font-weight:800; margin-top:10px;">
+                            Aguarde mais ${formatarTempo(restante)}.
+                        </p>
+                    </div>
+                `,
+                confirmButtonColor: '#005543',
+                background: '#ffffff',
+                color: '#0f172a'
+            });
+
+            return;
+        }
 
         const perguntasRespondidas = new Set();
 
@@ -490,31 +534,6 @@
                 icon: 'warning',
                 title: 'Ainda faltam respostas',
                 text: 'Responda todas as questões antes de finalizar o pós-teste.',
-                confirmButtonColor: '#005543',
-                background: '#ffffff',
-                color: '#0f172a'
-            });
-            return;
-        }
-
-        const restantesMinimo = segundosRestantesTempoMinimo();
-
-        if (restantesMinimo > 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Tempo mínimo não atingido',
-                html: `
-                    <div style="text-align:center;">
-                        <p style="color:#475569; font-size:15px; line-height:1.6;">
-                            Este pós-teste exige permanência mínima de
-                            <strong>${tempoMinimoMinutos} minuto(s)</strong>.
-                        </p>
-                        <p style="color:#dc2626; font-size:16px; font-weight:800; margin-top:12px;">
-                            Aguarde mais ${formatarTempo(restantesMinimo)} para finalizar.
-                        </p>
-                    </div>
-                `,
-                confirmButtonText: 'Continuar respondendo',
                 confirmButtonColor: '#005543',
                 background: '#ffffff',
                 color: '#0f172a'
@@ -542,7 +561,16 @@
         });
     }
 
-    // Contador
+    // Contador do tempo máximo e liberação do tempo mínimo
+    window.tempoMinimoDecorridoSegundos = 0;
+
+    setInterval(() => {
+        window.tempoMinimoDecorridoSegundos++;
+        verificarLiberacaoTempoMinimo();
+    }, 1000);
+
+    verificarLiberacaoTempoMinimo();
+
     if (tempoLimiteMinutos > 0 && form) {
         let tempoRestante = tempoLimiteMinutos * 60;
         const contador = document.getElementById('contador');
@@ -610,8 +638,29 @@
     window.addEventListener('beforeunload', function (e) {
         if (!finalizandoFormulario && form) {
             e.preventDefault();
-            e.returnValue = '';
+            e.returnValue = 'Tem certeza que deseja sair? Seu tempo será reiniciado e as alternativas marcadas serão apagadas.';
         }
+    });
+
+    window.addEventListener('pagehide', function () {
+        if (!finalizandoFormulario && form) {
+            const dados = new FormData();
+            dados.append('_token', csrfToken);
+            dados.append('motivo', 'pagehide_saida_da_pagina');
+
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(rotaResetarTempo, dados);
+            }
+        }
+    });
+
+    history.pushState({ posTesteAberto: true }, '', window.location.href);
+
+    window.addEventListener('popstate', function () {
+        if (finalizandoFormulario || saiuConfirmado) return;
+
+        history.pushState({ posTesteAberto: true }, '', window.location.href);
+        confirmarSaidaBonito();
     });
 
     document.addEventListener('keydown', function(e) {
@@ -621,11 +670,6 @@
     });
 
     atualizarProgressoRespostas();
-    atualizarTempoMinimoVisual();
-
-    if (tempoMinimoMinutos > 0) {
-        setInterval(atualizarTempoMinimoVisual, 1000);
-    }
 </script>
 
 @endsection
