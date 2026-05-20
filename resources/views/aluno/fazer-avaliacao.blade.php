@@ -1044,7 +1044,6 @@
             <button type="button"
                     onclick="marcarAssistida()"
                     id="btnConcluirAulaVideo"
-                    disabled
                     class="bg-gray-300 text-gray-500 px-4 py-3 rounded-2xl font-bold transition cursor-not-allowed opacity-70">
                 Aguarde o tempo mínimo
             </button>
@@ -1165,7 +1164,8 @@ function prepararCronometroVideoAula() {
     if (!botao) return;
 
     if (tempoMinimoVideoAtual > 0) {
-        botao.disabled = true;
+        botao.disabled = false;
+        botao.dataset.bloqueadoTempo = '1';
         botao.innerText = 'Aguarde ' + formatarTempoVideo(tempoMinimoVideoAtual);
         botao.className = 'bg-gray-300 text-gray-500 px-4 py-3 rounded-2xl font-bold transition cursor-not-allowed opacity-70';
 
@@ -1214,7 +1214,8 @@ function atualizarCronometroVideoAula() {
     if (!botao) return;
 
     if (tempoMinimoVideoAtual > 0 && assistido < tempoMinimoVideoAtual) {
-        botao.disabled = true;
+        botao.disabled = false;
+        botao.dataset.bloqueadoTempo = '1';
         botao.innerText = 'Aguarde ' + formatarTempoVideo(faltam);
         botao.className = 'bg-gray-300 text-gray-500 px-4 py-3 rounded-2xl font-bold transition cursor-not-allowed opacity-70';
 
@@ -1230,6 +1231,7 @@ function atualizarCronometroVideoAula() {
     }
 
     botao.disabled = false;
+    botao.dataset.bloqueadoTempo = '0';
     botao.innerText = 'Concluir aula';
     botao.className = 'bg-[#005543] hover:bg-[#004636] text-white px-4 py-3 rounded-2xl font-bold transition';
 
@@ -1303,7 +1305,9 @@ function marcarAssistida(autoConcluir = false) {
         Swal.fire({
             icon: 'warning',
             title: 'Tempo mínimo não atingido',
-            text: 'Você precisa assistir pelo menos ' + formatarTempoVideo(tempoMinimoVideoAtual) + ' desta videoaula. Ainda falta ' + formatarTempoVideo(tempoMinimoVideoAtual - tempoAssistido) + '.',
+            html: '<p>Volte e assista à videoaula.</p>' +
+                  '<p class="mt-2 text-sm text-slate-600">Você precisa assistir pelo menos <strong>' + formatarTempoVideo(tempoMinimoVideoAtual) + '</strong>. Ainda falta <strong>' + formatarTempoVideo(tempoMinimoVideoAtual - tempoAssistido) + '</strong>.</p>',
+            confirmButtonText: 'Voltar para a videoaula',
             confirmButtonColor: '#005543'
         });
         atualizarCronometroVideoAula();
@@ -1368,10 +1372,11 @@ function marcarAssistida(autoConcluir = false) {
             atualizarCronometroVideoAula();
 
             Swal.fire({
-                icon: 'error',
-                title: 'Aula ainda não liberada',
-                text: error.message || 'Não foi possível concluir a aula. Tente novamente.',
-                confirmButtonColor: '#dc2626'
+                icon: 'warning',
+                title: 'Tempo mínimo não atingido',
+                text: error.message || 'Volte e assista à videoaula antes de concluir.',
+                confirmButtonText: 'Voltar para a videoaula',
+                confirmButtonColor: '#005543'
             });
         });
 }
