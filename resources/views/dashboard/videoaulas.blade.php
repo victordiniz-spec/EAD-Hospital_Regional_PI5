@@ -540,6 +540,8 @@
                                                         data-titulo='@json($aula->titulo)'
                                                         data-descricao='@json($aula->descricao)'
                                                         data-video='@json($aula->video_url)'
+                                                        data-tempo-minimo-video="{{ $aula->tempo_minimo_video ?? 0 }}"
+                                                        data-tempo-maximo-video="{{ $aula->tempo_maximo_video ?? 0 }}"
                                                         data-modulo="{{ $aula->modulo_id }}"
                                                         onclick="abrirModalEditarAulaPeloBotao(this)"
                                                         class="inline-flex items-center justify-center gap-2 bg-white text-[#004D3A] border border-[#DCE7DE] px-4 py-3 rounded-2xl text-sm font-bold hover:bg-[#EAF5EF] hover:border-[#00A63E]/40 transition">
@@ -1000,6 +1002,52 @@
                            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
                 </div>
 
+                <div class="mb-6 border border-[#DCE7DE] rounded-3xl p-4 bg-[#F8FBF8]">
+                    <h3 class="font-extrabold text-[#003C2F] mb-2">
+                        Tempo obrigatório da videoaula
+                    </h3>
+
+                    <p class="text-xs text-[#60756B] mb-4">
+                        Defina quanto tempo o aluno precisa assistir para liberar o pós-teste. Se deixar 0, o sistema não bloqueará por tempo.
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                                Tempo mínimo para liberar pós-teste
+                            </label>
+
+                            <input type="number"
+                                   name="tempo_minimo_video"
+                                   value="{{ old('tempo_minimo_video', 0) }}"
+                                   min="0"
+                                   placeholder="Ex: 5"
+                                   class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+
+                            <p class="text-xs text-[#8A9B92] mt-1">
+                                Em minutos. Exemplo: 5.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                                Tempo máximo da videoaula
+                            </label>
+
+                            <input type="number"
+                                   name="tempo_maximo_video"
+                                   value="{{ old('tempo_maximo_video', 0) }}"
+                                   min="0"
+                                   placeholder="Ex: 30"
+                                   class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+
+                            <p class="text-xs text-[#8A9B92] mt-1">
+                                Em minutos. Use 0 para não limitar.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="mb-4 border-t border-[#DCE7DE] pt-5">
                     <h3 class="font-extrabold text-[#003C2F]">
                         Pós-teste
@@ -1334,6 +1382,40 @@
                            name="video_url"
                            required
                            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-sm placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                </div>
+
+                <div class="mb-6 border border-[#DCE7DE] rounded-3xl p-4 bg-[#F8FBF8]">
+                    <h3 class="font-extrabold text-[#003C2F] mb-2">
+                        Tempo obrigatório da videoaula
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                                Tempo mínimo para liberar pós-teste
+                            </label>
+
+                            <input type="number"
+                                   id="edit_tempo_minimo_video"
+                                   name="tempo_minimo_video"
+                                   min="0"
+                                   placeholder="Ex: 5"
+                                   class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-[#60756B] uppercase tracking-wider mb-1.5">
+                                Tempo máximo da videoaula
+                            </label>
+
+                            <input type="number"
+                                   id="edit_tempo_maximo_video"
+                                   name="tempo_maximo_video"
+                                   min="0"
+                                   placeholder="Ex: 30"
+                                   class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-white text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row justify-end gap-3">
@@ -1846,6 +1928,8 @@
 
         const id = botao.dataset.id;
         const moduloId = botao.dataset.modulo;
+        const tempoMinimoVideo = botao.dataset.tempoMinimoVideo || 0;
+        const tempoMaximoVideo = botao.dataset.tempoMaximoVideo || 0;
 
         let titulo = '';
         let descricao = '';
@@ -1861,10 +1945,10 @@
             videoUrl = botao.dataset.video || '';
         }
 
-        abrirModalEditarAula(id, titulo, descricao, videoUrl, moduloId);
+        abrirModalEditarAula(id, titulo, descricao, videoUrl, moduloId, tempoMinimoVideo, tempoMaximoVideo);
     }
 
-    function abrirModalEditarAula(id, titulo, descricao, videoUrl, moduloId) {
+    function abrirModalEditarAula(id, titulo, descricao, videoUrl, moduloId, tempoMinimoVideo = 0, tempoMaximoVideo = 0) {
         document.body.classList.add('modal-aberto');
 
         const modal = document.getElementById('modalEditarAula');
@@ -1879,11 +1963,15 @@
         const inputDescricao = document.getElementById('edit_descricao');
         const inputVideo = document.getElementById('edit_video_url');
         const inputModulo = document.getElementById('edit_modulo_id');
+        const inputTempoMinimoVideo = document.getElementById('edit_tempo_minimo_video');
+        const inputTempoMaximoVideo = document.getElementById('edit_tempo_maximo_video');
 
         if (inputTitulo) inputTitulo.value = titulo ?? '';
         if (inputDescricao) inputDescricao.value = descricao ?? '';
         if (inputVideo) inputVideo.value = videoUrl ?? '';
         if (inputModulo) inputModulo.value = moduloId ?? '';
+        if (inputTempoMinimoVideo) inputTempoMinimoVideo.value = tempoMinimoVideo ?? 0;
+        if (inputTempoMaximoVideo) inputTempoMaximoVideo.value = tempoMaximoVideo ?? 0;
 
         form.action = '/aulas/' + id;
 

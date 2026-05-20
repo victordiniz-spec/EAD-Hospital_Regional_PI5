@@ -151,12 +151,20 @@
             }
 
             $posTesteConcluido = false;
+            $notaPosTeste = null;
 
             if ($avaliacaoId && Schema::hasTable('notas')) {
-                $posTesteConcluido = DB::table('notas')
+                $notaRegistro = DB::table('notas')
                     ->where('aluno_id', $alunoId)
                     ->where('avaliacao_id', $avaliacaoId)
-                    ->exists();
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                $posTesteConcluido = (bool) $notaRegistro;
+
+                if ($notaRegistro && isset($notaRegistro->nota)) {
+                    $notaPosTeste = (float) $notaRegistro->nota;
+                }
             }
 
             $atividadeConcluida = $aulaAssistida && (!$avaliacaoId || $posTesteConcluido);
@@ -186,6 +194,8 @@
                 'titulo' => $aula->titulo ?? 'Aula sem título',
                 'descricao' => $aula->descricao ?? null,
                 'video_url' => $videoAula,
+                'tempo_minimo_video' => $aula->tempo_minimo_video ?? 0,
+                'tempo_maximo_video' => $aula->tempo_maximo_video ?? 0,
                 'modulo_id' => $modulo->id,
                 'modulo_nome' => $modulo->nome ?? 'Módulo sem nome',
                 'modulo_numero' => $moduloIndex + 1,
@@ -193,6 +203,7 @@
                 'avaliacao_id' => $avaliacaoId,
                 'aula_assistida' => $aulaAssistida,
                 'pos_teste_concluido' => $posTesteConcluido,
+                'nota_pos_teste' => $notaPosTeste,
                 'atividade_concluida' => $atividadeConcluida,
             ]);
         }
@@ -727,18 +738,34 @@
                                                 </div>
                                             </div>
 
-                                            @if($aulaAtual->avaliacao_id && $aulaAtual->aula_assistida && !$aulaAtual->pos_teste_concluido)
+                                            @if($aulaAtual->avaliacao_id && $aulaAtual->aula_assistida)
+                                            <div class="space-y-2">
+                                                @if($aulaAtual->nota_pos_teste !== null)
+                                                    <div class="bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-xs font-bold">
+                                                        Melhor nota do pós-teste: <span class="text-lg font-extrabold">{{ number_format($aulaAtual->nota_pos_teste, 1) }}</span>
+                                                    </div>
+                                                @endif
+
                                                 <button type="button"
                                                         onclick="fazerPosTeste('{{ $aulaAtual->avaliacao_id }}')"
-                                                        class="bg-white text-[#005543] rounded-2xl px-4 py-3 text-xs font-extrabold hover:bg-[#ECF7F3] transition">
-                                                    Realizar pós-teste
+                                                        class="w-full bg-white text-[#005543] rounded-2xl px-4 py-3 text-xs font-extrabold hover:bg-[#ECF7F3] transition">
+                                                    {{ $aulaAtual->pos_teste_concluido ? 'Refazer pós-teste' : 'Realizar pós-teste' }}
                                                 </button>
-                                            @elseif($aulaAtual->avaliacao_id && $aulaAtual->pos_teste_concluido)
-                                                <button type="button"
-                                                        onclick="verResultadoPosTeste('{{ $aulaAtual->avaliacao_id }}')"
-                                                        class="bg-white text-[#005543] rounded-2xl px-4 py-3 text-xs font-extrabold hover:bg-[#ECF7F3] transition">
-                                                    Ver resultado
-                                                </button>
+
+                                                @if($aulaAtual->pos_teste_concluido)
+                                                    <button type="button"
+                                                            onclick="verResultadoPosTeste('{{ $aulaAtual->avaliacao_id }}')"
+                                                            class="w-full bg-white/10 text-white border border-white/20 rounded-2xl px-4 py-3 text-xs font-extrabold hover:bg-white/20 transition">
+                                                        Ver resultado
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        @elseif($aulaAtual->avaliacao_id && !$aulaAtual->aula_assistida)
+                                            <button type="button"
+                                                    onclick="avisarTempoMinimoVideo('{{ $aulaAtual->tempo_minimo_video ?? 0 }}')"
+                                                    class="bg-white/20 text-white border border-white/30 rounded-2xl px-4 py-3 text-xs font-extrabold cursor-not-allowed">
+                                                Pós-teste bloqueado
+                                            </button>
                                             @else
                                                 <button type="button"
                                                         data-video="{{ $aulaAtual->video_url }}"
@@ -969,6 +996,7 @@
 
             <button type="button"
                     onclick="marcarAssistida()"
+                    id="btnConcluirAulaVideo"
                     class="bg-[#005543] hover:bg-[#004636] text-white px-4 py-3 rounded-2xl font-bold transition">
                 Concluir aula
             </button>
@@ -981,6 +1009,10 @@
 <script>
 let aulaIdAtual = null;
 let avaliacaoIdAtual = null;
+let tempoInicioVideoAtual = null;
+let tempoMinimoVideoAtual = 0;
+let tempoMaximoVideoAtual = 0;
+let intervaloTempoVideoAtual = null;
 
 function normalizarUrlYoutube(url) {
     if (!url) return '';
@@ -1002,11 +1034,14 @@ function normalizarUrlYoutube(url) {
     return video;
 }
 
-function abrirModal(url, aulaId, avaliacaoId = null) {
+function abrirModal(url, aulaId, avaliacaoId = null, tempoMinimoVideo = 0, tempoMaximoVideo = 0) {
     document.body.classList.add('modal-video-aberto');
 
     aulaIdAtual = aulaId;
     avaliacaoIdAtual = avaliacaoId && avaliacaoId !== 'null' && avaliacaoId !== '' ? avaliacaoId : null;
+    tempoInicioVideoAtual = Date.now();
+    tempoMinimoVideoAtual = parseInt(tempoMinimoVideo || 0) * 60;
+    tempoMaximoVideoAtual = parseInt(tempoMaximoVideo || 0) * 60;
 
     const video = normalizarUrlYoutube(url);
 
@@ -1028,6 +1063,8 @@ function abrirModal(url, aulaId, avaliacaoId = null) {
     frame.src = video;
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+
+    iniciarContadorTempoVideo();
 }
 
 function fecharModal() {
@@ -1041,6 +1078,61 @@ function fecharModal() {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
     frame.src = "";
+
+    if (intervaloTempoVideoAtual) {
+        clearInterval(intervaloTempoVideoAtual);
+        intervaloTempoVideoAtual = null;
+    }
+}
+
+function tempoAssistidoVideoSegundos() {
+    if (!tempoInicioVideoAtual) return 0;
+
+    return Math.floor((Date.now() - tempoInicioVideoAtual) / 1000);
+}
+
+function formatarTempoVideo(segundos) {
+    segundos = Math.max(0, parseInt(segundos || 0));
+
+    const minutos = Math.floor(segundos / 60);
+    const resto = segundos % 60;
+
+    return String(minutos).padStart(2, '0') + ':' + String(resto).padStart(2, '0');
+}
+
+function iniciarContadorTempoVideo() {
+    const botao = document.getElementById('btnConcluirAulaVideo');
+
+    if (intervaloTempoVideoAtual) {
+        clearInterval(intervaloTempoVideoAtual);
+    }
+
+    intervaloTempoVideoAtual = setInterval(() => {
+        if (!botao) return;
+
+        const assistido = tempoAssistidoVideoSegundos();
+
+        if (tempoMinimoVideoAtual > 0 && assistido < tempoMinimoVideoAtual) {
+            botao.innerText = 'Concluir aula - aguarde ' + formatarTempoVideo(tempoMinimoVideoAtual - assistido);
+        } else {
+            botao.innerText = 'Concluir aula';
+        }
+
+        if (tempoMaximoVideoAtual > 0 && assistido >= tempoMaximoVideoAtual) {
+            marcarAssistida();
+        }
+    }, 1000);
+}
+
+function avisarTempoMinimoVideo(minutos) {
+    Swal.fire({
+        icon: 'info',
+        title: 'Pós-teste bloqueado',
+        text: minutos && parseInt(minutos) > 0
+            ? 'Você precisa assistir pelo menos ' + minutos + ' minuto(s) da videoaula antes de fazer o pós-teste.'
+            : 'Você precisa concluir a videoaula antes de fazer o pós-teste.',
+        confirmButtonColor: '#005543'
+    });
 }
 
 function fazerPosTeste(avaliacaoId) {
@@ -1060,13 +1152,31 @@ function fazerPosTeste(avaliacaoId) {
 function marcarAssistida() {
     if (!aulaIdAtual) return;
 
-    fetch('/assistir-aula/' + aulaIdAtual)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Erro ao marcar aula como assistida.');
+    const tempoAssistido = tempoAssistidoVideoSegundos();
+
+    if (tempoMinimoVideoAtual > 0 && tempoAssistido < tempoMinimoVideoAtual) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Tempo mínimo não atingido',
+            text: 'Você precisa assistir pelo menos ' + formatarTempoVideo(tempoMinimoVideoAtual) + ' desta videoaula. Ainda falta ' + formatarTempoVideo(tempoMinimoVideoAtual - tempoAssistido) + '.',
+            confirmButtonColor: '#005543'
+        });
+        return;
+    }
+
+    fetch('/assistir-aula/' + aulaIdAtual + '?tempo_assistido_segundos=' + tempoAssistido, {
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+        .then(async response => {
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok || data.success === false) {
+                throw new Error(data.message || 'Erro ao marcar aula como assistida.');
             }
 
-            return response.json();
+            return data;
         })
         .then(() => {
             fecharModal();
@@ -1075,7 +1185,7 @@ function marcarAssistida() {
                 Swal.fire({
                     icon: 'success',
                     title: 'Aula concluída!',
-                    text: 'Deseja fazer o pós-teste agora?',
+                    text: 'Você liberou o pós-teste. Deseja fazer agora?',
                     showCancelButton: true,
                     confirmButtonText: 'Sim, fazer agora',
                     cancelButtonText: 'Depois',
@@ -1099,11 +1209,11 @@ function marcarAssistida() {
                 });
             }
         })
-        .catch(() => {
+        .catch((error) => {
             Swal.fire({
                 icon: 'error',
-                title: 'Erro',
-                text: 'Não foi possível concluir a aula. Tente novamente.',
+                title: 'Aula ainda não liberada',
+                text: error.message || 'Não foi possível concluir a aula. Tente novamente.',
                 confirmButtonColor: '#dc2626'
             });
         });

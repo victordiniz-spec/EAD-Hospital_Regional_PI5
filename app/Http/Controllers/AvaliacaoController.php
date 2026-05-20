@@ -277,6 +277,14 @@ class AvaliacaoController extends Controller
                 ->with('error', 'Pós-teste não encontrado.');
         }
 
+        $validacaoAula = $this->validarAulaAssistidaParaPosTeste($avaliacao, $alunoId);
+
+        if ($validacaoAula !== true) {
+            return redirect()
+                ->route('aluno.aulas', ['aula_id' => $avaliacao->aula_id ?? null])
+                ->with('error', $validacaoAula);
+        }
+
         /*
         |--------------------------------------------------------------------------
         | REGISTRA O INÍCIO DO PÓS-TESTE NA SESSÃO
@@ -337,6 +345,14 @@ class AvaliacaoController extends Controller
             return redirect()
                 ->route('dashboard.aluno')
                 ->with('error', 'Pós-teste não encontrado.');
+        }
+
+        $validacaoAula = $this->validarAulaAssistidaParaPosTeste($avaliacao, $alunoId);
+
+        if ($validacaoAula !== true) {
+            return redirect()
+                ->route('aluno.aulas', ['aula_id' => $avaliacao->aula_id ?? null])
+                ->with('error', $validacaoAula);
         }
 
         /*
@@ -687,24 +703,30 @@ class AvaliacaoController extends Controller
         $notaExistente = DB::table('notas')
             ->where('aluno_id', $alunoId)
             ->where('avaliacao_id', $avaliacaoId)
+            ->orderBy('id', 'desc')
             ->first();
 
         if ($notaExistente) {
+            $notaAtual = isset($notaExistente->nota) ? (float) $notaExistente->nota : 0;
+            $melhorNota = max($notaAtual, (float) $nota);
+
             DB::table('notas')
                 ->where('id', $notaExistente->id)
                 ->update([
-                    'nota' => $nota,
+                    'nota' => $melhorNota,
                     'updated_at' => now(),
                 ]);
-        } else {
-            DB::table('notas')->insert([
-                'aluno_id' => $alunoId,
-                'avaliacao_id' => $avaliacaoId,
-                'nota' => $nota,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+
+            return;
         }
+
+        DB::table('notas')->insert([
+            'aluno_id' => $alunoId,
+            'avaliacao_id' => $avaliacaoId,
+            'nota' => $nota,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     // =========================
@@ -742,6 +764,35 @@ class AvaliacaoController extends Controller
     private function chaveInicioAvaliacao($avaliacaoId, $alunoId)
     {
         return 'avaliacao_inicio_' . $avaliacaoId . '_aluno_' . $alunoId;
+    }
+
+
+    // =========================
+    // FUNÇÃO AUXILIAR: VALIDAR SE A AULA FOI ASSISTIDA ANTES DO PÓS-TESTE
+    // =========================
+    private function validarAulaAssistidaParaPosTeste($avaliacao, $alunoId)
+    {
+        if (!isset($avaliacao->aula_id) || !$avaliacao->aula_id) {
+            return true;
+        }
+
+        if (!Schema::hasTable('aulas_assistidas')) {
+            return 'Não foi possível confirmar se a videoaula foi assistida. Procure o administrador.';
+        }
+
+        $assistidaQuery = DB::table('aulas_assistidas')
+            ->where('aluno_id', $alunoId)
+            ->where('aula_id', $avaliacao->aula_id);
+
+        if (Schema::hasColumn('aulas_assistidas', 'assistido')) {
+            $assistidaQuery->where('assistido', true);
+        }
+
+        if (!$assistidaQuery->exists()) {
+            return 'Você precisa assistir a videoaula pelo tempo mínimo definido antes de fazer o pós-teste.';
+        }
+
+        return true;
     }
 
     // =========================

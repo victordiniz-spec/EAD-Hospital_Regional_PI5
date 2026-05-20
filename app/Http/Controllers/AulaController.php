@@ -495,6 +495,8 @@ class AulaController extends Controller
             'titulo' => 'nullable|string|max:255',
             'descricao' => 'nullable|string|max:5000',
             'video_url' => 'nullable|string|max:1000',
+            'tempo_minimo_video' => 'nullable|integer|min:0',
+            'tempo_maximo_video' => 'nullable|integer|min:0',
 
             'avaliacao.titulo' => 'nullable|string|max:255',
             'avaliacao.tempo_minimo' => 'nullable|integer|min:0',
@@ -593,6 +595,22 @@ class AulaController extends Controller
                 'modulo_id' => $moduloId,
             ]);
 
+            if (Schema::hasColumn('aulas', 'tempo_minimo_video') || Schema::hasColumn('aulas', 'tempo_maximo_video')) {
+                $dadosTempoAula = [];
+
+                if (Schema::hasColumn('aulas', 'tempo_minimo_video')) {
+                    $dadosTempoAula['tempo_minimo_video'] = (int) $request->input('tempo_minimo_video', 0);
+                }
+
+                if (Schema::hasColumn('aulas', 'tempo_maximo_video')) {
+                    $dadosTempoAula['tempo_maximo_video'] = (int) $request->input('tempo_maximo_video', 0);
+                }
+
+                if (!empty($dadosTempoAula)) {
+                    $aula->update($dadosTempoAula);
+                }
+            }
+
             $dadosAvaliacao = [
                 'titulo' => trim($request->input('avaliacao.titulo')),
                 'aula_id' => $aula->id,
@@ -651,6 +669,8 @@ class AulaController extends Controller
             'descricao' => 'required|string|max:5000',
             'video_url' => 'required|string|max:1000',
             'modulo_id' => 'required|integer',
+            'tempo_minimo_video' => 'nullable|integer|min:0',
+            'tempo_maximo_video' => 'nullable|integer|min:0',
         ], [
             'titulo.required' => 'Informe o título da aula.',
             'descricao.required' => 'Informe a descrição da aula.',
@@ -679,6 +699,22 @@ class AulaController extends Controller
                 'curso_id' => $modulo->curso_id ?? $aula->curso_id,
             ]);
 
+            if (Schema::hasColumn('aulas', 'tempo_minimo_video') || Schema::hasColumn('aulas', 'tempo_maximo_video')) {
+                $dadosTempoAula = [];
+
+                if (Schema::hasColumn('aulas', 'tempo_minimo_video')) {
+                    $dadosTempoAula['tempo_minimo_video'] = (int) $request->input('tempo_minimo_video', 0);
+                }
+
+                if (Schema::hasColumn('aulas', 'tempo_maximo_video')) {
+                    $dadosTempoAula['tempo_maximo_video'] = (int) $request->input('tempo_maximo_video', 0);
+                }
+
+                if (!empty($dadosTempoAula)) {
+                    $aula->update($dadosTempoAula);
+                }
+            }
+
             DB::commit();
 
             return back()->with('success', 'Aula atualizada com sucesso!');
@@ -693,21 +729,83 @@ class AulaController extends Controller
     // =========================
     // ▶ MARCAR AULA COMO ASSISTIDA
     // =========================
-    public function assistir($id)
+    public function assistir(Request $request, $id)
     {
+        $alunoId = auth()->id();
+
+        if (!$alunoId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Usuário não autenticado.',
+            ], 401);
+        }
+
+        $aula = Aula::find($id);
+
+        if (!$aula) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aula não encontrada.',
+            ], 404);
+        }
+
+        $tempoAssistidoSegundos = (int) $request->input('tempo_assistido_segundos', 0);
+        $tempoMinimoMinutos = Schema::hasColumn('aulas', 'tempo_minimo_video')
+            ? (int) ($aula->tempo_minimo_video ?? 0)
+            : 0;
+
+        $tempoMaximoMinutos = Schema::hasColumn('aulas', 'tempo_maximo_video')
+            ? (int) ($aula->tempo_maximo_video ?? 0)
+            : 0;
+
+        $tempoMinimoSegundos = $tempoMinimoMinutos * 60;
+        $tempoMaximoSegundos = $tempoMaximoMinutos * 60;
+
+        if ($tempoMinimoSegundos > 0 && $tempoAssistidoSegundos < $tempoMinimoSegundos) {
+            $faltamSegundos = $tempoMinimoSegundos - $tempoAssistidoSegundos;
+            $faltamMinutos = ceil($faltamSegundos / 60);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Você precisa assistir pelo menos ' . $tempoMinimoMinutos . ' minuto(s) desta videoaula para liberar o pós-teste. Ainda falta aproximadamente ' . $faltamMinutos . ' minuto(s).',
+                'tempo_minimo_segundos' => $tempoMinimoSegundos,
+                'tempo_assistido_segundos' => $tempoAssistidoSegundos,
+                'faltam_segundos' => $faltamSegundos,
+            ], 422);
+        }
+
+        $dadosAssistida = [
+            'assistido' => true,
+            'updated_at' => now(),
+        ];
+
+        if (Schema::hasColumn('aulas_assistidas', 'tempo_assistido_segundos')) {
+            $dadosAssistida['tempo_assistido_segundos'] = $tempoAssistidoSegundos;
+        }
+
+        if (Schema::hasColumn('aulas_assistidas', 'tempo_minimo_atingido')) {
+            $dadosAssistida['tempo_minimo_atingido'] = true;
+        }
+
+        if (Schema::hasColumn('aulas_assistidas', 'created_at')) {
+            $dadosAssistida['created_at'] = now();
+        }
+
         DB::table('aulas_assistidas')->updateOrInsert(
             [
-                'aluno_id' => auth()->id(),
+                'aluno_id' => $alunoId,
                 'aula_id' => $id,
             ],
-            [
-                'assistido' => true,
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]
+            $dadosAssistida
         );
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Aula concluída com sucesso.',
+            'tempo_assistido_segundos' => $tempoAssistidoSegundos,
+            'tempo_minimo_segundos' => $tempoMinimoSegundos,
+            'tempo_maximo_segundos' => $tempoMaximoSegundos,
+        ]);
     }
 
     // =========================
@@ -757,6 +855,21 @@ class AulaController extends Controller
 
         if (!$request->filled('video_url')) {
             throw new \Exception('Informe o link do vídeo da aula.');
+        }
+
+        $tempoMinimoVideo = (int) $request->input('tempo_minimo_video', 0);
+        $tempoMaximoVideo = (int) $request->input('tempo_maximo_video', 0);
+
+        if ($tempoMinimoVideo < 0) {
+            throw new \Exception('O tempo mínimo da videoaula não pode ser negativo.');
+        }
+
+        if ($tempoMaximoVideo < 0) {
+            throw new \Exception('O tempo máximo da videoaula não pode ser negativo.');
+        }
+
+        if ($tempoMaximoVideo > 0 && $tempoMinimoVideo > $tempoMaximoVideo) {
+            throw new \Exception('O tempo mínimo da videoaula não pode ser maior que o tempo máximo da videoaula.');
         }
 
         if (!$request->filled('avaliacao.titulo')) {
