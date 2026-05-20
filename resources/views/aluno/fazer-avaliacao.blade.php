@@ -1181,7 +1181,6 @@ function prepararCronometroVideoAula() {
     const textoAjuda = document.getElementById('textoAjudaTempoVideoAula');
     const barra = document.getElementById('barraTempoVideoAula');
     const textoDefinido = document.getElementById('textoTempoDefinidoVideoAula');
-    const textoDefinido = document.getElementById('textoTempoDefinidoVideoAula');
 
     if (cronometro) cronometro.innerText = '00:00';
     if (barra) barra.style.width = '0%';
@@ -1227,6 +1226,7 @@ function atualizarCronometroVideoAula() {
     const textoTempo = document.getElementById('textoTempoVideoAula');
     const textoAjuda = document.getElementById('textoAjudaTempoVideoAula');
     const barra = document.getElementById('barraTempoVideoAula');
+    const textoDefinido = document.getElementById('textoTempoDefinidoVideoAula');
 
     const assistido = tempoAssistidoVideoSegundos();
     const faltam = Math.max(0, tempoMinimoVideoAtual - assistido);
