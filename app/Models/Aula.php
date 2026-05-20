@@ -15,8 +15,16 @@ class Aula extends Model
         'titulo',
         'descricao',
         'video_url',
+        'video',
         'curso_id',
         'modulo_id',
+        'tempo_minimo_video',
+        'tempo_maximo_video',
+    ];
+
+    protected $casts = [
+        'tempo_minimo_video' => 'integer',
+        'tempo_maximo_video' => 'integer',
     ];
 
     public function curso()

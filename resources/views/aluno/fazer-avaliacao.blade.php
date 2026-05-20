@@ -194,8 +194,8 @@
                 'titulo' => $aula->titulo ?? 'Aula sem título',
                 'descricao' => $aula->descricao ?? null,
                 'video_url' => $videoAula,
-                'tempo_minimo_video' => $aula->tempo_minimo_video ?? 0,
-                'tempo_maximo_video' => $aula->tempo_maximo_video ?? 0,
+                'tempo_minimo_video' => (int) ($aula->tempo_minimo_video ?? $aula->tempo_minimo ?? $aula->tempo_minimo_aula ?? 0),
+                'tempo_maximo_video' => (int) ($aula->tempo_maximo_video ?? $aula->tempo_maximo ?? $aula->tempo_maximo_aula ?? 0),
                 'modulo_id' => $modulo->id,
                 'modulo_nome' => $modulo->nome ?? 'Módulo sem nome',
                 'modulo_numero' => $moduloIndex + 1,
@@ -1032,6 +1032,11 @@
                class="text-xs text-[#60756B] mt-3">
                 O botão de concluir será liberado quando o tempo mínimo for atingido.
             </p>
+
+            <p id="textoTempoDefinidoVideoAula"
+               class="text-[11px] text-[#8A9B92] mt-2 font-bold">
+                Tempo mínimo definido: carregando...
+            </p>
         </div>
 
         <div class="mt-4 flex flex-col sm:flex-row sm:justify-between gap-3">
@@ -1082,14 +1087,32 @@ function normalizarUrlYoutube(url) {
     return video;
 }
 
+function montarUrlYoutubeComAutoplay(urlNormalizada) {
+    if (!urlNormalizada) return '';
+
+    const separador = urlNormalizada.includes('?') ? '&' : '?';
+
+    /*
+     | Browsers generally block autoplay with sound.
+     | Using mute=1 allows the YouTube video to start automatically.
+     | The student can unmute after it starts.
+    */
+    return urlNormalizada + separador + 'autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1';
+}
+
+function inteiroSeguro(valor, padrao = 0) {
+    const numero = parseInt(String(valor ?? '').replace(',', '.'));
+    return Number.isFinite(numero) ? numero : padrao;
+}
+
 function abrirModal(url, aulaId, avaliacaoId = null, tempoMinimoVideo = 0, tempoMaximoVideo = 0) {
     document.body.classList.add('modal-video-aberto');
 
     aulaIdAtual = aulaId;
     avaliacaoIdAtual = avaliacaoId && avaliacaoId !== 'null' && avaliacaoId !== '' ? avaliacaoId : null;
     tempoInicioVideoAtual = Date.now();
-    tempoMinimoVideoAtual = parseInt(tempoMinimoVideo || 0) * 60;
-    tempoMaximoVideoAtual = parseInt(tempoMaximoVideo || 0) * 60;
+    tempoMinimoVideoAtual = inteiroSeguro(tempoMinimoVideo, 0) * 60;
+    tempoMaximoVideoAtual = inteiroSeguro(tempoMaximoVideo, 0) * 60;
     aulaConcluindoVideoAtual = false;
 
     prepararCronometroVideoAula();
@@ -1111,7 +1134,7 @@ function abrirModal(url, aulaId, avaliacaoId = null, tempoMinimoVideo = 0, tempo
 
     if (!modal || !frame) return;
 
-    frame.src = video;
+    frame.src = montarUrlYoutubeComAutoplay(video);
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 
@@ -1157,17 +1180,24 @@ function prepararCronometroVideoAula() {
     const textoTempo = document.getElementById('textoTempoVideoAula');
     const textoAjuda = document.getElementById('textoAjudaTempoVideoAula');
     const barra = document.getElementById('barraTempoVideoAula');
+    const textoDefinido = document.getElementById('textoTempoDefinidoVideoAula');
+    const textoDefinido = document.getElementById('textoTempoDefinidoVideoAula');
 
     if (cronometro) cronometro.innerText = '00:00';
     if (barra) barra.style.width = '0%';
+    if (textoDefinido) {
+        textoDefinido.innerText = tempoMinimoVideoAtual > 0
+            ? 'Tempo mínimo definido nesta aula: ' + formatarTempoVideo(tempoMinimoVideoAtual) + '.'
+            : 'Atenção: esta aula está com tempo mínimo 0. Confira se o tempo mínimo foi salvo no cadastro da aula.';
+    }
 
     if (!botao) return;
 
     if (tempoMinimoVideoAtual > 0) {
         botao.disabled = false;
         botao.dataset.bloqueadoTempo = '1';
-        botao.innerText = 'Tempo mínimo não atingido';
-        botao.className = 'bg-gray-300 text-gray-500 px-4 py-3 rounded-2xl font-bold transition cursor-not-allowed opacity-70';
+        botao.innerText = 'Bloqueado pelo tempo mínimo';
+        botao.className = 'bg-red-100 text-red-700 border border-red-200 px-4 py-3 rounded-2xl font-bold transition cursor-not-allowed opacity-90';
 
         if (textoTempo) {
             textoTempo.innerText = 'Assista pelo menos ' + formatarTempoVideo(tempoMinimoVideoAtual) + ' para liberar a conclusão da aula.';
@@ -1201,6 +1231,12 @@ function atualizarCronometroVideoAula() {
     const assistido = tempoAssistidoVideoSegundos();
     const faltam = Math.max(0, tempoMinimoVideoAtual - assistido);
 
+    if (textoDefinido) {
+        textoDefinido.innerText = tempoMinimoVideoAtual > 0
+            ? 'Tempo mínimo definido nesta aula: ' + formatarTempoVideo(tempoMinimoVideoAtual) + '.'
+            : 'Atenção: esta aula está com tempo mínimo 0. Confira se o tempo mínimo foi salvo no cadastro da aula.';
+    }
+
     if (cronometro) {
         cronometro.innerText = formatarTempoVideo(assistido);
     }
@@ -1217,7 +1253,7 @@ function atualizarCronometroVideoAula() {
         botao.disabled = false;
         botao.dataset.bloqueadoTempo = '1';
         botao.innerText = 'Tempo mínimo não atingido · falta ' + formatarTempoVideo(faltam);
-        botao.className = 'bg-gray-300 text-gray-500 px-4 py-3 rounded-2xl font-bold transition cursor-not-allowed opacity-70';
+        botao.className = 'bg-red-100 text-red-700 border border-red-200 px-4 py-3 rounded-2xl font-bold transition cursor-not-allowed opacity-90';
 
         if (textoTempo) {
             textoTempo.innerText = 'Faltam ' + formatarTempoVideo(faltam) + ' para liberar o botão de concluir.';

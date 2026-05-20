@@ -32,6 +32,22 @@
     | e puxar as informações automaticamente para o formulário de nova aula.
     */
     $temCursoIdEmAulas = DB::getSchemaBuilder()->hasColumn('aulas', 'curso_id');
+    $temTempoMinimoVideoEmAulas = DB::getSchemaBuilder()->hasColumn('aulas', 'tempo_minimo_video');
+    $temTempoMaximoVideoEmAulas = DB::getSchemaBuilder()->hasColumn('aulas', 'tempo_maximo_video');
+
+    $colunasModeloAulas = ['id', 'titulo', 'descricao', 'video_url', 'modulo_id'];
+
+    if ($temCursoIdEmAulas) {
+        $colunasModeloAulas[] = 'curso_id';
+    }
+
+    if ($temTempoMinimoVideoEmAulas) {
+        $colunasModeloAulas[] = 'tempo_minimo_video';
+    }
+
+    if ($temTempoMaximoVideoEmAulas) {
+        $colunasModeloAulas[] = 'tempo_maximo_video';
+    }
 
     $modelosCursos = DB::table('cursos')
         ->select('id', 'nome', 'descricao')
@@ -44,13 +60,10 @@
         ->get();
 
     $modelosAulas = DB::table('aulas')
-        ->select($temCursoIdEmAulas
-            ? ['id', 'titulo', 'descricao', 'video_url', 'modulo_id', 'curso_id']
-            : ['id', 'titulo', 'descricao', 'video_url', 'modulo_id']
-        )
+        ->select($colunasModeloAulas)
         ->orderBy('titulo')
         ->get()
-        ->map(function ($aula) use ($temCursoIdEmAulas) {
+        ->map(function ($aula) use ($temCursoIdEmAulas, $temTempoMinimoVideoEmAulas, $temTempoMaximoVideoEmAulas) {
             $avaliacao = DB::table('avaliacoes')
                 ->where('aula_id', $aula->id)
                 ->where(function ($query) {
@@ -88,6 +101,8 @@
                 'video_url' => $aula->video_url,
                 'modulo_id' => $aula->modulo_id,
                 'curso_id' => $temCursoIdEmAulas ? ($aula->curso_id ?? null) : null,
+                'tempo_minimo_video' => $temTempoMinimoVideoEmAulas ? (int) ($aula->tempo_minimo_video ?? 0) : 0,
+                'tempo_maximo_video' => $temTempoMaximoVideoEmAulas ? ($aula->tempo_maximo_video ?? null) : null,
                 'avaliacao' => $avaliacao,
                 'perguntas' => $perguntas,
             ];
@@ -1800,6 +1815,8 @@
         preencherCampo('input[name="titulo"]', aula.titulo || '');
         preencherCampo('textarea[name="descricao"]', aula.descricao || '');
         preencherCampo('input[name="video_url"]', aula.video_url || '');
+        preencherCampo('input[name="tempo_minimo_video"]', aula.tempo_minimo_video ?? 0);
+        preencherCampo('input[name="tempo_maximo_video"]', aula.tempo_maximo_video ?? 0);
 
         if (aula.avaliacao) {
             preencherPosTesteCriacao(aula.avaliacao, aula.perguntas || []);
