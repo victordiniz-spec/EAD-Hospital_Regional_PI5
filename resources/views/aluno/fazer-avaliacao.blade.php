@@ -1045,7 +1045,7 @@
                     onclick="marcarAssistida()"
                     id="btnConcluirAulaVideo"
                     class="bg-gray-300 text-gray-500 px-4 py-3 rounded-2xl font-bold transition cursor-not-allowed opacity-70">
-                Aguarde o tempo mínimo
+                Tempo mínimo não atingido
             </button>
         </div>
     </div>
@@ -1166,7 +1166,7 @@ function prepararCronometroVideoAula() {
     if (tempoMinimoVideoAtual > 0) {
         botao.disabled = false;
         botao.dataset.bloqueadoTempo = '1';
-        botao.innerText = 'Aguarde ' + formatarTempoVideo(tempoMinimoVideoAtual);
+        botao.innerText = 'Tempo mínimo não atingido';
         botao.className = 'bg-gray-300 text-gray-500 px-4 py-3 rounded-2xl font-bold transition cursor-not-allowed opacity-70';
 
         if (textoTempo) {
@@ -1174,7 +1174,7 @@ function prepararCronometroVideoAula() {
         }
 
         if (textoAjuda) {
-            textoAjuda.innerText = 'O pós-teste só será liberado depois que você concluir a aula dentro do tempo mínimo.';
+            textoAjuda.innerText = 'Volte e assista à videoaula até atingir o tempo mínimo. Depois o botão será liberado.';
         }
     } else {
         botao.disabled = false;
@@ -1216,7 +1216,7 @@ function atualizarCronometroVideoAula() {
     if (tempoMinimoVideoAtual > 0 && assistido < tempoMinimoVideoAtual) {
         botao.disabled = false;
         botao.dataset.bloqueadoTempo = '1';
-        botao.innerText = 'Aguarde ' + formatarTempoVideo(faltam);
+        botao.innerText = 'Tempo mínimo não atingido · falta ' + formatarTempoVideo(faltam);
         botao.className = 'bg-gray-300 text-gray-500 px-4 py-3 rounded-2xl font-bold transition cursor-not-allowed opacity-70';
 
         if (textoTempo) {
@@ -1224,7 +1224,7 @@ function atualizarCronometroVideoAula() {
         }
 
         if (textoAjuda) {
-            textoAjuda.innerText = 'Continue assistindo. O botão será liberado automaticamente.';
+            textoAjuda.innerText = 'Volte e assista à videoaula. Ao atingir o tempo mínimo, o botão será liberado automaticamente.';
         }
 
         return;
@@ -1305,7 +1305,7 @@ function marcarAssistida(autoConcluir = false) {
         Swal.fire({
             icon: 'warning',
             title: 'Tempo mínimo não atingido',
-            html: '<p>Volte e assista à videoaula.</p>' +
+            html: '<p><strong>Tempo mínimo não atingido.</strong> Volte e assista à videoaula.</p>' +
                   '<p class="mt-2 text-sm text-slate-600">Você precisa assistir pelo menos <strong>' + formatarTempoVideo(tempoMinimoVideoAtual) + '</strong>. Ainda falta <strong>' + formatarTempoVideo(tempoMinimoVideoAtual - tempoAssistido) + '</strong>.</p>',
             confirmButtonText: 'Voltar para a videoaula',
             confirmButtonColor: '#005543'
