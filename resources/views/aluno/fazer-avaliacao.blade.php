@@ -687,7 +687,9 @@
                                             data-video="{{ $aulaAtual->video_url }}"
                                             data-aula="{{ $aulaAtual->id }}"
                                             data-avaliacao="{{ $aulaAtual->avaliacao_id }}"
-                                            onclick="abrirModal(this.dataset.video, this.dataset.aula, this.dataset.avaliacao)"
+                                            data-tempo-minimo="{{ $aulaAtual->tempo_minimo_video ?? 0 }}"
+                                            data-tempo-maximo="{{ $aulaAtual->tempo_maximo_video ?? 0 }}"
+                                            onclick="abrirModal(this.dataset.video, this.dataset.aula, this.dataset.avaliacao, this.dataset.tempoMinimo, this.dataset.tempoMaximo)"
                                             class="card-video-mobile group relative w-full aspect-video bg-black rounded-3xl shadow-sm overflow-hidden flex items-center justify-center"
                                             aria-label="Assistir aula {{ $aulaAtual->titulo }}">
 
@@ -771,7 +773,9 @@
                                                         data-video="{{ $aulaAtual->video_url }}"
                                                         data-aula="{{ $aulaAtual->id }}"
                                                         data-avaliacao="{{ $aulaAtual->avaliacao_id }}"
-                                                        onclick="abrirModal(this.dataset.video, this.dataset.aula, this.dataset.avaliacao)"
+                                                        data-tempo-minimo="{{ $aulaAtual->tempo_minimo_video ?? 0 }}"
+                                                        data-tempo-maximo="{{ $aulaAtual->tempo_maximo_video ?? 0 }}"
+                                                        onclick="abrirModal(this.dataset.video, this.dataset.aula, this.dataset.avaliacao, this.dataset.tempoMinimo, this.dataset.tempoMaximo)"
                                                         class="bg-white text-[#005543] rounded-2xl px-4 py-3 text-xs font-extrabold hover:bg-[#ECF7F3] transition">
                                                     Assistir aula
                                                 </button>
@@ -987,6 +991,49 @@
             </iframe>
         </div>
 
+        <!-- CONTROLE DE TEMPO DA VIDEOAULA -->
+        <div id="boxTempoVideoAula"
+             class="mt-4 bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-4">
+
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+                <div>
+                    <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                        Tempo mínimo para concluir
+                    </p>
+
+                    <p id="textoTempoVideoAula"
+                       class="text-sm font-bold text-[#003C2F] mt-1">
+                        Iniciando cronômetro...
+                    </p>
+                </div>
+
+                <div class="text-left sm:text-right">
+                    <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                        Tempo assistido
+                    </p>
+
+                    <p id="cronometroVideoAula"
+                       class="text-2xl font-extrabold text-[#004D3A] mt-1">
+                        00:00
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="mt-4 h-3 bg-[#E7EEE9] rounded-full overflow-hidden">
+                <div id="barraTempoVideoAula"
+                     class="h-full bg-[#005543] rounded-full transition-all duration-500"
+                     style="width: 0%;">
+                </div>
+            </div>
+
+            <p id="textoAjudaTempoVideoAula"
+               class="text-xs text-[#60756B] mt-3">
+                O botão de concluir será liberado quando o tempo mínimo for atingido.
+            </p>
+        </div>
+
         <div class="mt-4 flex flex-col sm:flex-row sm:justify-between gap-3">
             <button type="button"
                     onclick="fecharModal()"
@@ -997,8 +1044,9 @@
             <button type="button"
                     onclick="marcarAssistida()"
                     id="btnConcluirAulaVideo"
-                    class="bg-[#005543] hover:bg-[#004636] text-white px-4 py-3 rounded-2xl font-bold transition">
-                Concluir aula
+                    disabled
+                    class="bg-gray-300 text-gray-500 px-4 py-3 rounded-2xl font-bold transition cursor-not-allowed opacity-70">
+                Aguarde o tempo mínimo
             </button>
         </div>
     </div>
@@ -1013,6 +1061,7 @@ let tempoInicioVideoAtual = null;
 let tempoMinimoVideoAtual = 0;
 let tempoMaximoVideoAtual = 0;
 let intervaloTempoVideoAtual = null;
+let aulaConcluindoVideoAtual = false;
 
 function normalizarUrlYoutube(url) {
     if (!url) return '';
@@ -1042,6 +1091,9 @@ function abrirModal(url, aulaId, avaliacaoId = null, tempoMinimoVideo = 0, tempo
     tempoInicioVideoAtual = Date.now();
     tempoMinimoVideoAtual = parseInt(tempoMinimoVideo || 0) * 60;
     tempoMaximoVideoAtual = parseInt(tempoMaximoVideo || 0) * 60;
+    aulaConcluindoVideoAtual = false;
+
+    prepararCronometroVideoAula();
 
     const video = normalizarUrlYoutube(url);
 
@@ -1100,26 +1152,118 @@ function formatarTempoVideo(segundos) {
     return String(minutos).padStart(2, '0') + ':' + String(resto).padStart(2, '0');
 }
 
-function iniciarContadorTempoVideo() {
+function prepararCronometroVideoAula() {
     const botao = document.getElementById('btnConcluirAulaVideo');
+    const cronometro = document.getElementById('cronometroVideoAula');
+    const textoTempo = document.getElementById('textoTempoVideoAula');
+    const textoAjuda = document.getElementById('textoAjudaTempoVideoAula');
+    const barra = document.getElementById('barraTempoVideoAula');
 
+    if (cronometro) cronometro.innerText = '00:00';
+    if (barra) barra.style.width = '0%';
+
+    if (!botao) return;
+
+    if (tempoMinimoVideoAtual > 0) {
+        botao.disabled = true;
+        botao.innerText = 'Aguarde ' + formatarTempoVideo(tempoMinimoVideoAtual);
+        botao.className = 'bg-gray-300 text-gray-500 px-4 py-3 rounded-2xl font-bold transition cursor-not-allowed opacity-70';
+
+        if (textoTempo) {
+            textoTempo.innerText = 'Assista pelo menos ' + formatarTempoVideo(tempoMinimoVideoAtual) + ' para liberar a conclusão da aula.';
+        }
+
+        if (textoAjuda) {
+            textoAjuda.innerText = 'O pós-teste só será liberado depois que você concluir a aula dentro do tempo mínimo.';
+        }
+    } else {
+        botao.disabled = false;
+        botao.innerText = 'Concluir aula';
+        botao.className = 'bg-[#005543] hover:bg-[#004636] text-white px-4 py-3 rounded-2xl font-bold transition';
+
+        if (textoTempo) {
+            textoTempo.innerText = 'Esta aula não possui tempo mínimo definido.';
+        }
+
+        if (textoAjuda) {
+            textoAjuda.innerText = 'Você pode concluir a aula quando terminar de assistir.';
+        }
+    }
+}
+
+function atualizarCronometroVideoAula() {
+    const botao = document.getElementById('btnConcluirAulaVideo');
+    const cronometro = document.getElementById('cronometroVideoAula');
+    const textoTempo = document.getElementById('textoTempoVideoAula');
+    const textoAjuda = document.getElementById('textoAjudaTempoVideoAula');
+    const barra = document.getElementById('barraTempoVideoAula');
+
+    const assistido = tempoAssistidoVideoSegundos();
+    const faltam = Math.max(0, tempoMinimoVideoAtual - assistido);
+
+    if (cronometro) {
+        cronometro.innerText = formatarTempoVideo(assistido);
+    }
+
+    if (barra) {
+        const base = tempoMinimoVideoAtual > 0 ? tempoMinimoVideoAtual : Math.max(1, tempoMaximoVideoAtual || assistido || 1);
+        const progresso = Math.min(100, Math.round((assistido / base) * 100));
+        barra.style.width = progresso + '%';
+    }
+
+    if (!botao) return;
+
+    if (tempoMinimoVideoAtual > 0 && assistido < tempoMinimoVideoAtual) {
+        botao.disabled = true;
+        botao.innerText = 'Aguarde ' + formatarTempoVideo(faltam);
+        botao.className = 'bg-gray-300 text-gray-500 px-4 py-3 rounded-2xl font-bold transition cursor-not-allowed opacity-70';
+
+        if (textoTempo) {
+            textoTempo.innerText = 'Faltam ' + formatarTempoVideo(faltam) + ' para liberar o botão de concluir.';
+        }
+
+        if (textoAjuda) {
+            textoAjuda.innerText = 'Continue assistindo. O botão será liberado automaticamente.';
+        }
+
+        return;
+    }
+
+    botao.disabled = false;
+    botao.innerText = 'Concluir aula';
+    botao.className = 'bg-[#005543] hover:bg-[#004636] text-white px-4 py-3 rounded-2xl font-bold transition';
+
+    if (textoTempo) {
+        textoTempo.innerText = tempoMinimoVideoAtual > 0
+            ? 'Tempo mínimo atingido. Você já pode concluir a aula.'
+            : 'Você já pode concluir a aula.';
+    }
+
+    if (textoAjuda) {
+        textoAjuda.innerText = avaliacaoIdAtual
+            ? 'Ao concluir, o pós-teste será liberado para esta aula.'
+            : 'Esta aula não possui pós-teste cadastrado.';
+    }
+}
+
+function iniciarContadorTempoVideo() {
     if (intervaloTempoVideoAtual) {
         clearInterval(intervaloTempoVideoAtual);
     }
 
+    atualizarCronometroVideoAula();
+
     intervaloTempoVideoAtual = setInterval(() => {
-        if (!botao) return;
+        atualizarCronometroVideoAula();
 
         const assistido = tempoAssistidoVideoSegundos();
 
-        if (tempoMinimoVideoAtual > 0 && assistido < tempoMinimoVideoAtual) {
-            botao.innerText = 'Concluir aula - aguarde ' + formatarTempoVideo(tempoMinimoVideoAtual - assistido);
-        } else {
-            botao.innerText = 'Concluir aula';
-        }
-
-        if (tempoMaximoVideoAtual > 0 && assistido >= tempoMaximoVideoAtual) {
-            marcarAssistida();
+        if (
+            tempoMaximoVideoAtual > 0 &&
+            assistido >= tempoMaximoVideoAtual &&
+            !aulaConcluindoVideoAtual
+        ) {
+            marcarAssistida(true);
         }
     }, 1000);
 }
@@ -1149,9 +1293,10 @@ function fazerPosTeste(avaliacaoId) {
     window.location.href = '/avaliacoes/' + avaliacaoId;
 }
 
-function marcarAssistida() {
-    if (!aulaIdAtual) return;
+function marcarAssistida(autoConcluir = false) {
+    if (!aulaIdAtual || aulaConcluindoVideoAtual) return;
 
+    const botao = document.getElementById('btnConcluirAulaVideo');
     const tempoAssistido = tempoAssistidoVideoSegundos();
 
     if (tempoMinimoVideoAtual > 0 && tempoAssistido < tempoMinimoVideoAtual) {
@@ -1161,7 +1306,16 @@ function marcarAssistida() {
             text: 'Você precisa assistir pelo menos ' + formatarTempoVideo(tempoMinimoVideoAtual) + ' desta videoaula. Ainda falta ' + formatarTempoVideo(tempoMinimoVideoAtual - tempoAssistido) + '.',
             confirmButtonColor: '#005543'
         });
+        atualizarCronometroVideoAula();
         return;
+    }
+
+    aulaConcluindoVideoAtual = true;
+
+    if (botao) {
+        botao.disabled = true;
+        botao.innerText = 'Salvando conclusão...';
+        botao.className = 'bg-gray-300 text-gray-500 px-4 py-3 rounded-2xl font-bold transition cursor-wait opacity-80';
     }
 
     fetch('/assistir-aula/' + aulaIdAtual + '?tempo_assistido_segundos=' + tempoAssistido, {
@@ -1210,6 +1364,9 @@ function marcarAssistida() {
             }
         })
         .catch((error) => {
+            aulaConcluindoVideoAtual = false;
+            atualizarCronometroVideoAula();
+
             Swal.fire({
                 icon: 'error',
                 title: 'Aula ainda não liberada',
