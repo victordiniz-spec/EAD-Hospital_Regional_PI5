@@ -6,6 +6,10 @@
     <meta name="theme-color" content="#061811">
     <title>404 | Integrar ReSaúde</title>
 
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js">
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js">
+
     <style>
         :root {
             --bg-1: #04110c;
@@ -451,6 +455,22 @@
             color: var(--muted);
         }
 
+        .loading-cover.error strong {
+            color: #fecaca;
+        }
+
+        .loading-cover.error span {
+            max-width: 360px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .loading-cover.error .loading-ring {
+            animation: none;
+            border-color: rgba(248, 113, 113, .2);
+            border-top-color: #f87171;
+        }
+
         @media (max-width: 1180px) {
             .page-404 {
                 grid-template-columns: 1fr;
@@ -659,19 +679,48 @@
         </section>
     </main>
 
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script>
+        window.addEventListener('error', function () {
+            const loadingCover = document.getElementById('loadingCover');
+
+            if (loadingCover && !loadingCover.classList.contains('hidden')) {
+                loadingCover.classList.add('error');
+                loadingCover.innerHTML = `
+                    <div class="loading-ring"></div>
+                    <strong>Não foi possível carregar o 3D</strong>
+                    <span>Verifique a internet do navegador ou libere o CDN do Three.js. A página continua funcionando pelos botões ao lado.</span>
+                `;
+            }
+        });
+    </script>
+
     <script type="module">
-        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
-        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js';
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         const container = document.getElementById('webgl-container');
         const loadingCover = document.getElementById('loadingCover');
 
-        let scene, camera, renderer, controls, nurseGroup, mixerClock;
+        let scene, camera, renderer, controls, nurseGroup;
         let autoRotateEnabled = true;
         let floatTick = 0;
+        let experienceReady = false;
 
-        init();
-        animate();
+        try {
+            init();
+            animate();
+        } catch (error) {
+            showLoadError(error);
+        }
 
         function init() {
             scene = new THREE.Scene();
@@ -681,7 +730,11 @@
             camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
             camera.position.set(3.8, 2.6, 5.8);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true,
+                powerPreference: 'high-performance'
+            });
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.shadowMap.enabled = true;
@@ -708,9 +761,8 @@
             wireButtons();
             window.addEventListener('resize', onResize);
 
-            setTimeout(() => {
-                loadingCover?.classList.add('hidden');
-            }, 650);
+            experienceReady = true;
+            loadingCover?.classList.add('hidden');
         }
 
         function addLights() {
@@ -724,7 +776,7 @@
             const key = new THREE.DirectionalLight(0xffffff, 2.2);
             key.position.set(4, 7, 5);
             key.castShadow = true;
-            key.shadow.mapSize.set(2048, 2048);
+            key.shadow.mapSize.set(1024, 1024);
             key.shadow.camera.near = 0.5;
             key.shadow.camera.far = 30;
             key.shadow.camera.left = -8;
@@ -1035,8 +1087,23 @@
             renderer.setSize(container.clientWidth, container.clientHeight);
         }
 
+        function showLoadError(error) {
+            console.error('Erro ao carregar experiência 3D:', error);
+
+            if (!loadingCover) return;
+
+            loadingCover.classList.add('error');
+            loadingCover.innerHTML = `
+                <div class="loading-ring"></div>
+                <strong>Não foi possível carregar o 3D</strong>
+                <span>O navegador não conseguiu carregar a biblioteca 3D. Verifique a internet, bloqueio de CDN ou teste novamente em outro navegador.</span>
+            `;
+        }
+
         function animate() {
             requestAnimationFrame(animate);
+
+            if (!experienceReady) return;
             floatTick += 0.018;
 
             if (nurseGroup) {
