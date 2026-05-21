@@ -3,31 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#061711">
+    <meta name="theme-color" content="#061811">
     <title>404 | Integrar ReSaúde</title>
-
-    @vite('resources/css/app.css')
 
     <style>
         :root {
-            --bg: #061711;
-            --bg-2: #09231a;
-            --text: #f4fff9;
-            --muted: #9fc8b8;
-            --soft: rgba(255,255,255,.075);
-            --soft-2: rgba(255,255,255,.045);
-            --line: rgba(186,255,226,.16);
-            --line-2: rgba(186,255,226,.28);
-            --green: #30d596;
-            --green-2: #8ff4c6;
-            --green-3: #0d7655;
-            --blue: #8bd7ff;
-            --danger: #ff6177;
-            --shadow: 0 40px 110px rgba(0,0,0,.45);
-            --mx: 0px;
-            --my: 0px;
-            --rx: 0deg;
-            --ry: 0deg;
+            --bg-1: #04110c;
+            --bg-2: #082118;
+            --panel: rgba(8, 27, 20, 0.78);
+            --panel-2: rgba(255, 255, 255, 0.05);
+            --line: rgba(173, 255, 220, 0.14);
+            --text: #f2fff8;
+            --muted: #9dc8b8;
+            --green: #2fd393;
+            --green-2: #8ef3c5;
+            --green-3: #0e7d57;
+            --shadow: 0 30px 100px rgba(0, 0, 0, 0.38);
         }
 
         * {
@@ -39,13 +30,13 @@
             margin: 0;
             min-height: 100%;
             overflow-x: hidden;
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             color: var(--text);
             background:
-                radial-gradient(circle at 16% 12%, rgba(48,213,150,.16), transparent 28%),
-                radial-gradient(circle at 84% 14%, rgba(139,215,255,.10), transparent 26%),
-                radial-gradient(circle at 48% 92%, rgba(48,213,150,.10), transparent 30%),
-                linear-gradient(135deg, #04100c 0%, #071711 42%, #0a2118 100%);
+                radial-gradient(circle at 12% 12%, rgba(47, 211, 147, 0.16), transparent 24%),
+                radial-gradient(circle at 86% 18%, rgba(142, 243, 197, 0.10), transparent 22%),
+                radial-gradient(circle at 50% 100%, rgba(47, 211, 147, 0.10), transparent 34%),
+                linear-gradient(140deg, var(--bg-1) 0%, #071812 45%, var(--bg-2) 100%);
         }
 
         body::before {
@@ -53,134 +44,113 @@
             position: fixed;
             inset: 0;
             pointer-events: none;
-            opacity: .38;
+            opacity: .22;
             background-image:
-                linear-gradient(rgba(186,255,226,.07) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(186,255,226,.07) 1px, transparent 1px);
+                linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
             background-size: 36px 36px;
-            mask-image: radial-gradient(circle at center, black 30%, transparent 92%);
-        }
-
-        body::after {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            opacity: .13;
-            background:
-                linear-gradient(180deg, rgba(255,255,255,.06), transparent 22%, transparent 76%, rgba(255,255,255,.05)),
-                repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 4px);
-            mix-blend-mode: screen;
+            mask-image: radial-gradient(circle at center, black 28%, transparent 85%);
         }
 
         .page-404 {
             min-height: 100vh;
             width: 100%;
             display: grid;
-            grid-template-columns: minmax(360px, 560px) minmax(420px, 1fr);
+            grid-template-columns: minmax(360px, 510px) minmax(420px, 1fr);
             gap: 18px;
             padding: 18px;
-            position: relative;
         }
 
-        .left-panel,
-        .right-panel {
+        .panel {
             position: relative;
             border: 1px solid var(--line);
-            background:
-                linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.025)),
-                rgba(5, 20, 15, .72);
             border-radius: 34px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
+                var(--panel);
             box-shadow: var(--shadow);
             backdrop-filter: blur(18px);
             overflow: hidden;
         }
 
-        .left-panel::before,
-        .right-panel::before {
+        .panel::before {
             content: "";
             position: absolute;
             inset: 0;
-            background:
-                radial-gradient(circle at 20% 0%, rgba(143,244,198,.14), transparent 34%),
-                linear-gradient(180deg, rgba(255,255,255,.07), transparent 18%);
             pointer-events: none;
+            background:
+                radial-gradient(circle at top left, rgba(142, 243, 197, 0.12), transparent 28%),
+                linear-gradient(180deg, rgba(255,255,255,.06), transparent 18%);
         }
 
         .left-content {
             position: relative;
             z-index: 2;
             min-height: calc(100vh - 36px);
-            padding: clamp(30px, 4vw, 58px);
+            padding: clamp(28px, 3vw, 52px);
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
 
-        .brand-pill {
-            width: max-content;
-            max-width: 100%;
+        .eyebrow {
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            padding: 11px 16px;
+            width: max-content;
+            max-width: 100%;
+            padding: 10px 16px;
             border-radius: 999px;
-            border: 1px solid rgba(143,244,198,.22);
-            background: rgba(143,244,198,.08);
-            color: #eefff8;
-            font-weight: 900;
-            font-size: 12px;
-            letter-spacing: .08em;
+            border: 1px solid rgba(142, 243, 197, 0.2);
+            background: rgba(142, 243, 197, 0.08);
             text-transform: uppercase;
+            letter-spacing: .08em;
+            font-size: 12px;
+            font-weight: 900;
         }
 
-        .brand-pill span {
-            width: 11px;
-            height: 11px;
+        .eyebrow span {
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background: var(--green);
-            box-shadow: 0 0 18px rgba(48,213,150,.7);
-            animation: livePulse 1.7s ease-in-out infinite;
-            flex: 0 0 auto;
+            box-shadow: 0 0 18px rgba(47, 211, 147, .75);
+            animation: pulse 1.8s ease-in-out infinite;
         }
 
-        @keyframes livePulse {
-            0%, 100% { transform: scale(.85); opacity: .75; }
+        @keyframes pulse {
+            0%,100% { transform: scale(.85); opacity: .75; }
             50% { transform: scale(1.18); opacity: 1; }
         }
 
-        .label {
+        .mini-label {
             margin-top: 34px;
-            color: #8bd4b6;
+            color: #8fd9b8;
+            letter-spacing: .38em;
             text-transform: uppercase;
-            letter-spacing: .42em;
             font-size: 12px;
             font-weight: 950;
         }
 
         .error-code {
-            margin-top: 16px;
-            font-size: clamp(112px, 16vw, 210px);
+            margin-top: 14px;
+            font-size: clamp(110px, 15vw, 200px);
             line-height: .82;
-            font-weight: 1000;
             letter-spacing: -.08em;
-            color: #f5fff9;
-            text-shadow:
-                0 1px 0 rgba(255,255,255,.3),
-                0 22px 70px rgba(0,0,0,.34),
-                0 0 45px rgba(48,213,150,.12);
-        }
-
-        .headline {
-            margin: 8px 0 0;
-            font-size: clamp(30px, 3.6vw, 54px);
-            line-height: 1.02;
             font-weight: 1000;
-            letter-spacing: -.055em;
-            color: #f5fff9;
+            color: #f6fff9;
+            text-shadow: 0 14px 45px rgba(0,0,0,.24), 0 0 34px rgba(47,211,147,.12);
         }
 
-        .headline em {
+        .title {
+            margin: 10px 0 0;
+            font-size: clamp(30px, 3.5vw, 54px);
+            line-height: 1.02;
+            letter-spacing: -.05em;
+            font-weight: 1000;
+        }
+
+        .title em {
             font-style: normal;
             color: var(--green-2);
         }
@@ -188,76 +158,61 @@
         .description {
             margin: 20px 0 0;
             color: var(--muted);
+            line-height: 1.8;
             font-size: 16px;
-            line-height: 1.82;
-            max-width: 680px;
+            max-width: 650px;
         }
 
-        .status-card {
+        .info-box {
             margin-top: 28px;
-            display: grid;
-            grid-template-columns: 58px 1fr;
-            gap: 16px;
-            padding: 19px;
+            padding: 18px;
             border-radius: 24px;
-            border: 1px solid rgba(143,244,198,.12);
-            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(142,243,197,.12);
+            background: rgba(255,255,255,.04);
         }
 
-        .status-icon {
-            width: 58px;
-            height: 58px;
-            border-radius: 20px;
-            display: grid;
-            place-items: center;
-            color: #eafff5;
-            border: 1px solid rgba(143,244,198,.18);
-            background: linear-gradient(180deg, rgba(48,213,150,.18), rgba(48,213,150,.055));
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.09);
-        }
-
-        .status-title {
-            font-weight: 950;
-            color: #f4fff9;
+        .info-title {
             font-size: 16px;
+            font-weight: 950;
+            color: #f4fff8;
         }
 
-        .status-text {
-            margin-top: 5px;
-            color: var(--muted);
-            line-height: 1.65;
+        .info-text {
+            margin-top: 8px;
             font-size: 14px;
+            line-height: 1.7;
+            color: var(--muted);
         }
 
-        .metrics {
+        .grid-info {
             margin-top: 16px;
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 12px;
         }
 
-        .metric {
-            padding: 16px;
-            border-radius: 21px;
-            border: 1px solid rgba(143,244,198,.10);
+        .grid-item {
+            padding: 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(142,243,197,.08);
             background: rgba(255,255,255,.035);
         }
 
-        .metric small {
+        .grid-item small {
             display: block;
-            color: #8ccfb5;
-            text-transform: uppercase;
+            color: #89cdb1;
             letter-spacing: .16em;
-            font-weight: 900;
+            text-transform: uppercase;
             font-size: 10px;
+            font-weight: 900;
         }
 
-        .metric strong {
+        .grid-item strong {
             display: block;
             margin-top: 8px;
-            color: #f5fff9;
             font-size: 15px;
-            line-height: 1.35;
+            line-height: 1.4;
+            color: #f5fff8;
         }
 
         .actions {
@@ -268,427 +223,232 @@
         }
 
         .btn-404 {
-            appearance: none;
             border: 0;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
             min-height: 52px;
             padding: 14px 22px;
             border-radius: 18px;
             text-decoration: none;
             font-size: 14px;
-            font-weight: 950;
-            transition: transform .22s ease, box-shadow .22s ease, background .22s ease;
+            font-weight: 900;
+            transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease;
         }
 
-        .btn-home {
-            color: #062016;
-            background: linear-gradient(180deg, #91f5c8, #30d596 70%);
-            box-shadow: 0 18px 38px rgba(48,213,150,.22);
+        .btn-primary {
+            color: #052217;
+            background: linear-gradient(180deg, #92f5c8, #2fd393 78%);
+            box-shadow: 0 16px 34px rgba(47,211,147,.25);
         }
 
-        .btn-back {
-            color: #eefdf7;
-            border: 1px solid rgba(255,255,255,.10);
+        .btn-secondary {
+            color: #effef7;
             background: rgba(255,255,255,.055);
+            border: 1px solid rgba(255,255,255,.1);
         }
 
         .btn-404:hover {
             transform: translateY(-2px);
         }
 
-        .btn-home:hover {
-            box-shadow: 0 22px 45px rgba(48,213,150,.28);
-        }
-
-        .fine-print {
-            margin-top: 24px;
-            color: #7fbda4;
+        .footer-note {
+            margin-top: 22px;
             font-size: 12px;
+            color: #7eb9a1;
             line-height: 1.7;
         }
 
-        .right-panel {
+        .viewer-panel {
+            position: relative;
             min-height: calc(100vh - 36px);
         }
 
-        .experience {
+        #scene-wrap {
             position: absolute;
             inset: 0;
-            overflow: hidden;
-            perspective: 1800px;
-            cursor: grab;
         }
 
-        .experience:active {
-            cursor: grabbing;
-        }
-
-        .scene {
+        #webgl-container {
             position: absolute;
             inset: 0;
-            transform-style: preserve-3d;
-            transform: rotateX(var(--rx)) rotateY(var(--ry));
-            transition: transform .16s ease-out;
         }
 
-        .scene::before {
-            content: "";
+        .viewer-ui {
             position: absolute;
             inset: 0;
-            background:
-                radial-gradient(circle at calc(50% + var(--mx)) calc(45% + var(--my)), rgba(143,244,198,.18), transparent 30%),
-                radial-gradient(circle at 50% 60%, rgba(139,215,255,.08), transparent 38%);
-            transform: translateZ(-180px);
+            z-index: 3;
             pointer-events: none;
         }
 
-        .topbar-scene {
+        .top-ui {
             position: absolute;
-            z-index: 25;
             top: 18px;
             left: 18px;
             right: 18px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: flex-start;
             gap: 12px;
             flex-wrap: wrap;
-            transform: translateZ(180px);
         }
 
-        .scene-chip {
-            padding: 11px 15px;
+        .chip,
+        .viewer-card,
+        .control-bar {
+            pointer-events: auto;
+        }
+
+        .chip {
+            padding: 10px 14px;
             border-radius: 999px;
-            border: 1px solid rgba(255,255,255,.10);
-            background: rgba(255,255,255,.055);
-            backdrop-filter: blur(10px);
-            color: #f1fff9;
             font-size: 11px;
-            font-weight: 950;
+            font-weight: 900;
+            text-transform: uppercase;
             letter-spacing: .08em;
-            text-transform: uppercase;
+            border: 1px solid rgba(255,255,255,.1);
+            background: rgba(6, 22, 16, 0.72);
+            backdrop-filter: blur(12px);
+            color: #f3fff8;
         }
 
-        .big-bg-code {
+        .viewer-card {
             position: absolute;
-            left: 50%;
-            top: 53%;
-            transform: translate(-50%, -50%) translateZ(-220px);
-            font-size: clamp(220px, 30vw, 520px);
-            line-height: .8;
-            font-weight: 1000;
-            letter-spacing: -.09em;
-            color: rgba(255,255,255,.045);
-            user-select: none;
-            pointer-events: none;
-            text-shadow: 0 0 80px rgba(48,213,150,.09);
-        }
-
-        .aura {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            width: min(58vw, 620px);
-            height: min(58vw, 620px);
-            border-radius: 50%;
-            transform: translate(-50%, -48%) translateZ(-90px);
-            background: radial-gradient(circle, rgba(143,244,198,.24), rgba(48,213,150,.07) 38%, transparent 68%);
-            filter: blur(8px);
-        }
-
-        .orbit {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            width: min(56vw, 600px);
-            height: min(56vw, 600px);
-            border-radius: 50%;
-            border: 1px solid rgba(143,244,198,.18);
-            transform: translate(-50%, -48%) translateZ(-40px) rotateX(68deg);
-            box-shadow:
-                0 0 0 34px rgba(143,244,198,.025),
-                0 0 0 72px rgba(143,244,198,.018),
-                inset 0 0 60px rgba(48,213,150,.035);
-            animation: orbitPulse 3.4s ease-in-out infinite;
-        }
-
-        @keyframes orbitPulse {
-            0%, 100% { opacity: .95; transform: translate(-50%, -48%) translateZ(-40px) rotateX(68deg) scale(1); }
-            50% { opacity: .55; transform: translate(-50%, -48%) translateZ(-40px) rotateX(68deg) scale(1.045); }
-        }
-
-        .helmet-area {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            width: min(82vw, 640px);
-            max-width: 92%;
-            aspect-ratio: 1 / 1;
-            transform: translate(-50%, -48%) translateZ(120px) translateX(calc(var(--mx) * .14)) translateY(calc(var(--my) * .14));
-            transform-style: preserve-3d;
-        }
-
-        .helmet-3d {
-            position: absolute;
-            inset: 0;
-            transform-style: preserve-3d;
-            filter: drop-shadow(0 44px 55px rgba(0,0,0,.45));
-            animation: helmetFloat 4.6s ease-in-out infinite;
-        }
-
-        @keyframes helmetFloat {
-            0%, 100% { transform: translateY(0) rotateZ(-1deg); }
-            50% { transform: translateY(-14px) rotateZ(1.2deg); }
-        }
-
-        .helmet-svg {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            transform: translateZ(44px) rotateX(calc(var(--ry) * -.38)) rotateY(calc(var(--rx) * -.38));
-        }
-
-        .visor-light {
-            position: absolute;
-            left: 48%;
-            top: 46%;
-            width: 47%;
-            height: 17%;
-            border-radius: 999px 999px 46px 46px;
-            transform: translate(-50%, -50%) translateZ(110px) rotate(-5deg);
-            background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,.06) 30%, rgba(255,255,255,.26) 48%, rgba(255,255,255,.05) 66%, transparent 100%);
-            mix-blend-mode: screen;
-            filter: blur(.7px);
-            opacity: .9;
-            pointer-events: none;
-        }
-
-        .helmet-shadow {
-            position: absolute;
-            left: 50%;
-            bottom: 10%;
-            width: 70%;
-            height: 48px;
-            border-radius: 50%;
-            transform: translateX(-50%) translateZ(-40px);
-            background: radial-gradient(circle, rgba(0,0,0,.46), rgba(0,0,0,.12) 56%, transparent 75%);
-            filter: blur(12px);
-        }
-
-        .data-card {
-            position: absolute;
-            z-index: 12;
-            width: 230px;
-            padding: 17px;
-            border-radius: 24px;
-            border: 1px solid rgba(143,244,198,.15);
-            background: rgba(6, 22, 16, .72);
+            max-width: 240px;
+            padding: 16px;
+            border-radius: 22px;
+            border: 1px solid rgba(142,243,197,.14);
+            background: rgba(6, 22, 16, 0.72);
             backdrop-filter: blur(14px);
-            box-shadow: 0 24px 58px rgba(0,0,0,.28);
-            transform-style: preserve-3d;
+            box-shadow: 0 20px 55px rgba(0,0,0,.25);
         }
 
-        .data-card small {
+        .viewer-card small {
             display: block;
-            color: #8dd2b6;
-            text-transform: uppercase;
-            letter-spacing: .16em;
+            color: #8fd6b8;
             font-size: 10px;
-            font-weight: 950;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .15em;
         }
 
-        .data-card strong {
+        .viewer-card strong {
             display: block;
-            margin-top: 9px;
-            color: #f4fff9;
-            font-weight: 950;
+            margin-top: 8px;
             font-size: 15px;
             line-height: 1.35;
+            color: #f4fff9;
         }
 
-        .data-card p {
-            margin: 7px 0 0;
+        .viewer-card p {
+            margin: 8px 0 0;
             color: var(--muted);
+            font-size: 12px;
             line-height: 1.55;
-            font-size: 12px;
         }
 
-        .card-a {
-            left: 34px;
-            top: 110px;
-            transform: translateZ(170px) translateX(calc(var(--mx) * -.11)) translateY(calc(var(--my) * -.08));
-        }
+        .card-a { top: 110px; left: 24px; }
+        .card-b { top: 140px; right: 24px; }
+        .card-c { bottom: 120px; left: 42px; }
 
-        .card-b {
-            right: 34px;
-            top: 150px;
-            transform: translateZ(190px) translateX(calc(var(--mx) * .10)) translateY(calc(var(--my) * -.08));
-        }
-
-        .card-c {
-            left: 62px;
-            bottom: 120px;
-            width: 210px;
-            transform: translateZ(155px) translateX(calc(var(--mx) * -.08)) translateY(calc(var(--my) * .10));
-        }
-
-        .ecg-panel {
+        .control-bar {
             position: absolute;
-            right: 38px;
-            bottom: 118px;
-            z-index: 12;
-            width: 250px;
-            padding: 17px;
-            border-radius: 24px;
-            border: 1px solid rgba(143,244,198,.15);
-            background: rgba(6, 22, 16, .72);
-            backdrop-filter: blur(14px);
-            transform: translateZ(175px) translateX(calc(var(--mx) * .08)) translateY(calc(var(--my) * .08));
-        }
-
-        .ecg-title {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            color: #eafff5;
-            font-size: 12px;
-            font-weight: 950;
-            text-transform: uppercase;
-            letter-spacing: .12em;
-        }
-
-        .ecg-title span {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: var(--green);
-            box-shadow: 0 0 14px rgba(48,213,150,.9);
-        }
-
-        .ecg-line {
-            margin-top: 14px;
-            height: 56px;
-            overflow: hidden;
-            border-radius: 16px;
-            background: rgba(255,255,255,.035);
-            border: 1px solid rgba(255,255,255,.06);
-        }
-
-        .ecg-line svg {
-            width: 200%;
-            height: 100%;
-            animation: ecgMove 2.4s linear infinite;
-        }
-
-        @keyframes ecgMove {
-            from { transform: translateX(0); }
-            to { transform: translateX(-50%); }
-        }
-
-        .floor {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 220px;
-            transform: translateZ(-150px);
-            background:
-                linear-gradient(180deg, rgba(255,255,255,.03), transparent 32%),
-                linear-gradient(180deg, #10271d, #06110d);
-            border-top: 1px solid rgba(143,244,198,.12);
-        }
-
-        .floor::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 26px;
-            height: 8px;
-            opacity: .8;
-            background: repeating-linear-gradient(90deg, rgba(143,244,198,.18) 0 50px, transparent 50px 88px);
-        }
-
-        .floor::after {
-            content: "";
-            position: absolute;
-            left: 50%;
-            top: 54px;
-            width: 60%;
-            height: 70px;
-            transform: translateX(-50%);
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0,0,0,.35), transparent 70%);
-            filter: blur(14px);
-        }
-
-        .particle {
-            position: absolute;
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: rgba(143,244,198,.82);
-            box-shadow: 0 0 20px rgba(143,244,198,.55);
-            animation: particleUp 5s linear infinite;
-            opacity: 0;
-        }
-
-        .p-1 { left: 28%; top: 66%; animation-delay: .1s; }
-        .p-2 { left: 72%; top: 70%; animation-delay: 1s; }
-        .p-3 { left: 44%; top: 78%; animation-delay: 1.8s; }
-        .p-4 { left: 62%; top: 46%; animation-delay: 2.7s; }
-        .p-5 { left: 35%; top: 38%; animation-delay: 3.4s; }
-
-        @keyframes particleUp {
-            0% { transform: translateY(30px) scale(.6); opacity: 0; }
-            20% { opacity: .75; }
-            100% { transform: translateY(-90px) scale(1.18); opacity: 0; }
-        }
-
-        .bottom-caption {
-            position: absolute;
-            z-index: 30;
             left: 18px;
             right: 18px;
             bottom: 18px;
-            padding: 15px 18px;
-            border-radius: 22px;
-            border: 1px solid rgba(143,244,198,.16);
-            background: rgba(5, 20, 15, .76);
-            backdrop-filter: blur(14px);
-            text-align: center;
-            transform: translateZ(230px);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 14px 16px;
+            border-radius: 24px;
+            border: 1px solid rgba(142,243,197,.16);
+            background: rgba(6, 22, 16, 0.76);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 18px 40px rgba(0,0,0,.22);
         }
 
-        .bottom-caption strong {
+        .control-text strong {
             display: block;
-            font-weight: 950;
             font-size: 14px;
-            color: #f2fff8;
+            font-weight: 900;
+            color: #f6fff9;
         }
 
-        .bottom-caption span {
+        .control-text span {
             display: block;
             margin-top: 4px;
-            color: var(--muted);
-            line-height: 1.55;
             font-size: 12px;
+            line-height: 1.5;
+            color: var(--muted);
         }
 
-        .click-pulse .helmet-3d {
-            animation: clickPop .5s ease;
+        .control-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
-        @keyframes clickPop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.035) translateY(-10px); }
-            100% { transform: scale(1); }
+        .control-btn {
+            border: 1px solid rgba(255,255,255,.1);
+            background: rgba(255,255,255,.06);
+            color: #effef7;
+            cursor: pointer;
+            padding: 11px 14px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 900;
+            transition: transform .2s ease, background .2s ease, border-color .2s ease;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-1px);
+            background: rgba(142,243,197,.12);
+            border-color: rgba(142,243,197,.2);
+        }
+
+        .loading-cover {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            background: linear-gradient(180deg, rgba(4, 16, 12, .32), rgba(4, 16, 12, .64));
+            z-index: 5;
+            transition: opacity .45s ease, visibility .45s ease;
+        }
+
+        .loading-cover.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-ring {
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,.08);
+            border-top-color: var(--green);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-cover strong {
+            font-size: 15px;
+            font-weight: 900;
+            color: #f4fff8;
+        }
+
+        .loading-cover span {
+            font-size: 13px;
+            color: var(--muted);
         }
 
         @media (max-width: 1180px) {
@@ -697,12 +457,12 @@
             }
 
             .left-content,
-            .right-panel {
+            .viewer-panel {
                 min-height: auto;
             }
 
-            .right-panel {
-                min-height: 720px;
+            .viewer-panel {
+                min-height: 760px;
             }
         }
 
@@ -711,16 +471,16 @@
                 padding: 12px;
             }
 
-            .left-panel,
-            .right-panel {
+            .panel {
                 border-radius: 26px;
             }
 
             .left-content {
+                min-height: auto;
                 padding: 26px;
             }
 
-            .brand-pill {
+            .eyebrow {
                 width: 100%;
                 justify-content: center;
                 text-align: center;
@@ -731,7 +491,7 @@
                 font-size: 14px;
             }
 
-            .metrics {
+            .grid-info {
                 grid-template-columns: 1fr;
             }
 
@@ -743,390 +503,550 @@
                 width: 100%;
             }
 
-            .right-panel {
-                min-height: 650px;
+            .viewer-panel {
+                min-height: 660px;
             }
 
-            .experience {
-                perspective: 1200px;
-            }
-
-            .topbar-scene {
+            .top-ui {
                 top: 12px;
                 left: 12px;
                 right: 12px;
             }
 
-            .scene-chip {
+            .chip {
                 font-size: 9px;
-                padding: 9px 11px;
+                padding: 8px 11px;
             }
 
-            .helmet-area {
-                width: 96%;
-                top: 50%;
+            .viewer-card {
+                max-width: 170px;
+                padding: 12px;
             }
 
-            .big-bg-code {
-                font-size: 190px;
-            }
-
-            .orbit {
-                width: 320px;
-                height: 320px;
-            }
-
-            .data-card {
-                width: 160px;
-                padding: 13px;
-                border-radius: 18px;
-            }
-
-            .data-card strong {
+            .viewer-card strong {
                 font-size: 12px;
             }
 
-            .data-card p {
+            .viewer-card p {
                 font-size: 10px;
             }
 
-            .card-a {
-                left: 10px;
-                top: 82px;
-            }
+            .card-a { top: 78px; left: 10px; }
+            .card-b { top: 110px; right: 10px; }
+            .card-c { display: none; }
 
-            .card-b {
-                right: 10px;
-                top: 124px;
-            }
-
-            .card-c {
-                display: none;
-            }
-
-            .ecg-panel {
-                left: 12px;
-                right: 12px;
-                bottom: 92px;
-                width: auto;
-            }
-
-            .bottom-caption {
+            .control-bar {
                 left: 12px;
                 right: 12px;
                 bottom: 12px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-buttons {
+                width: 100%;
+            }
+
+            .control-btn {
+                flex: 1 1 auto;
             }
         }
     </style>
 </head>
 <body>
     <main class="page-404">
-        <section class="left-panel">
+        <section class="panel">
             <div class="left-content">
-                <div class="brand-pill">
+                <div class="eyebrow">
                     <span></span>
-                    Integrar ReSaúde • Sistema em monitoramento
+                    Integrar ReSaúde • Página 404 interativa
                 </div>
 
-                <div class="label">erro de rota</div>
+                <div class="mini-label">erro de navegação</div>
                 <div class="error-code">404</div>
 
-                <h1 class="headline">
-                    Esta página saiu do <em>trajeto.</em>
+                <h1 class="title">
+                    A página não foi encontrada, mas o <em>sistema continua ativo.</em>
                 </h1>
 
                 <p class="description">
-                    A rota que você tentou acessar não foi encontrada. Talvez o endereço tenha mudado,
-                    sido removido ou não exista mais no sistema. Enquanto isso, o ambiente continua ativo
-                    e você pode voltar para uma área segura da plataforma.
+                    A rota que você tentou acessar não existe ou foi movida. Para deixar a experiência mais profissional,
+                    esta página ganhou um visual 3D com uma personagem de enfermagem em estilo bloco, que pode ser girada
+                    em todos os ângulos com o mouse, como uma vitrine interativa.
                 </p>
 
-                <div class="status-card">
-                    <div class="status-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v7.5M8.25 12h7.5"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                        </svg>
+                <div class="info-box">
+                    <div class="info-title">O que esta versão faz</div>
+                    <div class="info-text">
+                        Você pode arrastar para girar a enfermeira 3D, usar o scroll para aproximar e afastar,
+                        ver de frente, de lado, por cima e por baixo, além de usar botões rápidos para mudar a vista.
                     </div>
 
-                    <div>
-                        <div class="status-title">Navegação interrompida com segurança</div>
-                        <div class="status-text">
-                            Não se preocupe: isso não afeta seus dados. Use uma das opções abaixo para retornar ao fluxo principal.
+                    <div class="grid-info">
+                        <div class="grid-item">
+                            <small>modelo</small>
+                            <strong>Enfermeira 3D em estilo bloco</strong>
                         </div>
-                    </div>
-                </div>
-
-                <div class="metrics">
-                    <div class="metric">
-                        <small>status</small>
-                        <strong>Rota não encontrada</strong>
-                    </div>
-                    <div class="metric">
-                        <small>ambiente</small>
-                        <strong>Integrar ReSaúde</strong>
+                        <div class="grid-item">
+                            <small>interação</small>
+                            <strong>Rotação livre com mouse</strong>
+                        </div>
                     </div>
                 </div>
 
                 <div class="actions">
-                    <a href="{{ url('/') }}" class="btn-404 btn-home">
-                        Voltar ao início
-                    </a>
-
-                    <button class="btn-404 btn-back" type="button" onclick="history.back()">
-                        Voltar para a tela anterior
-                    </button>
+                    <a href="{{ url('/') }}" class="btn-404 btn-primary">Voltar ao início</a>
+                    <button type="button" class="btn-404 btn-secondary" onclick="history.back()">Voltar para a tela anterior</button>
                 </div>
 
-                <div class="fine-print">
-                    Erro 404 personalizado • experiência 3D interativa • tema institucional da saúde
+                <div class="footer-note">
+                    Integrar ReSaúde • página 404 redesenhada com visual mais profissional e experiência 3D interativa.
                 </div>
             </div>
         </section>
 
-        <section class="right-panel">
-            <div class="experience" id="experience404">
-                <div class="scene" id="scene404">
-                    <div class="topbar-scene">
-                        <div class="scene-chip">3D interactive error room</div>
-                        <div class="scene-chip">mova o mouse</div>
+        <section class="panel viewer-panel">
+            <div id="scene-wrap">
+                <div id="webgl-container"></div>
+
+                <div class="viewer-ui">
+                    <div class="top-ui">
+                        <div class="chip">arraste para girar</div>
+                        <div class="chip">scroll para zoom</div>
                     </div>
 
-                    <div class="big-bg-code">404</div>
-                    <div class="aura"></div>
-                    <div class="orbit"></div>
-
-                    <div class="data-card card-a">
-                        <small>health route</small>
-                        <strong>Destino não localizado</strong>
-                        <p>O caminho solicitado não existe no mapa atual do sistema.</p>
+                    <div class="viewer-card card-a">
+                        <small>visual 3d</small>
+                        <strong>Veja de todos os lados</strong>
+                        <p>Rotacione livremente a personagem para observar frente, costas, laterais e ângulos baixos.</p>
                     </div>
 
-                    <div class="data-card card-b">
-                        <small>security layer</small>
-                        <strong>Retorno seguro disponível</strong>
-                        <p>Você pode voltar sem perder a sessão da plataforma.</p>
+                    <div class="viewer-card card-b">
+                        <small>identidade</small>
+                        <strong>Tema da saúde</strong>
+                        <p>Visual profissional com uniforme, crachá, touca e base de apresentação no padrão do sistema.</p>
                     </div>
 
-                    <div class="data-card card-c">
-                        <small>diagnóstico</small>
-                        <strong>404 confirmado</strong>
-                        <p>A rota foi analisada e não retornou conteúdo válido.</p>
+                    <div class="viewer-card card-c">
+                        <small>experiência</small>
+                        <strong>Mais moderna</strong>
+                        <p>Substitui a tela simples por uma página 404 mais impactante e elegante.</p>
                     </div>
 
-                    <div class="ecg-panel">
-                        <div class="ecg-title">
-                            sistema ativo
-                            <span></span>
+                    <div class="control-bar">
+                        <div class="control-text">
+                            <strong>Enfermeira 3D interativa</strong>
+                            <span>Use os botões para reposicionar a câmera ou deixe a rotação automática ligada.</span>
                         </div>
 
-                        <div class="ecg-line">
-                            <svg viewBox="0 0 600 100" preserveAspectRatio="none" aria-hidden="true">
-                                <path d="M0 54 L70 54 L90 54 L108 20 L132 82 L158 54 L218 54 L238 54 L256 34 L278 70 L302 54 L370 54 L390 54 L410 18 L434 84 L460 54 L520 54 L540 54 L558 35 L580 70 L600 54"
-                                      fill="none" stroke="#8ff4c6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M600 54 L670 54 L690 54 L708 20 L732 82 L758 54 L818 54 L838 54 L856 34 L878 70 L902 54 L970 54 L990 54 L1010 18 L1034 84 L1060 54 L1120 54 L1140 54 L1158 35 L1180 70 L1200 54"
-                                      fill="none" stroke="#8ff4c6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                        <div class="control-buttons">
+                            <button type="button" class="control-btn" id="btnFront">Frente</button>
+                            <button type="button" class="control-btn" id="btnSide">Lado</button>
+                            <button type="button" class="control-btn" id="btnTop">Cima</button>
+                            <button type="button" class="control-btn" id="btnBottom">Baixo</button>
+                            <button type="button" class="control-btn" id="btnAuto">Auto rotação</button>
+                            <button type="button" class="control-btn" id="btnReset">Resetar</button>
                         </div>
                     </div>
+                </div>
 
-                    <div class="helmet-area">
-                        <div class="helmet-shadow"></div>
-
-                        <div class="helmet-3d">
-                            <svg class="helmet-svg" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                <defs>
-                                    <linearGradient id="shell" x1=".12" y1=".06" x2=".86" y2=".92">
-                                        <stop offset="0%" stop-color="#ffffff"/>
-                                        <stop offset="43%" stop-color="#e9fff7"/>
-                                        <stop offset="100%" stop-color="#95dfc1"/>
-                                    </linearGradient>
-
-                                    <linearGradient id="darkGreen" x1="0" y1="0" x2="1" y2="1">
-                                        <stop offset="0%" stop-color="#0b8b62"/>
-                                        <stop offset="100%" stop-color="#0a3d2f"/>
-                                    </linearGradient>
-
-                                    <linearGradient id="visor" x1="0" y1="0" x2="1" y2="0">
-                                        <stop offset="0%" stop-color="#071914"/>
-                                        <stop offset="48%" stop-color="#16392f"/>
-                                        <stop offset="100%" stop-color="#081a15"/>
-                                    </linearGradient>
-
-                                    <linearGradient id="stripe" x1="0" y1="0" x2="1" y2="1">
-                                        <stop offset="0%" stop-color="#91f5c8"/>
-                                        <stop offset="100%" stop-color="#30d596"/>
-                                    </linearGradient>
-
-                                    <filter id="helmetDrop" x="-30%" y="-30%" width="160%" height="160%">
-                                        <feDropShadow dx="0" dy="28" stdDeviation="20" flood-color="#000000" flood-opacity=".34"/>
-                                    </filter>
-                                </defs>
-
-                                <ellipse cx="324" cy="530" rx="152" ry="36" fill="rgba(0,0,0,.18)"/>
-
-                                <path filter="url(#helmetDrop)"
-                                      d="M164 333
-                                         C154 231 209 139 300 112
-                                         C379 89 470 112 522 185
-                                         C565 246 566 342 520 415
-                                         C484 474 425 507 348 511
-                                         L258 511
-                                         C216 510 185 491 170 457
-                                         C158 431 160 406 174 382
-                                         C143 369 126 347 126 319
-                                         C126 293 141 271 166 258
-                                         C161 282 160 307 164 333Z"
-                                      fill="url(#shell)"/>
-
-                                <path d="M314 113
-                                         C404 102 486 143 526 215
-                                         C480 211 436 208 386 204
-                                         C356 202 327 201 297 202
-                                         C292 164 297 134 314 113Z"
-                                      fill="url(#darkGreen)"/>
-
-                                <path d="M218 167
-                                         C263 128 343 112 426 134
-                                         C410 152 400 174 395 199
-                                         C318 190 259 197 205 222
-                                         C198 198 201 181 218 167Z"
-                                      fill="url(#stripe)"/>
-
-                                <g transform="translate(285 158)">
-                                    <rect width="70" height="70" rx="20" fill="#ffffff" stroke="#0a7d59" stroke-width="5"/>
-                                    <rect x="29" y="13" width="12" height="44" rx="6" fill="#30d596"/>
-                                    <rect x="13" y="29" width="44" height="12" rx="6" fill="#30d596"/>
-                                </g>
-
-                                <path d="M186 255
-                                         C240 229 346 224 456 248
-                                         C486 255 505 273 507 295
-                                         C509 317 493 334 460 346
-                                         C386 373 295 378 203 360
-                                         C170 353 152 336 149 313
-                                         C146 289 160 268 186 255Z"
-                                      fill="url(#visor)" stroke="rgba(255,255,255,.22)" stroke-width="5"/>
-
-                                <path d="M198 266
-                                         C255 245 342 246 436 264
-                                         C390 272 337 276 286 273
-                                         C250 271 220 268 198 266Z"
-                                      fill="rgba(255,255,255,.15)"/>
-
-                                <path d="M190 235
-                                         C247 213 307 209 382 217
-                                         C382 228 380 238 377 247
-                                         C335 242 291 244 251 252
-                                         L234 253 L224 229 L208 276 L193 235Z"
-                                      fill="#30d596"/>
-
-                                <path d="M180 393
-                                         C214 382 259 378 308 379
-                                         C305 425 318 469 345 511
-                                         L258 511
-                                         C216 510 185 491 170 457
-                                         C158 429 160 407 180 393Z"
-                                      fill="#0c7656"/>
-
-                                <path d="M374 389
-                                         C430 383 477 365 508 336
-                                         C529 361 537 392 527 426
-                                         C506 485 444 512 348 511
-                                         C368 465 376 423 374 389Z"
-                                      fill="#f0fff8"/>
-
-                                <g transform="translate(204 411)">
-                                    <rect width="93" height="44" rx="18" fill="#071914"/>
-                                    <rect x="16" y="12" width="60" height="5" rx="3" fill="#8ff4c6"/>
-                                    <rect x="16" y="26" width="60" height="5" rx="3" fill="#8ff4c6"/>
-                                </g>
-
-                                <path d="M335 118 C431 123 492 170 516 244" stroke="rgba(255,255,255,.26)" stroke-width="8" fill="none" stroke-linecap="round"/>
-                                <path d="M173 307 C224 289 280 286 338 292" stroke="rgba(255,255,255,.16)" stroke-width="7" fill="none" stroke-linecap="round"/>
-                            </svg>
-
-                            <div class="visor-light"></div>
-                        </div>
-                    </div>
-
-                    <div class="particle p-1"></div>
-                    <div class="particle p-2"></div>
-                    <div class="particle p-3"></div>
-                    <div class="particle p-4"></div>
-                    <div class="particle p-5"></div>
-
-                    <div class="floor"></div>
-
-                    <div class="bottom-caption">
-                        <strong>Capacete 3D interativo • rota não encontrada</strong>
-                        <span>Experiência visual inspirada em páginas premium, com identidade própria do Integrar ReSaúde.</span>
-                    </div>
+                <div class="loading-cover" id="loadingCover">
+                    <div class="loading-ring"></div>
+                    <strong>Carregando experiência 3D</strong>
+                    <span>Preparando a personagem de enfermagem...</span>
                 </div>
             </div>
         </section>
     </main>
 
-    <script>
-        (function () {
-            const experience = document.getElementById('experience404');
-            const root = document.documentElement;
+    <script type="module">
+        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
+        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js';
 
-            if (!experience || !root) return;
+        const container = document.getElementById('webgl-container');
+        const loadingCover = document.getElementById('loadingCover');
 
-            let raf = null;
+        let scene, camera, renderer, controls, nurseGroup, mixerClock;
+        let autoRotateEnabled = true;
+        let floatTick = 0;
 
-            function update(clientX, clientY) {
-                const rect = experience.getBoundingClientRect();
-                const x = clientX - rect.left;
-                const y = clientY - rect.top;
+        init();
+        animate();
 
-                const px = (x / rect.width) - 0.5;
-                const py = (y / rect.height) - 0.5;
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x081913);
+            scene.fog = new THREE.Fog(0x081913, 8, 16);
 
-                const rotateX = py * -14;
-                const rotateY = px * 18;
-                const moveX = px * 42;
-                const moveY = py * 34;
+            camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.set(3.8, 2.6, 5.8);
 
-                root.style.setProperty('--rx', rotateX.toFixed(2) + 'deg');
-                root.style.setProperty('--ry', rotateY.toFixed(2) + 'deg');
-                root.style.setProperty('--mx', moveX.toFixed(2) + 'px');
-                root.style.setProperty('--my', moveY.toFixed(2) + 'px');
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.06;
+            controls.target.set(0, 1.35, 0);
+            controls.minDistance = 3;
+            controls.maxDistance = 9;
+            controls.minPolarAngle = 0.10;
+            controls.maxPolarAngle = Math.PI - 0.10;
+            controls.autoRotate = autoRotateEnabled;
+            controls.autoRotateSpeed = 1.3;
+            controls.enablePan = false;
+
+            addLights();
+            addEnvironment();
+            nurseGroup = createNurse();
+            scene.add(nurseGroup);
+
+            wireButtons();
+            window.addEventListener('resize', onResize);
+
+            setTimeout(() => {
+                loadingCover?.classList.add('hidden');
+            }, 650);
+        }
+
+        function addLights() {
+            const ambient = new THREE.AmbientLight(0xffffff, 1.7);
+            scene.add(ambient);
+
+            const hemi = new THREE.HemisphereLight(0xc9fff0, 0x16352b, 1.35);
+            hemi.position.set(0, 6, 0);
+            scene.add(hemi);
+
+            const key = new THREE.DirectionalLight(0xffffff, 2.2);
+            key.position.set(4, 7, 5);
+            key.castShadow = true;
+            key.shadow.mapSize.set(2048, 2048);
+            key.shadow.camera.near = 0.5;
+            key.shadow.camera.far = 30;
+            key.shadow.camera.left = -8;
+            key.shadow.camera.right = 8;
+            key.shadow.camera.top = 8;
+            key.shadow.camera.bottom = -8;
+            scene.add(key);
+
+            const rim = new THREE.DirectionalLight(0x8ef3c5, 1.4);
+            rim.position.set(-4, 3, -5);
+            scene.add(rim);
+
+            const spot = new THREE.SpotLight(0x8ef3c5, 2.1, 20, Math.PI / 5, 0.35, 1.5);
+            spot.position.set(0, 7, 2);
+            spot.target.position.set(0, 1.2, 0);
+            scene.add(spot);
+            scene.add(spot.target);
+        }
+
+        function addEnvironment() {
+            const floorGeo = new THREE.CylinderGeometry(2.25, 2.45, 0.48, 48);
+            const floorMat = new THREE.MeshStandardMaterial({
+                color: 0x123327,
+                roughness: 0.65,
+                metalness: 0.12,
+                emissive: 0x0a1f18,
+                emissiveIntensity: 0.7
+            });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.position.y = -0.25;
+            floor.receiveShadow = true;
+            floor.castShadow = true;
+            scene.add(floor);
+
+            const floorTopGeo = new THREE.CylinderGeometry(1.85, 2.05, 0.08, 48);
+            const floorTopMat = new THREE.MeshStandardMaterial({
+                color: 0x2fd393,
+                roughness: 0.35,
+                metalness: 0.05,
+                emissive: 0x184733,
+                emissiveIntensity: 0.5
+            });
+            const floorTop = new THREE.Mesh(floorTopGeo, floorTopMat);
+            floorTop.position.y = 0.03;
+            floorTop.receiveShadow = true;
+            scene.add(floorTop);
+
+            const ringGeo = new THREE.TorusGeometry(2.15, 0.03, 24, 100);
+            const ringMat = new THREE.MeshStandardMaterial({ color: 0x8ef3c5, emissive: 0x8ef3c5, emissiveIntensity: 0.55 });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2;
+            ring.position.y = 0.16;
+            scene.add(ring);
+
+            const glowGeo = new THREE.CircleGeometry(2.35, 48);
+            const glowMat = new THREE.MeshBasicMaterial({ color: 0x2fd393, transparent: true, opacity: 0.08 });
+            const glow = new THREE.Mesh(glowGeo, glowMat);
+            glow.rotation.x = -Math.PI / 2;
+            glow.position.y = 0.12;
+            scene.add(glow);
+
+            const particlesGeo = new THREE.BufferGeometry();
+            const particleCount = 120;
+            const positions = [];
+            for (let i = 0; i < particleCount; i++) {
+                const radius = 3 + Math.random() * 3.5;
+                const angle = Math.random() * Math.PI * 2;
+                const height = Math.random() * 5.5;
+                positions.push(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
+            }
+            particlesGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            const particlesMat = new THREE.PointsMaterial({
+                color: 0x8ef3c5,
+                size: 0.05,
+                transparent: true,
+                opacity: 0.65,
+                sizeAttenuation: true
+            });
+            const particles = new THREE.Points(particlesGeo, particlesMat);
+            scene.add(particles);
+        }
+
+        function createNurse() {
+            const group = new THREE.Group();
+
+            const skin = new THREE.MeshStandardMaterial({ color: 0xe8b795, roughness: 0.9 });
+            const white = new THREE.MeshStandardMaterial({ color: 0xf6fbff, roughness: 0.8 });
+            const green = new THREE.MeshStandardMaterial({ color: 0x42c692, roughness: 0.72 });
+            const darkGreen = new THREE.MeshStandardMaterial({ color: 0x0f6d50, roughness: 0.72 });
+            const gray = new THREE.MeshStandardMaterial({ color: 0x47605b, roughness: 0.85 });
+            const hair = new THREE.MeshStandardMaterial({ color: 0x423126, roughness: 0.95 });
+            const shoes = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 });
+            const badge = new THREE.MeshStandardMaterial({ color: 0x86d5f8, roughness: 0.65 });
+            const black = new THREE.MeshStandardMaterial({ color: 0x161a1a, roughness: 0.95 });
+
+            const castShadowTo = (mesh) => {
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                return mesh;
+            };
+
+            // pedestal mini base
+            const stand = castShadowTo(new THREE.Mesh(
+                new THREE.BoxGeometry(1.45, 0.22, 1.45),
+                new THREE.MeshStandardMaterial({ color: 0xf0fff9, roughness: 0.55, metalness: 0.04 })
+            ));
+            stand.position.y = 0.18;
+            group.add(stand);
+
+            // shoes
+            const shoeL = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.18, 0.6), shoes));
+            shoeL.position.set(-0.22, 0.40, 0.02);
+            group.add(shoeL);
+
+            const shoeR = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.18, 0.6), shoes));
+            shoeR.position.set(0.22, 0.40, 0.02);
+            group.add(shoeR);
+
+            // legs
+            const legL = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.82, 0.26), white));
+            legL.position.set(-0.22, 0.90, 0);
+            group.add(legL);
+
+            const legR = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.82, 0.26), white));
+            legR.position.set(0.22, 0.90, 0);
+            group.add(legR);
+
+            // torso / coat
+            const torso = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.26, 0.58), white));
+            torso.position.set(0, 1.95, 0);
+            group.add(torso);
+
+            const chestPanel = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.98, 0.61), green));
+            chestPanel.position.set(0, 1.96, 0.015);
+            group.add(chestPanel);
+
+            const pocketL = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.03), white));
+            pocketL.position.set(-0.22, 1.7, 0.31);
+            group.add(pocketL);
+
+            const pocketR = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.03), white));
+            pocketR.position.set(0.22, 1.7, 0.31);
+            group.add(pocketR);
+
+            const badgeMesh = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.26, 0.02), badge));
+            badgeMesh.position.set(0.27, 2.17, 0.31);
+            group.add(badgeMesh);
+
+            // center health symbol on chest
+            const chestCrossVertical = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.28, 0.03), white));
+            chestCrossVertical.position.set(0, 2.08, 0.325);
+            group.add(chestCrossVertical);
+
+            const chestCrossHorizontal = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.03), white));
+            chestCrossHorizontal.position.set(0, 2.08, 0.325);
+            group.add(chestCrossHorizontal);
+
+            // arms
+            const armL = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.0, 0.24), white));
+            armL.position.set(-0.68, 1.94, 0);
+            armL.rotation.z = THREE.MathUtils.degToRad(7);
+            group.add(armL);
+
+            const armR = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.0, 0.24), white));
+            armR.position.set(0.68, 1.94, 0);
+            armR.rotation.z = THREE.MathUtils.degToRad(-7);
+            group.add(armR);
+
+            const handL = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.20, 0.20), skin));
+            handL.position.set(-0.72, 1.38, 0);
+            group.add(handL);
+
+            const handR = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.20, 0.20), skin));
+            handR.position.set(0.72, 1.38, 0);
+            group.add(handR);
+
+            // neck
+            const neck = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.22), skin));
+            neck.position.set(0, 2.72, 0);
+            group.add(neck);
+
+            // head
+            const head = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.82, 0.82), skin));
+            head.position.set(0, 3.16, 0);
+            group.add(head);
+
+            // hair back
+            const hairBack = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.48, 0.84), hair));
+            hairBack.position.set(0, 3.2, -0.05);
+            group.add(hairBack);
+
+            const fringe = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.18, 0.30), hair));
+            fringe.position.set(0, 3.48, 0.15);
+            group.add(fringe);
+
+            // face details
+            const eyeL = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.02), black));
+            eyeL.position.set(-0.16, 3.18, 0.42);
+            group.add(eyeL);
+
+            const eyeR = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.02), black));
+            eyeR.position.set(0.16, 3.18, 0.42);
+            group.add(eyeR);
+
+            const mouth = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.02), darkGreen));
+            mouth.position.set(0, 2.95, 0.42);
+            group.add(mouth);
+
+            const blushL = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.06, 0.02), new THREE.MeshStandardMaterial({ color: 0xed9f9f, roughness: 0.85 })));
+            blushL.position.set(-0.24, 3.00, 0.42);
+            group.add(blushL);
+
+            const blushR = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.06, 0.02), new THREE.MeshStandardMaterial({ color: 0xed9f9f, roughness: 0.85 })));
+            blushR.position.set(0.24, 3.00, 0.42);
+            group.add(blushR);
+
+            // nurse cap
+            const capBase = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.16, 0.62), white));
+            capBase.position.set(0, 3.64, -0.02);
+            group.add(capBase);
+
+            const capTop = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.10, 0.50), white));
+            capTop.position.set(0, 3.76, -0.04);
+            group.add(capTop);
+
+            const capCrossV = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.02), green));
+            capCrossV.position.set(0, 3.63, 0.29);
+            group.add(capCrossV);
+
+            const capCrossH = castShadowTo(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.02), green));
+            capCrossH.position.set(0, 3.63, 0.29);
+            group.add(capCrossH);
+
+            // stethoscope
+            const tubeMaterial = new THREE.MeshStandardMaterial({ color: 0x264a41, roughness: 0.72 });
+            const metallic = new THREE.MeshStandardMaterial({ color: 0xc9d6d2, roughness: 0.38, metalness: 0.65 });
+
+            const tubeLeft = castShadowTo(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.8, 18), tubeMaterial));
+            tubeLeft.position.set(-0.20, 1.90, 0.27);
+            tubeLeft.rotation.z = THREE.MathUtils.degToRad(20);
+            group.add(tubeLeft);
+
+            const tubeRight = castShadowTo(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.8, 18), tubeMaterial));
+            tubeRight.position.set(0.20, 1.90, 0.27);
+            tubeRight.rotation.z = THREE.MathUtils.degToRad(-20);
+            group.add(tubeRight);
+
+            const chestDisc = castShadowTo(new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.04, 24), metallic));
+            chestDisc.position.set(0, 1.55, 0.31);
+            chestDisc.rotation.x = Math.PI / 2;
+            group.add(chestDisc);
+
+            const earpieceL = castShadowTo(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.22, 16), metallic));
+            earpieceL.position.set(-0.26, 2.44, 0.22);
+            earpieceL.rotation.z = THREE.MathUtils.degToRad(15);
+            group.add(earpieceL);
+
+            const earpieceR = castShadowTo(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.22, 16), metallic));
+            earpieceR.position.set(0.26, 2.44, 0.22);
+            earpieceR.rotation.z = THREE.MathUtils.degToRad(-15);
+            group.add(earpieceR);
+
+            group.position.y = 0;
+            return group;
+        }
+
+        function wireButtons() {
+            document.getElementById('btnFront')?.addEventListener('click', () => moveCameraTo(0, 1.9, 5.8));
+            document.getElementById('btnSide')?.addEventListener('click', () => moveCameraTo(5.8, 1.9, 0));
+            document.getElementById('btnTop')?.addEventListener('click', () => moveCameraTo(0.01, 6.8, 0.01));
+            document.getElementById('btnBottom')?.addEventListener('click', () => moveCameraTo(0.01, -2.2, 4.4));
+            document.getElementById('btnReset')?.addEventListener('click', () => moveCameraTo(3.8, 2.6, 5.8));
+            document.getElementById('btnAuto')?.addEventListener('click', () => {
+                autoRotateEnabled = !autoRotateEnabled;
+                controls.autoRotate = autoRotateEnabled;
+                const btn = document.getElementById('btnAuto');
+                if (btn) btn.textContent = autoRotateEnabled ? 'Pausar rotação' : 'Auto rotação';
+            });
+        }
+
+        function moveCameraTo(x, y, z) {
+            controls.autoRotate = false;
+            autoRotateEnabled = false;
+            const btn = document.getElementById('btnAuto');
+            if (btn) btn.textContent = 'Auto rotação';
+
+            const start = camera.position.clone();
+            const end = new THREE.Vector3(x, y, z);
+            const duration = 700;
+            const startTime = performance.now();
+
+            function step(now) {
+                const progress = Math.min((now - startTime) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                camera.position.lerpVectors(start, end, eased);
+                controls.target.set(0, 1.55, 0);
+                controls.update();
+                if (progress < 1) requestAnimationFrame(step);
             }
 
-            function reset() {
-                root.style.setProperty('--rx', '0deg');
-                root.style.setProperty('--ry', '0deg');
-                root.style.setProperty('--mx', '0px');
-                root.style.setProperty('--my', '0px');
+            requestAnimationFrame(step);
+        }
+
+        function onResize() {
+            if (!renderer || !camera) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            floatTick += 0.018;
+
+            if (nurseGroup) {
+                nurseGroup.position.y = Math.sin(floatTick) * 0.06;
+                nurseGroup.rotation.y += 0.0012;
             }
 
-            experience.addEventListener('mousemove', function (event) {
-                if (raf) cancelAnimationFrame(raf);
-                raf = requestAnimationFrame(function () {
-                    update(event.clientX, event.clientY);
-                });
-            });
-
-            experience.addEventListener('mouseleave', reset);
-
-            experience.addEventListener('click', function () {
-                experience.classList.add('click-pulse');
-
-                setTimeout(function () {
-                    experience.classList.remove('click-pulse');
-                }, 520);
-            });
-
-            experience.addEventListener('touchmove', function (event) {
-                if (!event.touches || !event.touches[0]) return;
-                const touch = event.touches[0];
-                update(touch.clientX, touch.clientY);
-            }, { passive: true });
-
-            experience.addEventListener('touchend', reset);
-        })();
+            controls?.update();
+            renderer?.render(scene, camera);
+        }
     </script>
 </body>
 </html>
