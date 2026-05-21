@@ -3,44 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Erro 404 - Página não encontrada</title>
+    <title>404 | Integrar ReSaúde</title>
     @vite('resources/css/app.css')
 
     <style>
         :root{
-            --bg:#071712;
-            --bg-soft:#0c211a;
-            --panel:rgba(9, 30, 23, .82);
-            --line:rgba(46, 116, 92, .35);
-            --text:#ecfff7;
-            --muted:#9fc7ba;
-            --brand:#16d087;
-            --brand-soft:rgba(22,208,135,.15);
-            --shadow:0 20px 50px rgba(0,0,0,.30);
+            --bg-1:#071711;
+            --bg-2:#0b2218;
+            --bg-3:#103225;
+            --panel:rgba(9, 28, 21, 0.82);
+            --panel-soft:rgba(255,255,255,0.04);
+            --line:rgba(115, 214, 176, 0.16);
+            --line-strong:rgba(115, 214, 176, 0.30);
+            --text:#f3fff9;
+            --muted:#a6cfc0;
+            --brand:#36d69d;
+            --brand-2:#86f0c7;
+            --brand-dark:#0f6d50;
+            --danger:#ff6b7d;
+            --shadow:0 26px 80px rgba(0,0,0,.38);
+
+            --rx:0deg;
+            --ry:0deg;
+            --mx:0px;
+            --my:0px;
         }
 
-        *{ box-sizing:border-box; }
-        body{
+        *{
+            box-sizing:border-box;
+        }
+
+        html, body{
             margin:0;
-            min-height:100vh;
-            font-family: Inter, Arial, sans-serif;
+            min-height:100%;
+            font-family: Inter, Arial, Helvetica, sans-serif;
             color:var(--text);
             background:
-                radial-gradient(circle at 15% 20%, rgba(22,208,135,.12), transparent 25%),
-                radial-gradient(circle at 80% 10%, rgba(0,255,200,.06), transparent 20%),
-                linear-gradient(135deg, #03110d 0%, #071712 100%);
+                radial-gradient(circle at 10% 15%, rgba(54,214,157,.14), transparent 22%),
+                radial-gradient(circle at 90% 10%, rgba(134,240,199,.08), transparent 18%),
+                radial-gradient(circle at 50% 90%, rgba(54,214,157,.07), transparent 28%),
+                linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 45%, #06130e 100%);
             overflow-x:hidden;
         }
 
-        .grid-bg{
+        body::before{
+            content:"";
             position:fixed;
             inset:0;
             background-image:
-                linear-gradient(rgba(36,100,80,.12) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(36,100,80,.12) 1px, transparent 1px);
-            background-size:32px 32px;
-            opacity:.35;
+                linear-gradient(rgba(106, 187, 154, .08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(106, 187, 154, .08) 1px, transparent 1px);
+            background-size:34px 34px;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+            opacity:.45;
             pointer-events:none;
+        }
+
+        body::after{
+            content:"";
+            position:fixed;
+            inset:0;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.03), transparent 18%, transparent 82%, rgba(255,255,255,.02));
+            pointer-events:none;
+        }
+
+        .noise{
+            position:fixed;
+            inset:0;
+            pointer-events:none;
+            opacity:.10;
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(255,255,255,.8) 0 1px, transparent 1px),
+                radial-gradient(circle at 70% 60%, rgba(255,255,255,.8) 0 1px, transparent 1px),
+                radial-gradient(circle at 40% 80%, rgba(255,255,255,.8) 0 1px, transparent 1px);
+            background-size:180px 180px;
         }
 
         .page{
@@ -48,609 +85,1052 @@
             display:flex;
             align-items:center;
             justify-content:center;
-            padding:24px;
+            padding:26px;
         }
 
-        .wrapper{
+        .shell{
             width:100%;
-            max-width:1400px;
+            max-width:1440px;
             display:grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(340px, 530px) minmax(360px, 1fr);
             gap:24px;
+            align-items:stretch;
         }
 
-        .card{
-            background:var(--panel);
-            border:1px solid var(--line);
-            border-radius:30px;
-            box-shadow:var(--shadow);
-            backdrop-filter: blur(10px);
-            overflow:hidden;
+        .panel{
             position:relative;
+            border:1px solid var(--line);
+            background:var(--panel);
+            border-radius:32px;
+            box-shadow:var(--shadow);
+            backdrop-filter: blur(14px);
+            overflow:hidden;
         }
 
-        .left{
+        .panel::before{
+            content:"";
+            position:absolute;
+            inset:0;
+            background:linear-gradient(180deg, rgba(255,255,255,.04), transparent 18%);
+            pointer-events:none;
+        }
+
+        .content{
             padding:42px;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
         }
 
         .badge{
             display:inline-flex;
             align-items:center;
             gap:10px;
+            width:max-content;
             padding:12px 18px;
             border-radius:999px;
-            border:1px solid rgba(22,208,135,.2);
-            background:rgba(22,208,135,.09);
-            color:#e8fff6;
+            background:rgba(54,214,157,.10);
+            border:1px solid rgba(54,214,157,.18);
+            color:#effff8;
             font-weight:800;
             font-size:13px;
             letter-spacing:.04em;
         }
 
-        .badge-dot{
+        .badge .dot{
             width:12px;
             height:12px;
             border-radius:50%;
             background:var(--brand);
-            box-shadow:0 0 0 0 rgba(22,208,135,.5);
+            box-shadow:0 0 0 0 rgba(54,214,157,.6);
             animation:pulse 1.8s infinite;
         }
 
         @keyframes pulse{
-            0%{ box-shadow:0 0 0 0 rgba(22,208,135,.45); }
-            70%{ box-shadow:0 0 0 12px rgba(22,208,135,0); }
-            100%{ box-shadow:0 0 0 0 rgba(22,208,135,0); }
+            0%{ box-shadow:0 0 0 0 rgba(54,214,157,.55); }
+            70%{ box-shadow:0 0 0 12px rgba(54,214,157,0); }
+            100%{ box-shadow:0 0 0 0 rgba(54,214,157,0); }
         }
 
         .eyebrow{
-            margin-top:34px;
-            font-size:14px;
+            margin-top:28px;
+            font-size:12px;
             text-transform:uppercase;
-            letter-spacing:.35em;
-            font-weight:800;
-            color:#8cc8b0;
+            letter-spacing:.38em;
+            color:#8ecbb4;
+            font-weight:900;
         }
 
-        .code{
-            margin-top:20px;
-            font-size:clamp(96px, 16vw, 180px);
-            line-height:.9;
+        .big-404{
+            margin-top:18px;
+            font-size:clamp(92px, 13vw, 168px);
+            line-height:.88;
             font-weight:900;
-            letter-spacing:-.06em;
-            color:#eafff7;
+            letter-spacing:-.07em;
+            color:#f0fff9;
+            text-shadow:
+                0 0 22px rgba(54,214,157,.10),
+                0 12px 40px rgba(0,0,0,.30);
         }
 
         .title{
-            font-size:clamp(30px, 4vw, 46px);
+            margin:10px 0 0;
+            font-size:clamp(28px, 3vw, 46px);
+            line-height:1.05;
             font-weight:900;
-            margin-top:6px;
         }
 
         .desc{
             margin-top:18px;
-            color:var(--muted);
-            line-height:1.9;
             font-size:17px;
+            line-height:1.85;
+            color:var(--muted);
             max-width:700px;
         }
 
-        .info-box{
-            margin-top:30px;
-            display:flex;
+        .desc strong{
+            color:#effff8;
+        }
+
+        .info{
+            margin-top:28px;
+            display:grid;
+            grid-template-columns: 58px 1fr;
             gap:16px;
             align-items:flex-start;
             padding:22px;
+            background:rgba(255,255,255,.03);
+            border:1px solid rgba(136, 234, 198, .10);
             border-radius:24px;
-            border:1px solid rgba(77,155,126,.2);
-            background:rgba(255,255,255,.02);
         }
 
         .info-icon{
-            width:56px;
-            height:56px;
+            width:58px;
+            height:58px;
             border-radius:18px;
-            background:var(--brand-soft);
+            background:rgba(54,214,157,.10);
+            border:1px solid rgba(54,214,157,.20);
             display:flex;
             align-items:center;
             justify-content:center;
-            flex-shrink:0;
-            border:1px solid rgba(22,208,135,.18);
+            color:#dffff4;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
         }
 
         .info-title{
             font-size:16px;
-            font-weight:800;
+            font-weight:900;
         }
 
         .info-text{
-            margin-top:4px;
+            margin-top:5px;
             color:var(--muted);
-            line-height:1.7;
+            line-height:1.75;
+            font-size:14px;
+        }
+
+        .mini-grid{
+            margin-top:18px;
+            display:grid;
+            grid-template-columns:repeat(2, minmax(0,1fr));
+            gap:12px;
+        }
+
+        .mini-card{
+            padding:16px 18px;
+            border-radius:20px;
+            border:1px solid rgba(136,234,198,.10);
+            background:rgba(255,255,255,.025);
+        }
+
+        .mini-card span{
+            display:block;
+            color:#89cbb1;
+            font-size:11px;
+            text-transform:uppercase;
+            letter-spacing:.14em;
+            font-weight:800;
+        }
+
+        .mini-card strong{
+            display:block;
+            margin-top:8px;
+            font-size:15px;
+            line-height:1.45;
+            color:#f3fff9;
         }
 
         .actions{
+            margin-top:28px;
             display:flex;
             flex-wrap:wrap;
             gap:14px;
-            margin-top:28px;
         }
 
         .btn{
+            appearance:none;
+            border:none;
+            cursor:pointer;
+            text-decoration:none;
             display:inline-flex;
             align-items:center;
             justify-content:center;
             gap:10px;
-            padding:15px 24px;
+            padding:15px 22px;
             border-radius:18px;
-            text-decoration:none;
-            font-weight:800;
+            font-size:14px;
+            font-weight:900;
             transition:.25s ease;
         }
 
         .btn-primary{
-            background:var(--brand);
-            color:#062016;
-            box-shadow:0 12px 28px rgba(22,208,135,.25);
+            color:#073323;
+            background:linear-gradient(180deg, #6df0bc, #31d49a);
+            box-shadow:0 15px 34px rgba(54,214,157,.22);
         }
 
         .btn-primary:hover{
-            transform:translateY(-2px);
+            transform:translateY(-2px) scale(1.01);
+            box-shadow:0 18px 36px rgba(54,214,157,.28);
         }
 
         .btn-secondary{
-            background:rgba(255,255,255,.04);
-            color:#eafff7;
+            color:#effff8;
+            background:rgba(255,255,255,.05);
             border:1px solid rgba(255,255,255,.08);
         }
 
         .btn-secondary:hover{
             transform:translateY(-2px);
+            background:rgba(255,255,255,.08);
         }
 
-        .note{
-            margin-top:26px;
-            color:#7db09f;
+        .footer-note{
+            margin-top:24px;
+            color:#7cb79e;
             font-size:13px;
             line-height:1.7;
         }
 
-        .scene{
-            min-height:720px;
+        .visual{
+            min-height:760px;
             position:relative;
             overflow:hidden;
-            background:
-                radial-gradient(circle at center, rgba(22,208,135,.08), transparent 40%);
         }
 
-        .scene-header{
+        .visual-top{
             position:absolute;
             top:18px;
             left:18px;
             right:18px;
+            z-index:12;
             display:flex;
+            align-items:center;
             justify-content:space-between;
             gap:12px;
             flex-wrap:wrap;
-            z-index:10;
         }
 
         .chip{
             padding:12px 18px;
             border-radius:999px;
-            background:rgba(255,255,255,.04);
+            background:rgba(255,255,255,.05);
             border:1px solid rgba(255,255,255,.08);
-            color:#f2fff9;
-            font-size:13px;
+            font-size:12px;
             font-weight:800;
+            color:#f1fff9;
+            backdrop-filter: blur(8px);
         }
 
-        .bubble{
-            position:absolute;
-            padding:16px 18px;
-            border-radius:24px;
-            background:rgba(10, 29, 22, .92);
-            border:1px solid rgba(75,152,123,.24);
-            box-shadow:0 16px 34px rgba(0,0,0,.20);
-            max-width:250px;
-            z-index:12;
-            animation:floaty 3s ease-in-out infinite;
-        }
-
-        .bubble strong{
-            display:block;
-            line-height:1.5;
-            font-size:16px;
-        }
-
-        .bubble small{
-            display:block;
-            margin-top:6px;
-            color:#96c4b3;
-            line-height:1.6;
-            font-size:13px;
-        }
-
-        .bubble::after{
-            content:"";
-            position:absolute;
-            width:14px;
-            height:14px;
-            background:rgba(10, 29, 22, .92);
-            border-left:1px solid rgba(75,152,123,.24);
-            border-bottom:1px solid rgba(75,152,123,.24);
-            transform:rotate(-45deg);
-        }
-
-        .bubble-cat{
-            left:38px;
-            top:120px;
-        }
-        .bubble-cat::after{
-            left:28px;
-            bottom:-8px;
-        }
-
-        .bubble-dog{
-            right:38px;
-            top:160px;
-            animation-delay:.8s;
-        }
-        .bubble-dog::after{
-            right:28px;
-            bottom:-8px;
-        }
-
-        @keyframes floaty{
-            0%,100%{ transform:translateY(0); }
-            50%{ transform:translateY(-8px); }
-        }
-
-        .monitor{
-            position:absolute;
-            top:135px;
-            left:50%;
-            transform:translateX(-50%);
-            width:320px;
-            height:250px;
-            border-radius:30px;
-            background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)), #0c231b;
-            border:1px solid rgba(82,165,134,.26);
-            box-shadow:0 18px 45px rgba(0,0,0,.25);
-            z-index:8;
+        .interactive-stage{
+            position:relative;
+            width:100%;
+            height:100%;
+            min-height:760px;
+            perspective:1600px;
             overflow:hidden;
+            cursor:default;
         }
 
-        .monitor-screen{
+        .ghost-code{
             position:absolute;
-            inset:16px 16px 56px;
-            border-radius:20px;
-            background:linear-gradient(180deg, #071b14, #09261d);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            flex-direction:column;
-            overflow:hidden;
+            inset:auto 0 140px 0;
+            text-align:center;
+            font-size:clamp(160px, 25vw, 320px);
+            font-weight:900;
+            letter-spacing:-.08em;
+            line-height:.8;
+            color:rgba(255,255,255,.04);
+            text-shadow:0 0 50px rgba(54,214,157,.06);
+            transform:translate3d(calc(var(--mx) * .08), calc(var(--my) * .05), -120px);
+            pointer-events:none;
+            user-select:none;
         }
 
-        .monitor-screen::before{
-            content:"";
+        .scene-3d{
             position:absolute;
             inset:0;
-            background:linear-gradient(180deg, transparent, rgba(22,208,135,.09), transparent);
-            transform:translateY(-100%);
-            animation:scan 2.8s linear infinite;
+            transform-style:preserve-3d;
+            transition:transform .18s ease-out;
+            transform:
+                rotateX(var(--rx))
+                rotateY(var(--ry));
         }
 
-        @keyframes scan{
-            to{ transform:translateY(100%); }
-        }
-
-        .monitor-code{
-            position:relative;
-            z-index:2;
-            font-size:76px;
-            font-weight:900;
-            color:var(--brand);
-            text-shadow:0 0 18px rgba(22,208,135,.18);
-        }
-
-        .monitor-text{
-            position:relative;
-            z-index:2;
-            margin-top:10px;
-            font-weight:800;
-            font-size:16px;
-            text-align:center;
-            padding:0 20px;
-        }
-
-        .stand{
+        .orb{
             position:absolute;
-            bottom:18px;
-            left:50%;
-            transform:translateX(-50%);
+            border-radius:50%;
+            filter:blur(2px);
+            opacity:.95;
+        }
+
+        .orb-a{
+            width:180px;
+            height:180px;
+            background:radial-gradient(circle, rgba(122,255,210,.60) 0%, rgba(54,214,157,.18) 45%, transparent 70%);
+            top:90px;
+            left:70px;
+            transform:translateZ(-120px) translateX(calc(var(--mx) * -.08)) translateY(calc(var(--my) * -.08));
+        }
+
+        .orb-b{
+            width:240px;
+            height:240px;
+            background:radial-gradient(circle, rgba(96,175,255,.30) 0%, rgba(54,214,157,.12) 44%, transparent 72%);
+            right:50px;
+            bottom:120px;
+            transform:translateZ(-100px) translateX(calc(var(--mx) * .10)) translateY(calc(var(--my) * .08));
+        }
+
+        .orb-c{
             width:120px;
-            height:16px;
-            background:#44685b;
-            border-radius:999px;
+            height:120px;
+            background:radial-gradient(circle, rgba(255,255,255,.18) 0%, rgba(255,255,255,.04) 46%, transparent 72%);
+            right:180px;
+            top:130px;
+            transform:translateZ(-50px);
         }
 
         .ring{
             position:absolute;
-            width:330px;
-            height:330px;
-            border-radius:50%;
-            border:1px solid rgba(22,208,135,.14);
             left:50%;
-            top:130px;
-            transform:translateX(-50%);
-            box-shadow:0 0 0 24px rgba(22,208,135,.03), 0 0 0 54px rgba(22,208,135,.02);
-            animation:ring 2.2s ease-in-out infinite;
+            top:50%;
+            width:420px;
+            height:420px;
+            transform:translate(-50%, -42%) translateZ(-40px);
+            border-radius:50%;
+            border:1px solid rgba(101,228,183,.20);
+            box-shadow:
+                0 0 0 28px rgba(54,214,157,.03),
+                0 0 0 58px rgba(54,214,157,.02),
+                inset 0 0 50px rgba(54,214,157,.04);
+            animation:ringPulse 3s ease-in-out infinite;
         }
 
-        @keyframes ring{
-            0%,100%{ transform:translateX(-50%) scale(1); opacity:.95; }
-            50%{ transform:translateX(-50%) scale(1.05); opacity:.55; }
+        @keyframes ringPulse{
+            0%,100%{ transform:translate(-50%, -42%) translateZ(-40px) scale(1); opacity:.9; }
+            50%{ transform:translate(-50%, -42%) translateZ(-40px) scale(1.04); opacity:.55; }
         }
 
-        .floor{
+        .floating-card{
+            position:absolute;
+            width:220px;
+            padding:18px;
+            border-radius:24px;
+            background:rgba(10,28,21,.88);
+            border:1px solid rgba(115,214,176,.14);
+            box-shadow:0 20px 44px rgba(0,0,0,.24);
+            backdrop-filter: blur(10px);
+            transform-style:preserve-3d;
+            transition:transform .18s ease-out;
+        }
+
+        .floating-card .kicker{
+            font-size:11px;
+            text-transform:uppercase;
+            letter-spacing:.18em;
+            color:#8ecbb4;
+            font-weight:900;
+        }
+
+        .floating-card .fc-title{
+            margin-top:10px;
+            font-size:16px;
+            line-height:1.4;
+            font-weight:900;
+            color:#f3fff9;
+        }
+
+        .floating-card .fc-text{
+            margin-top:6px;
+            color:var(--muted);
+            font-size:13px;
+            line-height:1.6;
+        }
+
+        .fc-1{
+            left:38px;
+            top:118px;
+            transform:
+                translateZ(110px)
+                translateX(calc(var(--mx) * -.20))
+                translateY(calc(var(--my) * -.18));
+            animation:floatCardA 4.2s ease-in-out infinite;
+        }
+
+        .fc-2{
+            right:34px;
+            top:160px;
+            transform:
+                translateZ(120px)
+                translateX(calc(var(--mx) * .18))
+                translateY(calc(var(--my) * -.16));
+            animation:floatCardB 4.6s ease-in-out infinite;
+        }
+
+        .fc-3{
+            left:80px;
+            bottom:118px;
+            width:200px;
+            transform:
+                translateZ(80px)
+                translateX(calc(var(--mx) * -.12))
+                translateY(calc(var(--my) * .14));
+            animation:floatCardC 5s ease-in-out infinite;
+        }
+
+        @keyframes floatCardA{
+            0%,100%{ transform:translateZ(110px) translateY(0); }
+            50%{ transform:translateZ(110px) translateY(-10px); }
+        }
+
+        @keyframes floatCardB{
+            0%,100%{ transform:translateZ(120px) translateY(0); }
+            50%{ transform:translateZ(120px) translateY(-12px); }
+        }
+
+        @keyframes floatCardC{
+            0%,100%{ transform:translateZ(80px) translateY(0); }
+            50%{ transform:translateZ(80px) translateY(-8px); }
+        }
+
+        .helmet-zone{
+            position:absolute;
+            left:50%;
+            top:52%;
+            transform:translate(-50%, -50%);
+            width:min(88%, 620px);
+            height:min(82%, 620px);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            transform-style:preserve-3d;
+        }
+
+        .halo{
+            position:absolute;
+            width:440px;
+            height:440px;
+            border-radius:50%;
+            background:
+                radial-gradient(circle, rgba(134,240,199,.20) 0%, rgba(54,214,157,.08) 32%, rgba(54,214,157,0) 70%);
+            filter:blur(10px);
+            transform:translateZ(-40px);
+            pointer-events:none;
+        }
+
+        .helmet-wrapper{
+            position:relative;
+            width:min(100%, 500px);
+            aspect-ratio:1 / 1;
+            transform-style:preserve-3d;
+            transition:transform .15s ease-out;
+            transform:
+                translateZ(120px)
+                translateX(calc(var(--mx) * .18))
+                translateY(calc(var(--my) * .18))
+                rotateX(calc(var(--ry) * -.55))
+                rotateY(calc(var(--rx) * -.55));
+        }
+
+        .helmet-shadow{
+            position:absolute;
+            left:50%;
+            bottom:18px;
+            width:70%;
+            height:44px;
+            border-radius:50%;
+            transform:translateX(-50%) translateZ(-20px);
+            background:radial-gradient(circle, rgba(0,0,0,.42) 0%, rgba(0,0,0,.10) 55%, transparent 78%);
+            filter:blur(10px);
+        }
+
+        .helmet-svg{
+            position:relative;
+            width:100%;
+            height:100%;
+            filter:drop-shadow(0 36px 50px rgba(0,0,0,.34));
+            transform:translateZ(40px);
+        }
+
+        .visor-glow{
+            position:absolute;
+            left:50%;
+            top:48%;
+            width:54%;
+            height:23%;
+            border-radius:999px 999px 42px 42px;
+            transform:translate(-50%, -50%) translateZ(90px);
+            background:linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.16), rgba(255,255,255,.03));
+            mix-blend-mode:screen;
+            opacity:.85;
+            pointer-events:none;
+            filter:blur(1px);
+        }
+
+        .hint{
+            position:absolute;
+            left:50%;
+            bottom:10px;
+            transform:translateX(-50%) translateZ(140px);
+            padding:12px 16px;
+            border-radius:999px;
+            background:rgba(255,255,255,.06);
+            border:1px solid rgba(255,255,255,.08);
+            color:#effff9;
+            font-size:12px;
+            font-weight:800;
+            letter-spacing:.08em;
+            text-transform:uppercase;
+            white-space:nowrap;
+            backdrop-filter: blur(8px);
+        }
+
+        .hint strong{
+            color:var(--brand-2);
+        }
+
+        .scan-floor{
             position:absolute;
             left:0;
             right:0;
             bottom:0;
-            height:180px;
-            background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)), linear-gradient(180deg, #0d221b, #081611);
-            border-top:1px solid rgba(73,154,124,.16);
+            height:190px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)),
+                linear-gradient(180deg, #102219, #07130f);
+            border-top:1px solid rgba(136,234,198,.10);
+            transform:translateZ(-80px);
         }
 
-        .floor::before{
+        .scan-floor::before{
             content:"";
             position:absolute;
-            left:0;
-            right:0;
-            top:32px;
+            inset:28px 0 auto 0;
             height:8px;
-            background:repeating-linear-gradient(90deg, rgba(97,180,149,.18) 0 48px, transparent 48px 80px);
+            background:
+                repeating-linear-gradient(90deg, rgba(115,214,176,.16) 0 46px, transparent 46px 84px);
+            opacity:.75;
         }
 
-        .character{
+        .bottom-text{
             position:absolute;
-            bottom:88px;
-            z-index:9;
-        }
-
-        .cat{
-            left:55px;
-            width:240px;
-            animation:catRun 2.2s ease-in-out infinite;
-        }
-
-        .dog{
-            right:45px;
-            width:250px;
-            animation:dogRun 2.2s ease-in-out infinite;
-        }
-
-        @keyframes catRun{
-            0%,100%{ transform:translateX(0) translateY(0); }
-            25%{ transform:translateX(8px) translateY(-4px); }
-            50%{ transform:translateX(18px) translateY(0); }
-            75%{ transform:translateX(8px) translateY(-5px); }
-        }
-
-        @keyframes dogRun{
-            0%,100%{ transform:translateX(0) translateY(0); }
-            25%{ transform:translateX(-8px) translateY(-4px); }
-            50%{ transform:translateX(-16px) translateY(0); }
-            75%{ transform:translateX(-8px) translateY(-5px); }
-        }
-
-        .subtitle{
-            position:absolute;
-            left:20px;
-            right:20px;
-            bottom:20px;
-            z-index:11;
-            padding:16px 20px;
+            left:18px;
+            right:18px;
+            bottom:18px;
+            z-index:14;
+            padding:16px 18px;
             border-radius:22px;
-            background:rgba(10, 29, 22, .92);
-            border:1px solid rgba(75,152,123,.22);
+            background:rgba(10,28,21,.90);
+            border:1px solid rgba(115,214,176,.14);
             text-align:center;
+            backdrop-filter: blur(10px);
         }
 
-        .subtitle strong{
+        .bottom-text strong{
             display:block;
             font-size:15px;
             font-weight:900;
         }
 
-        .subtitle span{
+        .bottom-text span{
             display:block;
             margin-top:4px;
-            color:#96c4b3;
-            line-height:1.6;
+            color:var(--muted);
             font-size:13px;
+            line-height:1.65;
         }
 
-        @media (max-width: 1100px){
-            .wrapper{
+        .particle{
+            position:absolute;
+            width:8px;
+            height:8px;
+            border-radius:50%;
+            background:rgba(134,240,199,.8);
+            box-shadow:0 0 18px rgba(134,240,199,.45);
+            opacity:.75;
+            animation:particleFloat 5s linear infinite;
+        }
+
+        .p1{ top:120px; left:50%; animation-delay:0s; }
+        .p2{ top:220px; right:140px; animation-delay:1s; }
+        .p3{ bottom:220px; left:140px; animation-delay:2s; }
+        .p4{ bottom:120px; right:210px; animation-delay:3s; }
+
+        @keyframes particleFloat{
+            0%{ transform:translateY(0) scale(.9); opacity:.2; }
+            30%{ opacity:.75; }
+            100%{ transform:translateY(-40px) scale(1.15); opacity:0; }
+        }
+
+        .interactive-stage.is-clicked .helmet-wrapper{
+            animation:helmetPulse .45s ease;
+        }
+
+        @keyframes helmetPulse{
+            0%{ transform:translateZ(120px) scale(1) rotateX(0deg) rotateY(0deg); }
+            50%{ transform:translateZ(130px) scale(1.03) rotateX(-2deg) rotateY(2deg); }
+            100%{ transform:translateZ(120px) scale(1) rotateX(0deg) rotateY(0deg); }
+        }
+
+        @media (max-width: 1180px){
+            .shell{
                 grid-template-columns:1fr;
             }
-            .scene{
-                min-height:680px;
+
+            .visual,
+            .interactive-stage{
+                min-height:700px;
             }
         }
 
-        @media (max-width: 700px){
-            .left{
+        @media (max-width: 760px){
+            .page{
+                padding:16px;
+            }
+
+            .content{
                 padding:28px;
             }
-            .scene{
+
+            .desc{
+                font-size:15px;
+                line-height:1.8;
+            }
+
+            .mini-grid{
+                grid-template-columns:1fr;
+            }
+
+            .visual,
+            .interactive-stage{
                 min-height:620px;
             }
-            .monitor{
-                width:260px;
-                height:220px;
+
+            .floating-card{
+                width:170px;
+                padding:14px;
             }
-            .monitor-code{
-                font-size:60px;
+
+            .floating-card .fc-title{
+                font-size:14px;
             }
-            .cat{
-                left:10px;
-                width:190px;
+
+            .floating-card .fc-text{
+                font-size:12px;
             }
-            .dog{
-                right:10px;
-                width:200px;
-            }
-            .bubble-cat{
-                left:14px;
+
+            .fc-1{
+                left:12px;
                 top:90px;
-                max-width:180px;
             }
-            .bubble-dog{
-                right:14px;
-                top:145px;
-                max-width:180px;
+
+            .fc-2{
+                right:12px;
+                top:132px;
+            }
+
+            .fc-3{
+                left:18px;
+                bottom:110px;
+                width:170px;
+            }
+
+            .helmet-zone{
+                width:96%;
+            }
+
+            .halo{
+                width:320px;
+                height:320px;
+            }
+
+            .ring{
+                width:300px;
+                height:300px;
+            }
+
+            .hint{
+                font-size:10px;
+                padding:10px 14px;
+            }
+
+            .ghost-code{
+                bottom:170px;
+                font-size:170px;
+            }
+
+            .bottom-text{
+                left:12px;
+                right:12px;
+                bottom:12px;
             }
         }
     </style>
 </head>
 <body>
-<div class="grid-bg"></div>
+    <div class="noise"></div>
 
-<div class="page">
-    <div class="wrapper">
-        <section class="card left">
-            <div class="badge">
-                <span class="badge-dot"></span>
-                INTEGRAR RESAÚDE • TELA DE ERRO FUTURISTA
-            </div>
-
-            <div class="eyebrow">STATUS DO SISTEMA</div>
-            <div class="code">404</div>
-            <div class="title">Página não encontrada</div>
-
-            <div class="desc">
-                O gato enfermeiro saiu correndo com o cabo de rede para salvar a conexão,
-                o cachorro enfermeiro foi atrás querendo internet,
-                e no meio dessa perseguição a página se perdeu do mapa.
-                Parece que a rota não existe ou foi removida.
-            </div>
-
-            <div class="info-box">
-                <div class="info-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 3.75h1.5M12 7.5v4.5m0 0v3m0-3h3m-3 0H9m10.5 0a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z"/>
-                    </svg>
+    <div class="page">
+        <div class="shell">
+            <section class="panel content">
+                <div class="badge">
+                    <span class="dot"></span>
+                    INTEGRAR RESAÚDE • ERRO 404 INTERATIVO
                 </div>
-                <div>
-                    <div class="info-title">O que fazer agora?</div>
-                    <div class="info-text">
-                        Você pode voltar à tela inicial, retornar para a página anterior
-                        ou avisar o time de desenvolvimento caso o problema continue.
+
+                <div class="eyebrow">STATUS DA NAVEGAÇÃO</div>
+
+                <div class="big-404">404</div>
+
+                <h1 class="title">Página não encontrada</h1>
+
+                <p class="desc">
+                    A rota que você tentou acessar não está disponível no momento.
+                    Então eu refiz esta tela com um visual mais forte, inspirado em uma
+                    <strong>experiência 3D moderna</strong>, mas dentro do
+                    <strong>mundo da saúde</strong> do seu sistema.
+                    <br><br>
+                    O capacete ao lado reage ao mouse para dar aquele efeito premium e interativo.
+                </p>
+
+                <div class="info">
+                    <div class="info-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v7.5M8.25 12h7.5"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <div class="info-title">O que o usuário pode fazer agora?</div>
+                        <div class="info-text">
+                            Voltar para a página inicial, retornar para a tela anterior
+                            ou tentar acessar novamente a área correta do sistema.
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="actions">
-                <a href="{{ url('/') }}" class="btn btn-primary">Voltar ao início</a>
-                <button onclick="history.back()" class="btn btn-secondary" type="button">Voltar</button>
-            </div>
+                <div class="mini-grid">
+                    <div class="mini-card">
+                        <span>ambiente</span>
+                        <strong>Integrar ReSaúde</strong>
+                    </div>
 
-            <div class="note">
-                Integrar ReSaúde • Erro 404 personalizado
-            </div>
-        </section>
-
-        <section class="card scene">
-            <div class="scene-header">
-                <div class="chip">CENA CINEMATOGRÁFICA • MODO ANIME ORIGINAL</div>
-                <div class="chip">Rota perdida</div>
-            </div>
-
-            <div class="bubble bubble-cat">
-                <strong>Preciso salvar a rede agora!</strong>
-                <small>Gato enfermeiro em corrida máxima.</small>
-            </div>
-
-            <div class="bubble bubble-dog">
-                <strong>Ei! Eu quero internet!</strong>
-                <small>Cachorro enfermeiro em perseguição.</small>
-            </div>
-
-            <div class="ring"></div>
-
-            <div class="monitor">
-                <div class="monitor-screen">
-                    <div class="monitor-code">404</div>
-                    <div class="monitor-text">Rota não encontrada</div>
+                    <div class="mini-card">
+                        <span>situação</span>
+                        <strong>Rota ausente ou removida</strong>
+                    </div>
                 </div>
-                <div class="stand"></div>
-            </div>
 
-            <div class="character cat">
-                <svg viewBox="0 0 220 260" xmlns="http://www.w3.org/2000/svg">
-                    <ellipse cx="110" cy="248" rx="50" ry="10" fill="rgba(0,0,0,.18)"/>
-                    <rect x="84" y="145" width="18" height="70" rx="9" fill="#F4B06A"/>
-                    <rect x="118" y="145" width="18" height="70" rx="9" fill="#F4B06A"/>
-                    <ellipse cx="92" cy="220" rx="16" ry="8" fill="#D97706"/>
-                    <ellipse cx="128" cy="220" rx="16" ry="8" fill="#D97706"/>
-                    <rect x="60" y="70" width="100" height="100" rx="30" fill="#fff" stroke="#1e4f40" stroke-width="3"/>
-                    <circle cx="110" cy="60" r="42" fill="#F59E0B"/>
-                    <path d="M76 36 L88 10 L98 38 Z" fill="#F59E0B"/>
-                    <path d="M122 38 L132 10 L144 36 Z" fill="#F59E0B"/>
-                    <ellipse cx="110" cy="72" rx="25" ry="18" fill="#FFF2DF"/>
-                    <circle cx="98" cy="60" r="4" fill="#172A24"/>
-                    <circle cx="122" cy="60" r="4" fill="#172A24"/>
-                    <path d="M104 70 L116 70 L110 76 Z" fill="#FB7185"/>
-                    <path d="M102 82 Q110 90 118 82" stroke="#7C2D12" stroke-width="3" fill="none" stroke-linecap="round"/>
-                    <rect x="84" y="20" width="52" height="18" rx="9" fill="#fff" stroke="#1e4f40" stroke-width="2"/>
-                    <rect x="105" y="18" width="10" height="22" rx="3" fill="#16d087"/>
-                    <rect x="98" y="25" width="24" height="8" rx="3" fill="#16d087"/>
-                    <rect x="48" y="100" width="18" height="58" rx="9" fill="#fff" stroke="#1e4f40" stroke-width="3" transform="rotate(18 48 100)"/>
-                    <circle cx="52" cy="154" r="10" fill="#F4B06A"/>
-                    <rect x="154" y="96" width="18" height="58" rx="9" fill="#fff" stroke="#1e4f40" stroke-width="3" transform="rotate(-18 154 96)"/>
-                    <circle cx="166" cy="146" r="10" fill="#F4B06A"/>
-                    <path d="M160 118 C188 98, 194 76, 185 48" stroke="#D97706" stroke-width="14" fill="none" stroke-linecap="round"/>
-                </svg>
-            </div>
+                <div class="actions">
+                    <a href="{{ url('/') }}" class="btn btn-primary">
+                        Ir para o início
+                    </a>
 
-            <div class="character dog">
-                <svg viewBox="0 0 220 260" xmlns="http://www.w3.org/2000/svg">
-                    <ellipse cx="110" cy="248" rx="50" ry="10" fill="rgba(0,0,0,.18)"/>
-                    <rect x="84" y="150" width="18" height="68" rx="9" fill="#DDB081"/>
-                    <rect x="118" y="150" width="18" height="68" rx="9" fill="#DDB081"/>
-                    <ellipse cx="92" cy="222" rx="16" ry="8" fill="#8B5A2B"/>
-                    <ellipse cx="128" cy="222" rx="16" ry="8" fill="#8B5A2B"/>
-                    <rect x="60" y="72" width="100" height="100" rx="30" fill="#fff" stroke="#1e4f40" stroke-width="3"/>
-                    <circle cx="110" cy="62" r="42" fill="#C78A57"/>
-                    <ellipse cx="76" cy="48" rx="14" ry="22" fill="#8B5A2B" transform="rotate(-20 76 48)"/>
-                    <ellipse cx="144" cy="48" rx="14" ry="22" fill="#8B5A2B" transform="rotate(20 144 48)"/>
-                    <ellipse cx="110" cy="78" rx="28" ry="20" fill="#FCE7CF"/>
-                    <circle cx="98" cy="64" r="4" fill="#172A24"/>
-                    <circle cx="122" cy="64" r="4" fill="#172A24"/>
-                    <ellipse cx="110" cy="76" rx="7" ry="5" fill="#172A24"/>
-                    <path d="M102 88 Q110 96 118 88" stroke="#7C2D12" stroke-width="3" fill="none" stroke-linecap="round"/>
-                    <rect x="84" y="22" width="52" height="18" rx="9" fill="#fff" stroke="#1e4f40" stroke-width="2"/>
-                    <rect x="105" y="20" width="10" height="22" rx="3" fill="#16d087"/>
-                    <rect x="98" y="27" width="24" height="8" rx="3" fill="#16d087"/>
-                    <rect x="48" y="105" width="18" height="56" rx="9" fill="#fff" stroke="#1e4f40" stroke-width="3" transform="rotate(18 48 105)"/>
-                    <circle cx="54" cy="156" r="10" fill="#DDB081"/>
-                    <rect x="154" y="101" width="18" height="56" rx="9" fill="#fff" stroke="#1e4f40" stroke-width="3" transform="rotate(-18 154 101)"/>
-                    <circle cx="166" cy="150" r="10" fill="#DDB081"/>
-                    <path d="M160 122 C186 108, 198 118, 204 142" stroke="#8B5A2B" stroke-width="14" fill="none" stroke-linecap="round"/>
-                </svg>
-            </div>
+                    <button type="button" onclick="history.back()" class="btn btn-secondary">
+                        Voltar
+                    </button>
+                </div>
 
-            <div class="floor"></div>
+                <div class="footer-note">
+                    Página 404 personalizada • visual 3D interativo • tema saúde
+                </div>
+            </section>
 
-            <div class="subtitle">
-                <strong>Episódio 404 — página desaparecida</strong>
-                <span>O gato correu com a conexão, o cachorro foi atrás e a rota acabou sumindo do sistema.</span>
-            </div>
-        </section>
+            <section class="panel visual">
+                <div class="visual-top">
+                    <div class="chip">MODO INTERATIVO • 3D</div>
+                    <div class="chip">Mexa o mouse no capacete</div>
+                </div>
+
+                <div class="interactive-stage" id="interactiveStage">
+                    <div class="ghost-code">404</div>
+
+                    <div class="scene-3d" id="scene3d">
+                        <div class="orb orb-a"></div>
+                        <div class="orb orb-b"></div>
+                        <div class="orb orb-c"></div>
+
+                        <div class="ring"></div>
+
+                        <div class="floating-card fc-1">
+                            <div class="kicker">alerta clínico</div>
+                            <div class="fc-title">A rota sumiu do painel</div>
+                            <div class="fc-text">
+                                O conteúdo procurado não foi localizado nesta navegação.
+                            </div>
+                        </div>
+
+                        <div class="floating-card fc-2">
+                            <div class="kicker">navegação segura</div>
+                            <div class="fc-title">Retorne ao fluxo principal</div>
+                            <div class="fc-text">
+                                Use os botões para voltar sem perder a experiência do sistema.
+                            </div>
+                        </div>
+
+                        <div class="floating-card fc-3">
+                            <div class="kicker">monitoramento</div>
+                            <div class="fc-title">Erro 404 detectado</div>
+                            <div class="fc-text">
+                                Tela redesenhada para uma experiência mais bonita e viva.
+                            </div>
+                        </div>
+
+                        <div class="helmet-zone">
+                            <div class="halo"></div>
+
+                            <div class="helmet-wrapper" id="helmetWrapper">
+                                <div class="helmet-shadow"></div>
+
+                                <svg class="helmet-svg" viewBox="0 0 520 520" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <defs>
+                                        <linearGradient id="shellMain" x1="0" y1="0" x2="1" y2="1">
+                                            <stop offset="0%" stop-color="#ffffff"/>
+                                            <stop offset="55%" stop-color="#d9f9ee"/>
+                                            <stop offset="100%" stop-color="#8edec0"/>
+                                        </linearGradient>
+
+                                        <linearGradient id="shellSide" x1="0" y1="0" x2="1" y2="1">
+                                            <stop offset="0%" stop-color="#0b7d5a"/>
+                                            <stop offset="100%" stop-color="#0e4f3a"/>
+                                        </linearGradient>
+
+                                        <linearGradient id="visorGrad" x1="0" y1="0" x2="1" y2="0">
+                                            <stop offset="0%" stop-color="#09241d"/>
+                                            <stop offset="50%" stop-color="#183b32"/>
+                                            <stop offset="100%" stop-color="#0c221b"/>
+                                        </linearGradient>
+
+                                        <linearGradient id="tealBand" x1="0" y1="0" x2="1" y2="1">
+                                            <stop offset="0%" stop-color="#7bf0c2"/>
+                                            <stop offset="100%" stop-color="#31d49a"/>
+                                        </linearGradient>
+
+                                        <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+                                            <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="rgba(0,0,0,.35)"/>
+                                        </filter>
+                                    </defs>
+
+                                    <!-- sombra base -->
+                                    <ellipse cx="270" cy="430" rx="122" ry="30" fill="rgba(0,0,0,.18)"/>
+
+                                    <!-- casco externo -->
+                                    <path filter="url(#softShadow)"
+                                        d="M146 260
+                                           C146 150, 225 84, 326 92
+                                           C412 99, 468 162, 471 246
+                                           C473 301, 454 343, 420 377
+                                           C388 409, 344 425, 297 425
+                                           L212 425
+                                           C184 425, 162 413, 150 389
+                                           C140 369, 141 348, 151 330
+                                           C121 315, 104 293, 104 265
+                                           C104 239, 119 216, 146 204 Z"
+                                        fill="url(#shellMain)"/>
+
+                                    <!-- lateral verde -->
+                                    <path
+                                        d="M273 98
+                                           C368 96, 437 151, 451 230
+                                           C418 224, 391 220, 356 216
+                                           C328 213, 301 211, 274 211
+                                           Z"
+                                        fill="url(#shellSide)"/>
+
+                                    <!-- faixa superior -->
+                                    <path
+                                        d="M201 143
+                                           C242 113, 308 103, 370 120
+                                           C357 136, 348 153, 343 172
+                                           C282 163, 238 165, 198 181
+                                           C194 168, 194 155, 201 143 Z"
+                                        fill="url(#tealBand)"/>
+
+                                    <!-- cruz médica -->
+                                    <g transform="translate(235 138)">
+                                        <rect x="0" y="0" width="50" height="50" rx="14" fill="#ffffff" stroke="#0b7d5a" stroke-width="4"/>
+                                        <rect x="20" y="9" width="10" height="32" rx="5" fill="#25c98f"/>
+                                        <rect x="9" y="20" width="32" height="10" rx="5" fill="#25c98f"/>
+                                    </g>
+
+                                    <!-- ecg band -->
+                                    <path
+                                        d="M168 208
+                                           C214 193, 265 188, 332 196
+                                           C334 204, 334 212, 332 220
+                                           C286 214, 254 214, 226 220
+                                           L214 220 L205 205 L194 237 L181 204 L170 220
+                                           C154 224, 142 229, 132 235
+                                           C130 226, 132 216, 168 208 Z"
+                                        fill="#24bf89"/>
+
+                                    <!-- visor -->
+                                    <path
+                                        d="M178 224
+                                           C218 208, 302 206, 381 225
+                                           C397 230, 408 242, 410 256
+                                           C413 271, 405 283, 387 290
+                                           C331 313, 267 320, 189 308
+                                           C166 304, 153 293, 149 278
+                                           C145 261, 155 237, 178 224 Z"
+                                        fill="url(#visorGrad)"
+                                        stroke="rgba(255,255,255,.18)"
+                                        stroke-width="4"/>
+
+                                    <!-- brilho visor -->
+                                    <path
+                                        d="M191 233
+                                           C231 220, 297 220, 360 236
+                                           C337 241, 309 244, 287 245
+                                           C253 247, 220 245, 191 240 Z"
+                                        fill="rgba(255,255,255,.16)"/>
+
+                                    <!-- estrutura boca -->
+                                    <path
+                                        d="M147 330
+                                           C171 322, 209 318, 248 319
+                                           C246 349, 253 382, 268 425
+                                           L210 425
+                                           C183 425, 162 413, 150 390
+                                           C140 370, 141 346, 147 330 Z"
+                                        fill="#0e7656"/>
+
+                                    <!-- detalhe lateral -->
+                                    <path
+                                        d="M302 330
+                                           C346 325, 384 312, 408 294
+                                           C421 307, 428 323, 429 343
+                                           C430 366, 421 386, 404 400
+                                           C383 418, 356 425, 297 425
+                                           C304 394, 307 365, 302 330 Z"
+                                        fill="#e8fff4"/>
+
+                                    <!-- grade frontal -->
+                                    <g transform="translate(173 342)">
+                                        <rect x="0" y="0" width="70" height="30" rx="12" fill="#0b2018"/>
+                                        <rect x="10" y="8" width="50" height="4" rx="2" fill="#59d9a8"/>
+                                        <rect x="10" y="18" width="50" height="4" rx="2" fill="#59d9a8"/>
+                                    </g>
+
+                                    <!-- faixas finas -->
+                                    <path d="M281 108 C358 110, 410 149, 430 211" stroke="rgba(255,255,255,.24)" stroke-width="6" fill="none" stroke-linecap="round"/>
+                                    <path d="M158 262 C200 248, 246 245, 290 248" stroke="rgba(255,255,255,.16)" stroke-width="6" fill="none" stroke-linecap="round"/>
+                                </svg>
+
+                                <div class="visor-glow"></div>
+
+                                <div class="hint">
+                                    <strong>Mexa o mouse</strong> para interagir com o capacete
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="particle p1"></div>
+                        <div class="particle p2"></div>
+                        <div class="particle p3"></div>
+                        <div class="particle p4"></div>
+
+                        <div class="scan-floor"></div>
+                    </div>
+
+                    <div class="bottom-text">
+                        <strong>Rota não encontrada • experiência 404 redesenhada</strong>
+                        <span>
+                            Visual futurista, interativo e alinhado ao universo da saúde do seu sistema.
+                        </span>
+                    </div>
+                </div>
+            </section>
+        </div>
     </div>
-</div>
+
+    <script>
+        (function () {
+            const stage = document.getElementById('interactiveStage');
+            const root = document.documentElement;
+
+            if (!stage) return;
+
+            let frame = null;
+
+            function applyInteraction(clientX, clientY) {
+                const rect = stage.getBoundingClientRect();
+
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
+
+                const px = (x / rect.width) - 0.5;
+                const py = (y / rect.height) - 0.5;
+
+                const rotateY = px * 16;
+                const rotateX = py * -14;
+
+                const moveX = px * 36;
+                const moveY = py * 28;
+
+                root.style.setProperty('--rx', rotateX.toFixed(2) + 'deg');
+                root.style.setProperty('--ry', rotateY.toFixed(2) + 'deg');
+                root.style.setProperty('--mx', moveX.toFixed(2) + 'px');
+                root.style.setProperty('--my', moveY.toFixed(2) + 'px');
+            }
+
+            function resetInteraction() {
+                root.style.setProperty('--rx', '0deg');
+                root.style.setProperty('--ry', '0deg');
+                root.style.setProperty('--mx', '0px');
+                root.style.setProperty('--my', '0px');
+            }
+
+            stage.addEventListener('mousemove', (event) => {
+                if (frame) cancelAnimationFrame(frame);
+                frame = requestAnimationFrame(() => {
+                    applyInteraction(event.clientX, event.clientY);
+                });
+            });
+
+            stage.addEventListener('mouseleave', () => {
+                resetInteraction();
+            });
+
+            stage.addEventListener('click', () => {
+                stage.classList.add('is-clicked');
+                setTimeout(() => {
+                    stage.classList.remove('is-clicked');
+                }, 450);
+            });
+
+            stage.addEventListener('touchmove', (event) => {
+                if (!event.touches || !event.touches[0]) return;
+                const touch = event.touches[0];
+                applyInteraction(touch.clientX, touch.clientY);
+            }, { passive: true });
+
+            stage.addEventListener('touchend', () => {
+                resetInteraction();
+            });
+        })();
+    </script>
 </body>
 </html>
