@@ -215,6 +215,174 @@
             })
             ->first();
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | AULA ATUAL, ÚLTIMA AULA E PRÓXIMA AULA
+    |--------------------------------------------------------------------------
+    | A aula atual é a primeira pendente dentro da ordem do curso.
+    | A última aula é a última que o aluno já concluiu.
+    | A próxima aula é a aula seguinte à aula atual, quando existir.
+    */
+
+    $aulasLinhaTempo = collect();
+    $ultimaAulaConcluida = null;
+    $aulaAtualAluno = null;
+    $proximaAulaAluno = null;
+
+    foreach ($modulos as $moduloLinha) {
+        foreach (($moduloLinha->aulas ?? collect()) as $aulaLinha) {
+            $avaliacaoLinhaId = null;
+
+            if (Schema::hasTable('avaliacoes')) {
+                $avaliacaoLinhaQuery = DB::table('avaliacoes')
+                    ->where('aula_id', $aulaLinha->id);
+
+                if (Schema::hasColumn('avaliacoes', 'tipo')) {
+                    $avaliacaoLinhaQuery->where(function ($query) {
+                        $query->where('tipo', 'normal')
+                              ->orWhere('tipo', 'pos_teste')
+                              ->orWhere('tipo', 'pós-teste')
+                              ->orWhereNull('tipo');
+                    });
+                }
+
+                $avaliacaoLinhaId = $avaliacaoLinhaQuery
+                    ->orderBy('id')
+                    ->value('id');
+            }
+
+            $assistidaLinha = false;
+
+            if (Schema::hasTable('aulas_assistidas')) {
+                $assistidaLinhaQuery = DB::table('aulas_assistidas')
+                    ->where('aluno_id', $alunoId)
+                    ->where('aula_id', $aulaLinha->id);
+
+                if (Schema::hasColumn('aulas_assistidas', 'assistido')) {
+                    $assistidaLinhaQuery->where('assistido', true);
+                }
+
+                $assistidaLinha = $assistidaLinhaQuery->exists();
+            }
+
+            $posTesteLinhaConcluido = false;
+
+            if ($avaliacaoLinhaId && Schema::hasTable('notas')) {
+                $posTesteLinhaConcluido = DB::table('notas')
+                    ->where('aluno_id', $alunoId)
+                    ->where('avaliacao_id', $avaliacaoLinhaId)
+                    ->exists();
+            }
+
+            $aulaLinhaConcluida = $assistidaLinha && (!$avaliacaoLinhaId || $posTesteLinhaConcluido);
+
+            $itemLinha = (object) [
+                'id' => $aulaLinha->id,
+                'titulo' => $aulaLinha->titulo ?? 'Aula sem título',
+                'descricao' => $aulaLinha->descricao ?? '',
+                'modulo_id' => $aulaLinha->modulo_id ?? null,
+                'modulo_nome' => $moduloLinha->nome ?? 'Módulo',
+                'avaliacao_id' => $avaliacaoLinhaId,
+                'assistida' => $assistidaLinha,
+                'pos_teste_concluido' => $posTesteLinhaConcluido,
+                'concluida' => $aulaLinhaConcluida,
+            ];
+
+            $aulasLinhaTempo->push($itemLinha);
+
+            if ($aulaLinhaConcluida) {
+                $ultimaAulaConcluida = $itemLinha;
+            }
+
+            if (!$aulaAtualAluno && !$aulaLinhaConcluida) {
+                $aulaAtualAluno = $itemLinha;
+            }
+        }
+    }
+
+    if (!$aulaAtualAluno && $aulasLinhaTempo->count() > 0) {
+        $aulaAtualAluno = $aulasLinhaTempo->last();
+    }
+
+    if ($aulaAtualAluno) {
+        $indiceAtual = $aulasLinhaTempo->search(function ($item) use ($aulaAtualAluno) {
+            return (int) $item->id === (int) $aulaAtualAluno->id;
+        });
+
+        if ($indiceAtual !== false) {
+            $proximaAulaAluno = $aulasLinhaTempo->get($indiceAtual + 1);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | CALENDÁRIO DO ALUNO
+    |--------------------------------------------------------------------------
+    | Visual no mesmo estilo da imagem enviada. Como as aulas ainda não possuem
+    | data agendada, o calendário mostra o dia atual e um marcador de atividade.
+    | Depois, se você criar uma coluna data_aula ou data_liberacao, dá para
+    | colocar aulas diretamente nos dias.
+    */
+
+    $mesCalendarioParam = request('mes');
+
+    try {
+        $dataCalendario = $mesCalendarioParam
+            ? \Carbon\Carbon::createFromFormat('Y-m', $mesCalendarioParam, 'America/Sao_Paulo')->startOfMonth()
+            : \Carbon\Carbon::now('America/Sao_Paulo')->startOfMonth();
+    } catch (\Throwable $e) {
+        $dataCalendario = \Carbon\Carbon::now('America/Sao_Paulo')->startOfMonth();
+    }
+
+    $hojeBrasil = \Carbon\Carbon::now('America/Sao_Paulo')->startOfDay();
+    $inicioGradeCalendario = $dataCalendario->copy()->startOfWeek(\Carbon\Carbon::SUNDAY);
+    $semanasCalendario = [];
+    $cursorCalendario = $inicioGradeCalendario->copy();
+
+    for ($semana = 0; $semana < 6; $semana++) {
+        $diasSemana = [];
+
+        for ($dia = 0; $dia < 7; $dia++) {
+            $dataDia = $cursorCalendario->copy();
+
+            $diasSemana[] = [
+                'data' => $dataDia,
+                'numero' => $dataDia->day,
+                'mes_atual' => $dataDia->month === $dataCalendario->month,
+                'hoje' => $dataDia->isSameDay($hojeBrasil),
+                'tem_atividade' => $dataDia->isSameDay($hojeBrasil) && $aulaAtualAluno,
+                'qtd_atividades' => $dataDia->isSameDay($hojeBrasil) && $aulaAtualAluno ? 1 : 0,
+            ];
+
+            $cursorCalendario->addDay();
+        }
+
+        $semanasCalendario[] = $diasSemana;
+    }
+
+    $mesAnteriorCalendario = $dataCalendario->copy()->subMonth()->format('Y-m');
+    $proximoMesCalendario = $dataCalendario->copy()->addMonth()->format('Y-m');
+
+    $mesesPtBrCalendario = [
+        1 => 'Janeiro',
+        2 => 'Fevereiro',
+        3 => 'Março',
+        4 => 'Abril',
+        5 => 'Maio',
+        6 => 'Junho',
+        7 => 'Julho',
+        8 => 'Agosto',
+        9 => 'Setembro',
+        10 => 'Outubro',
+        11 => 'Novembro',
+        12 => 'Dezembro',
+    ];
+
+    $tituloMesCalendario = ($mesesPtBrCalendario[(int) $dataCalendario->format('n')] ?? $dataCalendario->translatedFormat('F'))
+        . ' '
+        . $dataCalendario->format('Y');
+
 @endphp
 
 <style>
@@ -231,6 +399,92 @@
         min-height: 100vh;
         width: 100%;
     }
+
+    .calendario-aluno-grade {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .calendario-aluno-dia-nome {
+        text-align: center;
+        color: #60756B;
+        font-weight: 800;
+        font-size: 12px;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        padding: 6px 0 10px;
+    }
+
+    .calendario-aluno-dia {
+        min-height: 74px;
+        border: 2px solid #D9E1DC;
+        border-radius: 10px;
+        background: #FFFFFF;
+        padding: 10px;
+        position: relative;
+        transition: .2s ease;
+    }
+
+    .calendario-aluno-dia:hover {
+        border-color: #00A63E;
+        box-shadow: 0 8px 22px rgba(0, 77, 58, .08);
+        transform: translateY(-1px);
+    }
+
+    .calendario-aluno-dia-fora {
+        background: #FAFAFA;
+        color: #C5CCC8;
+        border-color: #E4E8E5;
+    }
+
+    .calendario-aluno-dia-hoje {
+        border-color: #ff4b00;
+        color: #ff4b00;
+    }
+
+    .calendario-aluno-bolinha {
+        position: absolute;
+        left: 10px;
+        bottom: 8px;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: #7DB7DA;
+        color: white;
+        font-size: 11px;
+        font-weight: 900;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    @media (max-width: 640px) {
+        .calendario-aluno-grade {
+            gap: 4px;
+        }
+
+        .calendario-aluno-dia {
+            min-height: 54px;
+            padding: 7px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .calendario-aluno-dia-nome {
+            font-size: 10px;
+        }
+
+        .calendario-aluno-bolinha {
+            left: 6px;
+            bottom: 5px;
+            min-width: 16px;
+            height: 16px;
+            font-size: 9px;
+        }
+    }
+
 </style>
 
 <div class="flex min-h-screen w-full bg-[#F3F7F3] text-[#003C2F] overflow-x-hidden">
@@ -458,6 +712,144 @@
                 </div>
 
             </div>
+
+
+            <!-- CALENDÁRIO E CONTINUIDADE DO CURSO -->
+            <div class="grid grid-cols-1 2xl:grid-cols-12 gap-7 mb-8">
+
+                <!-- CALENDÁRIO -->
+                <div class="2xl:col-span-7 bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6">
+
+                    <div class="flex items-center justify-between gap-4 mb-5">
+                        <h2 class="text-2xl font-extrabold text-[#003C2F]">
+                            Calendário
+                        </h2>
+
+                        <div class="flex items-center gap-3">
+                            <span class="font-extrabold text-[#111827]">
+                                {{ $tituloMesCalendario }}
+                            </span>
+
+                            <a href="{{ request()->fullUrlWithQuery(['mes' => $mesAnteriorCalendario]) }}"
+                               class="w-8 h-8 rounded-full hover:bg-[#F1F6F2] text-[#8A9B92] flex items-center justify-center transition"
+                               title="Mês anterior">
+                                ‹
+                            </a>
+
+                            <a href="{{ request()->fullUrlWithQuery(['mes' => $proximoMesCalendario]) }}"
+                               class="w-8 h-8 rounded-full hover:bg-[#F1F6F2] text-[#8A9B92] flex items-center justify-center transition"
+                               title="Próximo mês">
+                                ›
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="calendario-aluno-grade">
+                        <div class="calendario-aluno-dia-nome">DOM</div>
+                        <div class="calendario-aluno-dia-nome">SEG</div>
+                        <div class="calendario-aluno-dia-nome">TER</div>
+                        <div class="calendario-aluno-dia-nome">QUA</div>
+                        <div class="calendario-aluno-dia-nome">QUI</div>
+                        <div class="calendario-aluno-dia-nome">SEX</div>
+                        <div class="calendario-aluno-dia-nome">SÁB</div>
+
+                        @foreach($semanasCalendario as $semanaCalendario)
+                            @foreach($semanaCalendario as $diaCalendario)
+                                <div class="calendario-aluno-dia
+                                    {{ !$diaCalendario['mes_atual'] ? 'calendario-aluno-dia-fora' : '' }}
+                                    {{ $diaCalendario['hoje'] ? 'calendario-aluno-dia-hoje' : '' }}">
+                                    <span class="font-bold">
+                                        {{ $diaCalendario['numero'] }}
+                                    </span>
+
+                                    @if($diaCalendario['tem_atividade'])
+                                        <span class="calendario-aluno-bolinha">
+                                            {{ $diaCalendario['qtd_atividades'] }}
+                                        </span>
+                                    @endif
+                                </div>
+                            @endforeach
+                        @endforeach
+                    </div>
+
+                    <div class="mt-5 bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4">
+                        <p class="text-sm font-extrabold text-[#003C2F]">
+                            Atividade em destaque no dia de hoje
+                        </p>
+
+                        <p class="text-xs text-[#60756B] mt-1 leading-relaxed">
+                            @if($aulaAtualAluno)
+                                Continue a aula <strong>{{ $aulaAtualAluno->titulo }}</strong>, do módulo <strong>{{ $aulaAtualAluno->modulo_nome }}</strong>.
+                            @else
+                                Nenhuma atividade pendente encontrada para este curso.
+                            @endif
+                        </p>
+                    </div>
+
+                </div>
+
+                <!-- CONTINUIDADE -->
+                <div class="2xl:col-span-5 space-y-4">
+
+                    <div class="bg-[#004D3A] text-white rounded-3xl p-6 shadow-sm relative overflow-hidden">
+                        <div class="absolute -right-10 -top-10 w-36 h-36 rounded-full border-[22px] border-white/10"></div>
+
+                        <div class="relative z-10">
+                            <p class="text-[11px] uppercase tracking-widest text-white/70 font-extrabold">
+                                Aula atual
+                            </p>
+
+                            <h2 class="text-2xl font-extrabold mt-2 leading-tight">
+                                {{ $aulaAtualAluno->titulo ?? 'Nenhuma aula pendente' }}
+                            </h2>
+
+                            <p class="text-sm text-white/75 mt-2">
+                                {{ $aulaAtualAluno->modulo_nome ?? 'Você concluiu ou ainda não possui aulas vinculadas.' }}
+                            </p>
+
+                            <a href="{{ route('aluno.aulas') }}"
+                               class="mt-5 inline-flex w-full items-center justify-center bg-white text-[#004D3A] px-5 py-3 rounded-2xl font-extrabold hover:bg-[#EAF5EF] transition">
+                                Continuar agora
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-1 gap-4">
+
+                        <div class="bg-white border border-[#E3EBE4] rounded-3xl p-5 shadow-sm">
+                            <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                Última aula feita
+                            </p>
+
+                            <h3 class="text-lg font-extrabold text-[#003C2F] mt-2 leading-tight">
+                                {{ $ultimaAulaConcluida->titulo ?? 'Nenhuma aula concluída ainda' }}
+                            </h3>
+
+                            <p class="text-xs text-[#60756B] mt-2">
+                                {{ $ultimaAulaConcluida->modulo_nome ?? 'Assim que assistir uma aula, ela aparecerá aqui.' }}
+                            </p>
+                        </div>
+
+                        <div class="bg-white border border-[#E3EBE4] rounded-3xl p-5 shadow-sm">
+                            <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                Próxima aula
+                            </p>
+
+                            <h3 class="text-lg font-extrabold text-[#003C2F] mt-2 leading-tight">
+                                {{ $proximaAulaAluno->titulo ?? 'Sem próxima aula no momento' }}
+                            </h3>
+
+                            <p class="text-xs text-[#60756B] mt-2">
+                                {{ $proximaAulaAluno->modulo_nome ?? 'Continue a aula atual para avançar no curso.' }}
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
 
             <div class="grid grid-cols-1 xl:grid-cols-12 gap-7">
 
