@@ -460,6 +460,60 @@
         justify-content: center;
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | CALENDÁRIO NO MODO ESCURO
+    |--------------------------------------------------------------------------
+    */
+    html.dark .calendario-aluno-dia-nome {
+        color: #CBD5E1 !important;
+    }
+
+    html.dark .calendario-aluno-dia {
+        background: #0B1220 !important;
+        border-color: #334155 !important;
+        color: #F8FAFC !important;
+    }
+
+    html.dark .calendario-aluno-dia span {
+        color: #F8FAFC !important;
+    }
+
+    html.dark .calendario-aluno-dia:hover {
+        border-color: #00A63E !important;
+        box-shadow: 0 8px 22px rgba(0, 166, 62, .16) !important;
+    }
+
+    html.dark .calendario-aluno-dia-fora {
+        background: #111827 !important;
+        border-color: #243044 !important;
+        color: #64748B !important;
+    }
+
+    html.dark .calendario-aluno-dia-fora span {
+        color: #64748B !important;
+    }
+
+    html.dark .calendario-aluno-dia-hoje {
+        border-color: #FF6B2C !important;
+        color: #FFB38A !important;
+    }
+
+    html.dark .calendario-aluno-dia-hoje span {
+        color: #FFB38A !important;
+    }
+
+    html.dark .calendario-aluno-bolinha {
+        background: #38BDF8 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, .15);
+    }
+
+    html.dark .calendario-aluno-mes-titulo {
+        color: #F8FAFC !important;
+    }
+
     @media (max-width: 640px) {
         .calendario-aluno-grade {
             gap: 4px;
@@ -726,7 +780,7 @@
                         </h2>
 
                         <div class="flex items-center gap-3">
-                            <span class="font-extrabold text-[#111827]">
+                            <span class="calendario-aluno-mes-titulo font-extrabold text-[#111827]">
                                 {{ $tituloMesCalendario }}
                             </span>
 
@@ -779,7 +833,7 @@
 
                         <p class="text-xs text-[#60756B] mt-1 leading-relaxed">
                             @if($aulaAtualAluno)
-                                Continue a aula <strong>{{ $aulaAtualAluno->titulo }}</strong>, do módulo <strong>{{ $aulaAtualAluno->modulo_nome }}</strong>.
+                                Continue a aula <strong>{{ $aulaAtualAluno->titulo }}</strong>.
                             @else
                                 Nenhuma atividade pendente encontrada para este curso.
                             @endif
@@ -804,7 +858,7 @@
                             </h2>
 
                             <p class="text-sm text-white/75 mt-2">
-                                {{ $aulaAtualAluno->modulo_nome ?? 'Você concluiu ou ainda não possui aulas vinculadas.' }}
+                                {{ $aulaAtualAluno ? 'Continue seus estudos a partir desta aula.' : 'Você concluiu ou ainda não possui aulas vinculadas.' }}
                             </p>
 
                             <a href="{{ route('aluno.aulas') }}"
@@ -826,7 +880,7 @@
                             </h3>
 
                             <p class="text-xs text-[#60756B] mt-2">
-                                {{ $ultimaAulaConcluida->modulo_nome ?? 'Assim que assistir uma aula, ela aparecerá aqui.' }}
+                                {{ $ultimaAulaConcluida ? 'Última atividade concluída no curso.' : 'Assim que assistir uma aula, ela aparecerá aqui.' }}
                             </p>
                         </div>
 
@@ -840,7 +894,7 @@
                             </h3>
 
                             <p class="text-xs text-[#60756B] mt-2">
-                                {{ $proximaAulaAluno->modulo_nome ?? 'Continue a aula atual para avançar no curso.' }}
+                                {{ $proximaAulaAluno ? 'Próxima etapa recomendada para continuar seu avanço.' : 'Continue a aula atual para avançar no curso.' }}
                             </p>
                         </div>
 
@@ -851,347 +905,8 @@
             </div>
 
 
-            <div class="grid grid-cols-1 xl:grid-cols-12 gap-7">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-7">
 
-                <!-- COLUNA PRINCIPAL -->
-                <div class="xl:col-span-8 space-y-7">
-
-                    <!-- MÓDULOS -->
-                    @if(isset($modulos))
-                        <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm overflow-hidden">
-
-                            <div class="p-5 sm:p-6 border-b border-[#E3EBE4] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 rounded-2xl bg-[#EAF5EF] text-[#004D3A] flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="w-6 h-6"
-                                             fill="none"
-                                             viewBox="0 0 24 24"
-                                             stroke="currentColor">
-                                            <path stroke-linecap="round"
-                                                  stroke-linejoin="round"
-                                                  stroke-width="1.8"
-                                                  d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25A8.966 8.966 0 0 1 18 3.75c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.966 8.966 0 0 0-6 2.292m0-14.25v14.25"/>
-                                        </svg>
-                                    </div>
-
-                                    <div>
-                                        <h2 class="text-xl font-extrabold text-[#003C2F]">
-                                            Módulos do curso
-                                        </h2>
-
-                                        <p class="text-xs text-[#60756B] mt-1">
-                                            Acompanhe suas aulas e pós-testes.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <span class="inline-flex items-center justify-center bg-[#EAF5EF] text-[#004D3A] px-4 py-2 rounded-full text-xs font-extrabold">
-                                    {{ $totalModulos }} módulos
-                                </span>
-
-                            </div>
-
-                            <div class="p-4 sm:p-6 space-y-4">
-
-                                @forelse($modulos as $modulo)
-
-                                    @php
-                                        $aulasModulo = $modulo->aulas ?? collect();
-                                        $totalAulasModulo = count($aulasModulo);
-                                        $aulasConcluidasModulo = 0;
-                                        $totalItensModulo = 0;
-                                        $itensConcluidosModulo = 0;
-
-                                        foreach ($aulasModulo as $aulaResumo) {
-                                            $avaliacaoResumoId = DB::table('avaliacoes')
-                                                ->where('aula_id', $aulaResumo->id)
-                                                ->value('id');
-
-                                            $assistidaResumo = DB::table('aulas_assistidas')
-                                                ->where('aluno_id', auth()->id())
-                                                ->where('aula_id', $aulaResumo->id)
-                                                ->where('assistido', true)
-                                                ->exists();
-
-                                            $posResumo = false;
-
-                                            if ($avaliacaoResumoId) {
-                                                $posResumo = DB::table('notas')
-                                                    ->where('aluno_id', auth()->id())
-                                                    ->where('avaliacao_id', $avaliacaoResumoId)
-                                                    ->exists();
-                                            }
-
-                                            $totalItensModulo++;
-
-                                            if ($assistidaResumo) {
-                                                $aulasConcluidasModulo++;
-                                                $itensConcluidosModulo++;
-                                            }
-
-                                            if ($avaliacaoResumoId) {
-                                                $totalItensModulo++;
-
-                                                if ($posResumo) {
-                                                    $itensConcluidosModulo++;
-                                                }
-                                            }
-                                        }
-
-                                        $progressoModulo = $totalItensModulo > 0
-                                            ? round(($itensConcluidosModulo / $totalItensModulo) * 100)
-                                            : 0;
-                                    @endphp
-
-                                    <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl overflow-hidden">
-
-                                        <!-- CABEÇALHO MÓDULO -->
-                                        <button type="button"
-                                                onclick="toggleModulo({{ $modulo->id }})"
-                                                class="w-full p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 text-left hover:bg-[#F1F6F2] transition">
-
-                                            <div class="flex items-start gap-4">
-
-                                                <div class="w-11 h-11 rounded-2xl bg-white border border-[#E3EBE4] text-[#004D3A] flex items-center justify-center shrink-0">
-                                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                                         class="w-5 h-5"
-                                                         fill="none"
-                                                         viewBox="0 0 24 24"
-                                                         stroke="currentColor">
-                                                        <path stroke-linecap="round"
-                                                              stroke-linejoin="round"
-                                                              stroke-width="1.8"
-                                                              d="M4.5 6.75A2.25 2.25 0 0 1 6.75 4.5h10.5A2.25 2.25 0 0 1 19.5 6.75v10.5A2.25 2.25 0 0 1 17.25 19.5H6.75A2.25 2.25 0 0 1 4.5 17.25V6.75z"/>
-                                                    </svg>
-                                                </div>
-
-                                                <div>
-                                                    <h3 class="font-extrabold text-[#003C2F] text-lg">
-                                                        {{ $modulo->nome }}
-                                                    </h3>
-
-                                                    <p class="text-xs text-[#60756B] mt-1">
-                                                        {{ $aulasConcluidasModulo }} de {{ $totalAulasModulo }} aulas assistidas
-                                                    </p>
-                                                </div>
-
-                                            </div>
-
-                                            <div class="w-full lg:w-56">
-
-                                                <div class="flex justify-between items-center mb-2">
-                                                    <span class="text-xs font-bold text-[#60756B]">
-                                                        Progresso
-                                                    </span>
-
-                                                    <span class="text-xs font-extrabold text-[#004D3A]">
-                                                        {{ $progressoModulo }}%
-                                                    </span>
-                                                </div>
-
-                                                <div class="h-2 bg-[#E8EFE9] rounded-full overflow-hidden">
-                                                    <div class="h-full bg-[#004D3A] rounded-full"
-                                                         style="width: {{ $progressoModulo }}%;">
-                                                    </div>
-                                                </div>
-
-                                            </div>
-
-                                        </button>
-
-                                        <!-- AULAS -->
-                                        <div id="modulo-{{ $modulo->id }}" class="hidden border-t border-[#E3EBE4] p-4 space-y-3">
-
-                                            @if(isset($modulo->aulas))
-                                                @forelse($modulo->aulas as $aula)
-
-                                                    @php
-                                                        $avaliacaoId = DB::table('avaliacoes')
-                                                            ->where('aula_id', $aula->id)
-                                                            ->value('id');
-
-                                                        $aulaAssistida = DB::table('aulas_assistidas')
-                                                            ->where('aluno_id', auth()->id())
-                                                            ->where('aula_id', $aula->id)
-                                                            ->where('assistido', true)
-                                                            ->exists();
-
-                                                        $posTesteConcluido = false;
-                                                        $notaPosTeste = null;
-
-                                                        if ($avaliacaoId) {
-                                                            $notaRegistro = DB::table('notas')
-                                                                ->where('aluno_id', auth()->id())
-                                                                ->where('avaliacao_id', $avaliacaoId)
-                                                                ->orderBy('id', 'desc')
-                                                                ->first();
-
-                                                            $posTesteConcluido = (bool) $notaRegistro;
-
-                                                            if ($notaRegistro && isset($notaRegistro->nota)) {
-                                                                $notaPosTeste = (float) $notaRegistro->nota;
-                                                            }
-                                                        }
-
-                                                        $atividadeConcluida = $aulaAssistida && (!$avaliacaoId || $posTesteConcluido);
-                                                    @endphp
-
-                                                    <div class="bg-white border rounded-3xl p-4 transition
-                                                        {{ $atividadeConcluida ? 'border-green-200 opacity-75' : 'border-[#E3EBE4] hover:shadow-md' }}">
-
-                                                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
-                                                            <div class="min-w-0">
-
-                                                                <div class="flex flex-wrap items-center gap-2">
-
-                                                                    @if($atividadeConcluida)
-                                                                        <span class="w-7 h-7 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-sm font-extrabold">
-                                                                            ✓
-                                                                        </span>
-                                                                    @else
-                                                                        <span class="w-7 h-7 rounded-full bg-[#EAF5EF] text-[#004D3A] flex items-center justify-center">
-                                                                            ▶
-                                                                        </span>
-                                                                    @endif
-
-                                                                    <p class="font-extrabold break-words
-                                                                        {{ $atividadeConcluida ? 'text-[#8A9B92]' : 'text-[#003C2F]' }}">
-                                                                        {{ $aula->titulo }}
-                                                                    </p>
-
-                                                                    @if($atividadeConcluida)
-                                                                        <span class="text-[11px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-extrabold">
-                                                                            Concluído
-                                                                        </span>
-                                                                    @endif
-
-                                                                </div>
-
-                                                                <div class="mt-3 flex flex-wrap gap-2">
-
-                                                                    @if($atividadeConcluida)
-                                                                        <span class="inline-flex text-xs bg-[#F1F6F2] text-[#60756B] border border-[#E3EBE4] px-3 py-1 rounded-full font-bold">
-                                                                            Aula e atividade finalizadas
-                                                                        </span>
-                                                                    @elseif($aulaAssistida && $avaliacaoId && !$posTesteConcluido)
-                                                                        <span class="inline-flex text-xs bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-full font-bold">
-                                                                            Aula assistida — pós-teste liberado
-                                                                        </span>
-                                                                    @elseif($aulaAssistida)
-                                                                        <span class="inline-flex text-xs bg-green-50 text-green-700 border border-green-100 px-3 py-1 rounded-full font-bold">
-                                                                            Aula concluída
-                                                                        </span>
-                                                                    @else
-                                                                        <span class="inline-flex text-xs bg-yellow-50 text-yellow-700 border border-yellow-100 px-3 py-1 rounded-full font-bold">
-                                                                            Assista para liberar o pós-teste
-                                                                        </span>
-                                                                    @endif
-
-                                                                @if($notaPosTeste !== null)
-                                                                    <div class="mt-3">
-                                                                        <span class="inline-flex text-xs bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-full font-extrabold">
-                                                                            Melhor nota do pós-teste: {{ number_format($notaPosTeste, 1) }}
-                                                                        </span>
-                                                                    </div>
-                                                                @endif
-
-                                                                @if(($aula->tempo_minimo_video ?? 0) > 0)
-                                                                    <p class="text-[11px] text-[#60756B] mt-2 font-bold">
-                                                                        Tempo mínimo da videoaula: {{ $aula->tempo_minimo_video }} minuto(s)
-                                                                    </p>
-                                                                @endif
-                                                            </div>
-
-                                                            <div class="flex flex-wrap gap-2 shrink-0">
-
-                                                                @if(!$aulaAssistida)
-                                                                    <button
-                                                                        type="button"
-                                                                        data-video="{{ $aula->video_url }}"
-                                                                        data-aula="{{ $aula->id }}"
-                                                                        data-avaliacao="{{ $avaliacaoId }}"
-                                                                        data-tempo-minimo="{{ $aula->tempo_minimo_video ?? 0 }}"
-                                                                        data-tempo-maximo="{{ $aula->tempo_maximo_video ?? 0 }}"
-                                                                        onclick="abrirModal(this.dataset.video, this.dataset.aula, this.dataset.avaliacao, this.dataset.tempoMinimo, this.dataset.tempoMaximo)"
-                                                                        class="bg-[#004D3A] hover:bg-[#003C2F] text-white px-4 py-2.5 rounded-2xl text-sm font-extrabold transition"
-                                                                    >
-                                                                        Assistir
-                                                                    </button>
-                                                                @else
-                                                                    <button
-                                                                        type="button"
-                                                                        data-video="{{ $aula->video_url }}"
-                                                                        data-aula="{{ $aula->id }}"
-                                                                        data-avaliacao="{{ $avaliacaoId }}"
-                                                                        data-tempo-minimo="{{ $aula->tempo_minimo_video ?? 0 }}"
-                                                                        data-tempo-maximo="{{ $aula->tempo_maximo_video ?? 0 }}"
-                                                                        onclick="abrirModal(this.dataset.video, this.dataset.aula, this.dataset.avaliacao, this.dataset.tempoMinimo, this.dataset.tempoMaximo)"
-                                                                        class="bg-[#F1F6F2] hover:bg-[#E6EFE8] text-[#004D3A] border border-[#DCE7DE] px-4 py-2.5 rounded-2xl text-sm font-extrabold transition"
-                                                                    >
-                                                                        Rever aula
-                                                                    </button>
-
-                                                                    @if($avaliacaoId)
-                                                                        <button
-                                                                            type="button"
-                                                                            onclick="fazerPosTeste('{{ $avaliacaoId }}')"
-                                                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-2xl text-sm font-extrabold transition"
-                                                                        >
-                                                                            {{ $posTesteConcluido ? 'Refazer pós-teste' : 'Fazer pós-teste' }}
-                                                                        </button>
-
-                                                                        @if($posTesteConcluido)
-                                                                            <button
-                                                                                type="button"
-                                                                                onclick="verResultadoPosTeste('{{ $avaliacaoId }}')"
-                                                                                class="bg-green-100 hover:bg-green-200 text-green-700 border border-green-200 px-4 py-2.5 rounded-2xl text-sm font-extrabold transition">
-                                                                                Ver resultado
-                                                                            </button>
-                                                                        @endif
-                                                                    @else
-                                                                        <span class="text-xs text-[#60756B] self-center font-bold">
-                                                                            Sem pós-teste
-                                                                        </span>
-                                                                    @endif
-                                                                @endif
-
-                                                            </div>
-
-                                                        </div>
-
-                                                    </div>
-
-                                                @empty
-                                                    <div class="bg-white border border-[#E3EBE4] rounded-3xl p-5 text-center text-[#60756B]">
-                                                        Nenhuma aula neste módulo.
-                                                    </div>
-                                                @endforelse
-                                            @endif
-
-                                        </div>
-
-                                    </div>
-
-                                @empty
-
-                                    <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-8 text-center text-[#60756B]">
-                                        Nenhum módulo encontrado.
-                                    </div>
-
-                                @endforelse
-
-                            </div>
-
-                        </div>
-                    @endif
-
-                </div>
-
-                <!-- COLUNA LATERAL -->
-                <div class="xl:col-span-4 space-y-7">
 
                     <!-- CARD DE AÇÃO -->
                     <div class="bg-[#004D3A] rounded-3xl p-6 shadow-sm text-white relative overflow-hidden">
@@ -1337,7 +1052,6 @@
 
                     </div>
 
-                </div>
 
             </div>
 
@@ -1346,6 +1060,7 @@
     </main>
 
 </div>
+
 
 <!-- MODAL AVISO URGENTE -->
 @if($avisoUrgentePopup)
