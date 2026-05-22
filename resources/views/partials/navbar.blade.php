@@ -29,7 +29,7 @@
             };
 
             $mostrarAvisosAluno = in_array($tipoUsuario, ['residente', 'preceptor', 'aluno']);
-            $mostrarPendentesProfessor = in_array($tipoUsuario, ['preceptor', 'professor', 'admin', 'administrador', 'super_admin']);
+            $mostrarPendentesProfessor = in_array($tipoUsuario, ['professor', 'admin', 'administrador', 'super_admin']);
 
             $usuariosPendentesNavbar = collect();
             $totalPendentesNavbar = 0;

@@ -201,7 +201,6 @@ Route::middleware('auth')->group(function () {
             'admin',
             'administrador',
             'professor',
-            'preceptor',
         ]);
 
         if (!$podeVerPendentes) {
