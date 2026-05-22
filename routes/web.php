@@ -81,15 +81,6 @@ Route::post('/reenviar-codigo-senha', [UserController::class, 'reenviarCodigoRed
 |--------------------------------------------------------------------------
 | ROTAS PROTEGIDAS
 |--------------------------------------------------------------------------
-| IMPORTANTE:
-| Não use Closure dentro de Route::middleware([...]).
-| O Laravel Cloud estava falhando no build com:
-| "Object of class Closure could not be converted to string".
-|
-| Por isso, neste arquivo mantemos o middleware auth normal.
-| A regra principal de redirecionamento por tipo está no UserController::login().
-| As permissões mais finas podem ser colocadas depois em middlewares próprios.
-|--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
 
@@ -175,7 +166,6 @@ Route::middleware('auth')->group(function () {
     // =========================
     // ✔ APROVAÇÃO / REJEIÇÃO / INUTILIZAÇÃO
     // =========================
-
     Route::post('/aprovar-usuario/{id}', [UserController::class, 'aprovar'])
         ->name('usuario.aprovar');
 
@@ -187,6 +177,95 @@ Route::middleware('auth')->group(function () {
 
     Route::patch('/usuarios/{id}/reativar', [UserController::class, 'reativar'])
         ->name('usuarios.reativar');
+
+
+    // =========================
+    // 🔔 NOTIFICAÇÕES DA NAVBAR - USUÁRIOS PENDENTES
+    // =========================
+    Route::get('/navbar/usuarios-pendentes', function () {
+        $usuarioLogado = auth()->user();
+
+        if (!$usuarioLogado) {
+            return response()->json([
+                'success' => false,
+                'total' => 0,
+                'usuarios' => [],
+                'message' => 'Usuário não autenticado.',
+            ]);
+        }
+
+        $tipo = strtolower($usuarioLogado->tipo ?? 'usuario');
+
+        $podeVerPendentes = in_array($tipo, [
+            'super_admin',
+            'admin',
+            'administrador',
+            'professor',
+            'preceptor',
+        ]);
+
+        if (!$podeVerPendentes) {
+            return response()->json([
+                'success' => true,
+                'total' => 0,
+                'usuarios' => [],
+            ]);
+        }
+
+        $query = DB::table('users')
+            ->where(function ($q) {
+                $q->where('status', 'pendente')
+                    ->orWhere('status', 'aguardando')
+                    ->orWhere('status', 'aguardando_aprovacao')
+                    ->orWhere('status', 'aguardando aprovação');
+            });
+
+        $total = (clone $query)->count();
+
+        $usuarios = $query
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get()
+            ->map(function ($user) {
+                $tipoUsuario = $user->tipo ?? 'usuario';
+
+                $criadoEm = null;
+
+                if (!empty($user->created_at)) {
+                    try {
+                        $criadoEm = \Carbon\Carbon::parse($user->created_at)
+                            ->timezone('America/Sao_Paulo')
+                            ->format('d/m/Y H:i');
+                    } catch (\Throwable $e) {
+                        $criadoEm = $user->created_at;
+                    }
+                }
+
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name ?? 'Usuário sem nome',
+                    'email' => $user->email ?? '',
+                    'cpf' => $user->cpf ?? '',
+                    'tipo' => $tipoUsuario,
+                    'tipo_formatado' => ucfirst(str_replace('_', ' ', $tipoUsuario)),
+                    'status' => $user->status ?? 'pendente',
+                    'created_at' => $user->created_at,
+                    'created_at_formatado' => $criadoEm,
+                    'aprovar_url' => route('usuario.aprovar', $user->id),
+                    'rejeitar_url' => route('usuario.rejeitar', $user->id),
+                    'controle_url' => route('controle.usuarios'),
+                    'csrf_token' => csrf_token(),
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'total' => $total,
+            'usuarios' => $usuarios,
+            'controle_url' => route('controle.usuarios'),
+        ]);
+    })->name('navbar.usuarios-pendentes');
 
 
     // =========================
@@ -276,13 +355,6 @@ Route::middleware('auth')->group(function () {
     // 🎓 CERTIFICADOS
     // =========================
     Route::get('/certificados/criar', function () {
-        /*
-        |--------------------------------------------------------------------------
-        | CERTIFICADOS EMITIDOS
-        |--------------------------------------------------------------------------
-        | Esta tela continua configurando o modelo do certificado.
-        | Agora também busca o histórico real da tabela certificados_emitidos.
-        */
         $certificados = collect();
 
         if (DB::getSchemaBuilder()->hasTable('certificados_emitidos')) {
@@ -310,14 +382,6 @@ Route::middleware('auth')->group(function () {
     })->name('certificados.criar');
 
     Route::post('/certificados', function () {
-        /*
-        |--------------------------------------------------------------------------
-        | CONFIGURAÇÃO DO MODELO DE CERTIFICADO
-        |--------------------------------------------------------------------------
-        | Mantém o funcionamento atual: cada atualização cria um novo modelo.
-        | Depois, se quiser, podemos alterar para atualizar sempre o último modelo
-        | em vez de inserir vários registros.
-        */
         DB::table('certificados')->insert([
             'curso' => request('curso'),
             'carga_horaria' => request('carga_horaria'),

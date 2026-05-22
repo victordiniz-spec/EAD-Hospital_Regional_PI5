@@ -376,6 +376,8 @@
                         data-delete-url="{{ route('usuarios.destroy', $user->id) }}"
                         data-inutilizar-url="{{ route('usuarios.inutilizar', $user->id) }}"
                         data-reativar-url="{{ route('usuarios.reativar', $user->id) }}"
+                        data-aprovar-url="{{ route('usuario.aprovar', $user->id) }}"
+                        data-rejeitar-url="{{ route('usuario.rejeitar', $user->id) }}"
                         data-search="{{ strtolower($user->name . ' ' . $user->email . ' ' . $user->cpf . ' ' . $user->tipo . ' ' . $user->status . ' ' . $statusTexto . ' ' . ($dataCadastro ? $dataCadastro->format('d/m/Y') : '') . ' ' . ($dataAceito ? $dataAceito->format('d/m/Y') : '')) }}"
                     >
 
@@ -486,7 +488,27 @@
                                 Editar
                             </button>
 
-                            @if($statusInutilizado)
+                            @if($statusPendente)
+                                <form action="{{ route('usuario.aprovar', $user->id) }}" method="POST" class="flex-1 min-w-[130px]" onclick="event.stopPropagation();">
+                                    @csrf
+
+                                    <button type="submit"
+                                            onclick="return confirm('Deseja aprovar este usuário? Ele passará a ter acesso ao sistema.')"
+                                            class="w-full bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2">
+                                        Aprovar
+                                    </button>
+                                </form>
+
+                                <form action="{{ route('usuario.rejeitar', $user->id) }}" method="POST" class="flex-1 min-w-[130px]" onclick="event.stopPropagation();">
+                                    @csrf
+
+                                    <button type="submit"
+                                            onclick="return confirm('Deseja rejeitar este usuário? Esta ação negará a solicitação de acesso.')"
+                                            class="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2">
+                                        Rejeitar
+                                    </button>
+                                </form>
+                            @elseif($statusInutilizado)
                                 <form action="{{ route('usuarios.reativar', $user->id) }}" method="POST" class="flex-1 min-w-[130px]" onclick="event.stopPropagation();">
                                     @csrf
                                     @method('PATCH')
@@ -508,18 +530,18 @@
                                         Inutilizar
                                     </button>
                                 </form>
-                            @endif
 
-                            <button
-                                type="button"
-                                onclick='event.stopPropagation(); abrirModalExcluir(
-                                    @json($user->id),
-                                    @json($user->name),
-                                    @json($user->email)
-                                )'
-                                class="flex-1 min-w-[130px] bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2">
-                                Excluir
-                            </button>
+                                <button
+                                    type="button"
+                                    onclick='event.stopPropagation(); abrirModalExcluir(
+                                        @json($user->id),
+                                        @json($user->name),
+                                        @json($user->email)
+                                    )'
+                                    class="flex-1 min-w-[130px] bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2">
+                                    Excluir
+                                </button>
+                            @endif
 
                         </div>
 
@@ -556,6 +578,22 @@
         <div class="p-3 space-y-2">
 
             <button type="button"
+                    id="botaoContextoAprovar"
+                    onclick="aprovarUsuarioSelecionado()"
+                    class="hidden w-full text-left px-4 py-3 rounded-2xl hover:bg-green-50 text-green-700 font-extrabold transition items-center justify-between">
+                <span>Aprovar acesso</span>
+                <span>✅</span>
+            </button>
+
+            <button type="button"
+                    id="botaoContextoRejeitar"
+                    onclick="rejeitarUsuarioSelecionado()"
+                    class="hidden w-full text-left px-4 py-3 rounded-2xl hover:bg-red-50 text-red-600 font-extrabold transition items-center justify-between">
+                <span>Rejeitar acesso</span>
+                <span>❌</span>
+            </button>
+
+            <button type="button"
                     onclick="editarUsuarioSelecionado()"
                     class="w-full text-left px-4 py-3 rounded-2xl hover:bg-[#EAF5EF] text-[#004D3A] font-extrabold transition flex items-center justify-between">
                 <span>Editar</span>
@@ -586,6 +624,11 @@
 <form id="formAcaoRapidaUsuario" method="POST" class="hidden">
     @csrf
     <input type="hidden" name="_method" id="metodoAcaoRapidaUsuario" value="PATCH">
+</form>
+
+<!-- FORM DINÂMICO PARA APROVAR / REJEITAR -->
+<form id="formAprovacaoRapidaUsuario" method="POST" class="hidden">
+    @csrf
 </form>
 
 <!-- MODAL EDITAR -->
@@ -875,11 +918,31 @@
         const textoBotao = document.getElementById('textoContextoInutilizar');
         const iconeBotao = document.getElementById('iconeContextoInutilizar');
         const botaoAcao = document.getElementById('botaoContextoInutilizar');
+        const botaoAprovar = document.getElementById('botaoContextoAprovar');
+        const botaoRejeitar = document.getElementById('botaoContextoRejeitar');
+
+        if (botaoAprovar && botaoRejeitar) {
+            if (statusReal === 'pendente') {
+                botaoAprovar.classList.remove('hidden');
+                botaoAprovar.classList.add('flex');
+                botaoRejeitar.classList.remove('hidden');
+                botaoRejeitar.classList.add('flex');
+            } else {
+                botaoAprovar.classList.add('hidden');
+                botaoAprovar.classList.remove('flex');
+                botaoRejeitar.classList.add('hidden');
+                botaoRejeitar.classList.remove('flex');
+            }
+        }
 
         if (statusReal === 'inutilizado') {
             textoBotao.innerText = 'Reativar';
             iconeBotao.innerText = '✅';
             botaoAcao.className = 'w-full text-left px-4 py-3 rounded-2xl hover:bg-green-50 text-green-700 font-extrabold transition flex items-center justify-between';
+        } else if (statusReal === 'pendente') {
+            textoBotao.innerText = 'Inutilizar';
+            iconeBotao.innerText = '🚫';
+            botaoAcao.className = 'hidden w-full text-left px-4 py-3 rounded-2xl hover:bg-yellow-50 text-yellow-700 font-extrabold transition items-center justify-between';
         } else {
             textoBotao.innerText = 'Inutilizar';
             iconeBotao.innerText = '🚫';
@@ -912,6 +975,38 @@
         if (menu) {
             menu.style.display = 'none';
         }
+    }
+
+    function aprovarUsuarioSelecionado() {
+        if (!usuarioSelecionado) return;
+
+        if (!confirm('Deseja aprovar este usuário? Ele passará a ter acesso ao sistema.')) {
+            return;
+        }
+
+        const form = document.getElementById('formAprovacaoRapidaUsuario');
+
+        if (!form) return;
+
+        form.action = usuarioSelecionado.dataset.aprovarUrl;
+        fecharMenuContexto();
+        form.submit();
+    }
+
+    function rejeitarUsuarioSelecionado() {
+        if (!usuarioSelecionado) return;
+
+        if (!confirm('Deseja rejeitar este usuário? Esta ação negará a solicitação de acesso.')) {
+            return;
+        }
+
+        const form = document.getElementById('formAprovacaoRapidaUsuario');
+
+        if (!form) return;
+
+        form.action = usuarioSelecionado.dataset.rejeitarUrl;
+        fecharMenuContexto();
+        form.submit();
     }
 
     function editarUsuarioSelecionado() {
