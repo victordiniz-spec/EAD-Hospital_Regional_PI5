@@ -5,6 +5,9 @@
 @section('content')
 
 @php
+    $timezoneSistema = config('app.timezone', 'America/Sao_Paulo');
+    $timezoneBrasil = 'America/Sao_Paulo';
+
     $totalUsuarios = $usuarios->count();
 
     $usuariosAtivos = $usuarios->where('status', 'aprovado')->count();
@@ -340,10 +343,19 @@
                             default => 'PENDENTE',
                         };
 
-                        $dataCadastro = $user->created_at ? \Carbon\Carbon::parse($user->created_at) : null;
+                        /*
+                        |--------------------------------------------------------------------------
+                        | DATAS NO HORÁRIO DO BRASIL
+                        |--------------------------------------------------------------------------
+                        | O banco/Laravel Cloud normalmente salva datas em UTC.
+                        | Aqui convertemos para America/Sao_Paulo antes de mostrar na tela.
+                        */
+                        $dataCadastro = $user->created_at
+                            ? \Carbon\Carbon::parse($user->created_at)->timezone($timezoneBrasil)
+                            : null;
 
                         $dataAceito = $statusAtivo && $user->updated_at
-                            ? \Carbon\Carbon::parse($user->updated_at)
+                            ? \Carbon\Carbon::parse($user->updated_at)->timezone($timezoneBrasil)
                             : null;
                     @endphp
 
