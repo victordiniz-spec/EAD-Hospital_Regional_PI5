@@ -351,6 +351,13 @@
         min-height: 260px;
     }
 
+    #youtubePlayer iframe {
+        width: 100% !important;
+        height: 100% !important;
+        border: 0 !important;
+        display: block;
+    }
+
     @media (max-width: 1024px) {
         .area-aluno-video {
             padding-left: 1rem !important;
@@ -982,13 +989,15 @@
             ×
         </button>
 
-        <div class="rounded-2xl overflow-hidden bg-black">
-            <iframe id="videoFrame"
-                    class="iframe-player-aula rounded-2xl bg-black"
-                    src=""
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen>
-            </iframe>
+        <div class="rounded-2xl overflow-hidden bg-black relative">
+            <div id="youtubePlayer"
+                 class="iframe-player-aula rounded-2xl bg-black">
+            </div>
+
+            <div id="youtubePlayerLoading"
+                 class="absolute inset-0 flex items-center justify-center bg-black/80 text-white text-sm font-extrabold">
+                Carregando vídeo do YouTube...
+            </div>
         </div>
 
         <!-- CONTROLE DE TEMPO DA VIDEOAULA -->
@@ -1061,43 +1070,58 @@
 <script>
 let aulaIdAtual = null;
 let avaliacaoIdAtual = null;
-let tempoInicioVideoAtual = null;
+
 let tempoMinimoVideoAtual = 0;
 let tempoMaximoVideoAtual = 0;
+let tempoAssistidoVideoAtualSegundos = 0;
+
 let intervaloTempoVideoAtual = null;
 let aulaConcluindoVideoAtual = false;
+let videoYoutubeTocando = false;
 
-function normalizarUrlYoutube(url) {
-    if (!url) return '';
+let youtubePlayer = null;
+let youtubeApiCarregada = false;
+let youtubeApiPronta = false;
+let youtubeApiCallbacks = [];
 
-    let video = String(url).trim();
+window.onYouTubeIframeAPIReady = function () {
+    youtubeApiPronta = true;
 
-    if (video.includes('watch?v=')) {
-        video = video.replace('watch?v=', 'embed/');
+    youtubeApiCallbacks.forEach((callback) => {
+        if (typeof callback === 'function') callback();
+    });
+
+    youtubeApiCallbacks = [];
+};
+
+function carregarYoutubeIframeAPI(callback) {
+    if (youtubeApiPronta && window.YT && window.YT.Player) {
+        callback();
+        return;
     }
 
-    if (video.includes('youtu.be/')) {
-        video = video.replace('youtu.be/', 'www.youtube.com/embed/');
+    youtubeApiCallbacks.push(callback);
+
+    if (youtubeApiCarregada) {
+        return;
     }
 
-    if (video.includes('&')) {
-        video = video.split('&')[0];
-    }
+    youtubeApiCarregada = true;
 
-    return video;
-}
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    tag.async = true;
+    tag.onerror = function () {
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro ao carregar o YouTube',
+            text: 'Não foi possível carregar a API do YouTube. Verifique a conexão com a internet e tente novamente.',
+            confirmButtonColor: '#dc2626'
+        });
+    };
 
-function montarUrlYoutubeComAutoplay(urlNormalizada) {
-    if (!urlNormalizada) return '';
-
-    const separador = urlNormalizada.includes('?') ? '&' : '?';
-
-    /*
-     | Browsers generally block autoplay with sound.
-     | Using mute=1 allows the YouTube video to start automatically.
-     | The student can unmute after it starts.
-    */
-    return urlNormalizada + separador + 'autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1';
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 }
 
 function inteiroSeguro(valor, padrao = 0) {
@@ -1105,64 +1129,227 @@ function inteiroSeguro(valor, padrao = 0) {
     return Number.isFinite(numero) ? numero : padrao;
 }
 
+function extrairYoutubeVideoId(url) {
+    if (!url) return '';
+
+    const video = String(url).trim();
+
+    try {
+        const parsed = new URL(video);
+
+        if (parsed.hostname.includes('youtu.be')) {
+            return parsed.pathname.replace('/', '').split('/')[0];
+        }
+
+        if (parsed.searchParams.get('v')) {
+            return parsed.searchParams.get('v');
+        }
+
+        const partes = parsed.pathname.split('/').filter(Boolean);
+
+        const embedIndex = partes.indexOf('embed');
+        if (embedIndex !== -1 && partes[embedIndex + 1]) {
+            return partes[embedIndex + 1];
+        }
+
+        const shortsIndex = partes.indexOf('shorts');
+        if (shortsIndex !== -1 && partes[shortsIndex + 1]) {
+            return partes[shortsIndex + 1];
+        }
+    } catch (e) {
+        // Caso venha apenas o ID do vídeo.
+        if (/^[a-zA-Z0-9_-]{8,20}$/.test(video)) {
+            return video;
+        }
+    }
+
+    return '';
+}
+
+function destruirYoutubePlayer() {
+    pararContagemVideoYoutube();
+
+    if (youtubePlayer && typeof youtubePlayer.destroy === 'function') {
+        try {
+            youtubePlayer.destroy();
+        } catch (e) {
+            console.warn('Erro ao destruir player do YouTube:', e);
+        }
+    }
+
+    youtubePlayer = null;
+    videoYoutubeTocando = false;
+
+    const playerContainer = document.getElementById('youtubePlayer');
+    if (playerContainer) {
+        playerContainer.innerHTML = '';
+    }
+}
+
+function mostrarLoadingYoutube(mostrar = true, texto = 'Carregando vídeo do YouTube...') {
+    const loading = document.getElementById('youtubePlayerLoading');
+
+    if (!loading) return;
+
+    loading.innerText = texto;
+    loading.classList.toggle('hidden', !mostrar);
+}
+
 function abrirModal(url, aulaId, avaliacaoId = null, tempoMinimoVideo = 0, tempoMaximoVideo = 0) {
     document.body.classList.add('modal-video-aberto');
 
     aulaIdAtual = aulaId;
     avaliacaoIdAtual = avaliacaoId && avaliacaoId !== 'null' && avaliacaoId !== '' ? avaliacaoId : null;
-    tempoInicioVideoAtual = Date.now();
+
     tempoMinimoVideoAtual = inteiroSeguro(tempoMinimoVideo, 0) * 60;
     tempoMaximoVideoAtual = inteiroSeguro(tempoMaximoVideo, 0) * 60;
-    aulaConcluindoVideoAtual = false;
+    tempoAssistidoVideoAtualSegundos = 0;
 
+    aulaConcluindoVideoAtual = false;
+    videoYoutubeTocando = false;
+
+    destruirYoutubePlayer();
     prepararCronometroVideoAula();
 
-    const video = normalizarUrlYoutube(url);
+    const videoId = extrairYoutubeVideoId(url);
 
-    if (!video) {
+    if (!videoId) {
         Swal.fire({
             icon: 'error',
             title: 'Vídeo não encontrado',
-            text: 'Esta aula não possui link de vídeo cadastrado.',
+            text: 'Esta aula não possui um link válido do YouTube cadastrado.',
             confirmButtonColor: '#dc2626'
         });
         return;
     }
 
     const modal = document.getElementById('modalVideo');
-    const frame = document.getElementById('videoFrame');
 
-    if (!modal || !frame) return;
+    if (!modal) return;
 
-    frame.src = montarUrlYoutubeComAutoplay(video);
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 
-    iniciarContadorTempoVideo();
+    mostrarLoadingYoutube(true, 'Carregando vídeo do YouTube...');
+
+    carregarYoutubeIframeAPI(() => {
+        criarYoutubePlayer(videoId);
+    });
+}
+
+function criarYoutubePlayer(videoId) {
+    const playerContainer = document.getElementById('youtubePlayer');
+
+    if (!playerContainer || !window.YT || !window.YT.Player) {
+        mostrarLoadingYoutube(true, 'Não foi possível iniciar o player do YouTube.');
+        return;
+    }
+
+    playerContainer.innerHTML = '';
+
+    youtubePlayer = new YT.Player('youtubePlayer', {
+        width: '100%',
+        height: '100%',
+        videoId: videoId,
+        playerVars: {
+            autoplay: 1,
+            mute: 1,
+            playsinline: 1,
+            rel: 0,
+            modestbranding: 1,
+            controls: 1,
+            disablekb: 0,
+            fs: 1,
+            origin: window.location.origin
+        },
+        events: {
+            onReady: function (event) {
+                mostrarLoadingYoutube(false);
+
+                try {
+                    event.target.mute();
+                    event.target.playVideo();
+                } catch (e) {
+                    console.warn('Autoplay bloqueado. O aluno precisa apertar play.', e);
+                }
+
+                const textoAjuda = document.getElementById('textoAjudaTempoVideoAula');
+                if (textoAjuda) {
+                    textoAjuda.innerText = 'O cronômetro só começa quando o YouTube confirmar que o vídeo está realmente tocando.';
+                }
+            },
+            onStateChange: onYoutubePlayerStateChange,
+            onError: function () {
+                pararContagemVideoYoutube();
+                mostrarLoadingYoutube(true, 'Erro ao carregar este vídeo do YouTube.');
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro no vídeo',
+                    text: 'Não foi possível carregar este vídeo do YouTube. Confira o link cadastrado na aula.',
+                    confirmButtonColor: '#dc2626'
+                });
+            }
+        }
+    });
+}
+
+function onYoutubePlayerStateChange(event) {
+    if (!window.YT || !YT.PlayerState) return;
+
+    if (event.data === YT.PlayerState.PLAYING) {
+        videoYoutubeTocando = true;
+        mostrarLoadingYoutube(false);
+        iniciarContagemVideoYoutube();
+        atualizarMensagemEstadoYoutube('Vídeo em reprodução. O tempo assistido está sendo contado.');
+        return;
+    }
+
+    if (event.data === YT.PlayerState.BUFFERING) {
+        videoYoutubeTocando = false;
+        pararContagemVideoYoutube();
+        atualizarMensagemEstadoYoutube('O vídeo está carregando. O cronômetro foi pausado para não contar tempo falso.');
+        return;
+    }
+
+    if (event.data === YT.PlayerState.PAUSED) {
+        videoYoutubeTocando = false;
+        pararContagemVideoYoutube();
+        atualizarMensagemEstadoYoutube('Vídeo pausado. O cronômetro também foi pausado.');
+        return;
+    }
+
+    if (event.data === YT.PlayerState.ENDED) {
+        videoYoutubeTocando = false;
+        pararContagemVideoYoutube();
+        atualizarMensagemEstadoYoutube('Vídeo finalizado. Você pode concluir a aula se o tempo mínimo foi atingido.');
+        atualizarCronometroVideoAula();
+        return;
+    }
+}
+
+function atualizarMensagemEstadoYoutube(mensagem) {
+    const textoAjuda = document.getElementById('textoAjudaTempoVideoAula');
+
+    if (textoAjuda) {
+        textoAjuda.innerText = mensagem;
+    }
 }
 
 function fecharModal() {
     document.body.classList.remove('modal-video-aberto');
 
     const modal = document.getElementById('modalVideo');
-    const frame = document.getElementById('videoFrame');
 
-    if (!modal || !frame) return;
+    if (!modal) return;
 
     modal.classList.add('hidden');
     modal.classList.remove('flex');
-    frame.src = "";
 
-    if (intervaloTempoVideoAtual) {
-        clearInterval(intervaloTempoVideoAtual);
-        intervaloTempoVideoAtual = null;
-    }
-}
+    destruirYoutubePlayer();
 
-function tempoAssistidoVideoSegundos() {
-    if (!tempoInicioVideoAtual) return 0;
-
-    return Math.floor((Date.now() - tempoInicioVideoAtual) / 1000);
+    aulaIdAtual = null;
+    avaliacaoIdAtual = null;
 }
 
 function formatarTempoVideo(segundos) {
@@ -1172,6 +1359,10 @@ function formatarTempoVideo(segundos) {
     const resto = segundos % 60;
 
     return String(minutos).padStart(2, '0') + ':' + String(resto).padStart(2, '0');
+}
+
+function tempoAssistidoVideoSegundos() {
+    return tempoAssistidoVideoAtualSegundos;
 }
 
 function prepararCronometroVideoAula() {
@@ -1184,6 +1375,7 @@ function prepararCronometroVideoAula() {
 
     if (cronometro) cronometro.innerText = '00:00';
     if (barra) barra.style.width = '0%';
+
     if (textoDefinido) {
         textoDefinido.innerText = tempoMinimoVideoAtual > 0
             ? 'Tempo mínimo definido nesta aula: ' + formatarTempoVideo(tempoMinimoVideoAtual) + '.'
@@ -1203,10 +1395,11 @@ function prepararCronometroVideoAula() {
         }
 
         if (textoAjuda) {
-            textoAjuda.innerText = 'Volte e assista à videoaula até atingir o tempo mínimo. Depois o botão será liberado.';
+            textoAjuda.innerText = 'Aguardando o vídeo começar. O tempo só será contado quando o YouTube confirmar reprodução.';
         }
     } else {
         botao.disabled = false;
+        botao.dataset.bloqueadoTempo = '0';
         botao.innerText = 'Concluir aula';
         botao.className = 'bg-[#005543] hover:bg-[#004636] text-white px-4 py-3 rounded-2xl font-bold transition';
 
@@ -1259,8 +1452,8 @@ function atualizarCronometroVideoAula() {
             textoTempo.innerText = 'Faltam ' + formatarTempoVideo(faltam) + ' para liberar o botão de concluir.';
         }
 
-        if (textoAjuda) {
-            textoAjuda.innerText = 'Volte e assista à videoaula. Ao atingir o tempo mínimo, o botão será liberado automaticamente.';
+        if (textoAjuda && videoYoutubeTocando) {
+            textoAjuda.innerText = 'Vídeo em reprodução. Continue assistindo até atingir o tempo mínimo.';
         }
 
         return;
@@ -1284,26 +1477,32 @@ function atualizarCronometroVideoAula() {
     }
 }
 
-function iniciarContadorTempoVideo() {
+function iniciarContagemVideoYoutube() {
     if (intervaloTempoVideoAtual) {
-        clearInterval(intervaloTempoVideoAtual);
+        return;
     }
 
-    atualizarCronometroVideoAula();
-
     intervaloTempoVideoAtual = setInterval(() => {
+        tempoAssistidoVideoAtualSegundos++;
         atualizarCronometroVideoAula();
-
-        const assistido = tempoAssistidoVideoSegundos();
 
         if (
             tempoMaximoVideoAtual > 0 &&
-            assistido >= tempoMaximoVideoAtual &&
+            tempoAssistidoVideoAtualSegundos >= tempoMaximoVideoAtual &&
             !aulaConcluindoVideoAtual
         ) {
             marcarAssistida(true);
         }
     }, 1000);
+}
+
+function pararContagemVideoYoutube() {
+    if (intervaloTempoVideoAtual) {
+        clearInterval(intervaloTempoVideoAtual);
+        intervaloTempoVideoAtual = null;
+    }
+
+    atualizarCronometroVideoAula();
 }
 
 function avisarTempoMinimoVideo(minutos) {
