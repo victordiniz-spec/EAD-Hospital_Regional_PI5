@@ -360,6 +360,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/avisos/{id}', [AvisoController::class, 'update'])
         ->name('avisos.update');
 
+    Route::patch('/avisos/{id}/favorito', [AvisoController::class, 'toggleFavorito'])
+        ->name('avisos.toggle-favorito');
+
     Route::delete('/avisos/{id}', [AvisoController::class, 'destroy'])
         ->name('avisos.destroy');
 

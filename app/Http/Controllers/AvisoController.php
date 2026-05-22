@@ -10,71 +10,59 @@ use Carbon\Carbon;
 
 class AvisoController extends Controller
 {
-    // =========================
-    // LISTAR AVISOS
-    // =========================
     public function index()
     {
-        $avisos = Aviso::query()
-            ->orderByRaw("
-                CASE 
-                    WHEN categoria = 'urgente' THEN 0
-                    WHEN tipo = 'urgente' THEN 0
-                    ELSE 1
-                END
-            ")
+        $query = Aviso::query();
+
+        if (Schema::hasColumn('avisos', 'favorito')) {
+            $query->orderByDesc('favorito');
+        }
+
+        $avisos = $query
             ->orderByDesc('created_at')
             ->get();
 
         return view('dashboard.avisos', compact('avisos'));
     }
 
-    // =========================
-    // CRIAR AVISO
-    // =========================
     public function store(Request $request)
     {
         $request->validate([
             'titulo' => 'required|string|max:255',
             'mensagem' => 'required|string',
-            'categoria' => 'required|in:urgente,importante,informativo',
-            'tempo_exibicao' => 'nullable|integer|min:1',
-            'unidade_tempo' => 'nullable|in:minutos,horas,dias',
+            'categoria' => 'required|in:urgente,informativo,importante',
+            'tempo_exibicao' => 'required|integer|min:1',
+            'unidade_tempo' => 'required|in:minutos,horas,dias',
         ], [
             'titulo.required' => 'Informe o título do aviso.',
-            'mensagem.required' => 'Digite a mensagem do aviso.',
-            'categoria.required' => 'Escolha a categoria do aviso.',
-            'categoria.in' => 'A categoria precisa ser urgente ou importante.',
-            'tempo_exibicao.integer' => 'O tempo de exibição precisa ser um número.',
+            'mensagem.required' => 'Informe a mensagem do aviso.',
+            'categoria.required' => 'Selecione a categoria do aviso.',
+            'tempo_exibicao.required' => 'Informe o tempo de exibição.',
             'tempo_exibicao.min' => 'O tempo de exibição precisa ser maior que zero.',
-            'unidade_tempo.in' => 'Escolha uma unidade válida: minutos, horas ou dias.',
         ]);
 
         try {
             $categoria = $this->normalizarCategoria($request->categoria);
-
-            $tempo = $request->tempo_exibicao ?? 24;
-            $unidade = $request->unidade_tempo ?? 'horas';
-
-            $expiresAt = $this->calcularExpiracao($tempo, $unidade);
+            $expiresAt = $this->calcularExpiracao(
+                (int) $request->tempo_exibicao,
+                $request->unidade_tempo
+            );
 
             $dados = [
-                'titulo' => $request->titulo,
+                'titulo' => trim($request->titulo),
                 'categoria' => $categoria,
-                'created_at' => now(),
-                'updated_at' => now(),
             ];
 
             if (Schema::hasColumn('avisos', 'mensagem')) {
-                $dados['mensagem'] = $request->mensagem;
+                $dados['mensagem'] = trim($request->mensagem);
             }
 
             if (Schema::hasColumn('avisos', 'descricao')) {
-                $dados['descricao'] = $request->mensagem;
+                $dados['descricao'] = trim($request->mensagem);
             }
 
             if (Schema::hasColumn('avisos', 'status')) {
-                $dados['status'] = $request->has('publicar_agora') ? 'publicado' : 'publicado';
+                $dados['status'] = $request->has('publicar_agora') ? 'publicado' : 'rascunho';
             }
 
             if (Schema::hasColumn('avisos', 'tipo')) {
@@ -85,9 +73,23 @@ class AvisoController extends Controller
                 $dados['expires_at'] = $expiresAt;
             }
 
+            if (Schema::hasColumn('avisos', 'favorito')) {
+                $dados['favorito'] = $request->boolean('favorito');
+            }
+
+            if (Schema::hasColumn('avisos', 'created_at')) {
+                $dados['created_at'] = now();
+            }
+
+            if (Schema::hasColumn('avisos', 'updated_at')) {
+                $dados['updated_at'] = now();
+            }
+
             DB::table('avisos')->insert($dados);
 
-            return back()->with('success', 'Aviso criado com sucesso!');
+            return redirect()
+                ->route('avisos')
+                ->with('success', 'Aviso criado com sucesso!');
 
         } catch (\Throwable $e) {
             return back()
@@ -96,9 +98,6 @@ class AvisoController extends Controller
         }
     }
 
-    // =========================
-    // BUSCAR AVISO PARA EDITAR
-    // =========================
     public function edit($id)
     {
         $aviso = Aviso::findOrFail($id);
@@ -106,78 +105,66 @@ class AvisoController extends Controller
         return response()->json($aviso);
     }
 
-    // =========================
-    // ATUALIZAR AVISO
-    // =========================
     public function update(Request $request, $id)
     {
         $request->validate([
             'titulo' => 'required|string|max:255',
             'mensagem' => 'required|string',
-            'categoria' => 'required|in:urgente,importante,informativo',
+            'categoria' => 'required|in:urgente,informativo,importante',
             'tempo_exibicao' => 'nullable|integer|min:1',
             'unidade_tempo' => 'nullable|in:minutos,horas,dias',
         ], [
             'titulo.required' => 'Informe o título do aviso.',
-            'mensagem.required' => 'Digite a mensagem do aviso.',
-            'categoria.required' => 'Escolha a categoria do aviso.',
-            'categoria.in' => 'A categoria precisa ser urgente ou importante.',
-            'tempo_exibicao.integer' => 'O tempo de exibição precisa ser um número.',
-            'tempo_exibicao.min' => 'O tempo de exibição precisa ser maior que zero.',
-            'unidade_tempo.in' => 'Escolha uma unidade válida: minutos, horas ou dias.',
+            'mensagem.required' => 'Informe a mensagem do aviso.',
+            'categoria.required' => 'Selecione a categoria do aviso.',
         ]);
 
         try {
-            $aviso = DB::table('avisos')->where('id', $id)->first();
-
-            if (!$aviso) {
-                return back()->with('error', 'Aviso não encontrado.');
-            }
-
             $categoria = $this->normalizarCategoria($request->categoria);
 
             $dados = [
-                'titulo' => $request->titulo,
+                'titulo' => trim($request->titulo),
                 'categoria' => $categoria,
-                'updated_at' => now(),
             ];
 
             if (Schema::hasColumn('avisos', 'mensagem')) {
-                $dados['mensagem'] = $request->mensagem;
+                $dados['mensagem'] = trim($request->mensagem);
             }
 
             if (Schema::hasColumn('avisos', 'descricao')) {
-                $dados['descricao'] = $request->mensagem;
+                $dados['descricao'] = trim($request->mensagem);
             }
 
             if (Schema::hasColumn('avisos', 'status')) {
-                $dados['status'] = $request->has('publicar_agora') ? 'publicado' : 'publicado';
+                $dados['status'] = $request->has('publicar_agora') ? 'publicado' : 'rascunho';
             }
 
             if (Schema::hasColumn('avisos', 'tipo')) {
                 $dados['tipo'] = $categoria;
             }
 
-            /*
-             * Se o formulário mandar novo tempo, renova a expiração.
-             * Se não mandar, mantém a data antiga.
-             */
-            if (Schema::hasColumn('avisos', 'expires_at')) {
-                if ($request->filled('tempo_exibicao') && $request->filled('unidade_tempo')) {
-                    $dados['expires_at'] = $this->calcularExpiracao(
-                        $request->tempo_exibicao,
-                        $request->unidade_tempo
-                    );
-                } else {
-                    $dados['expires_at'] = $aviso->expires_at ?? now()->addHours(24);
-                }
+            if (Schema::hasColumn('avisos', 'expires_at') && $request->filled('tempo_exibicao') && $request->filled('unidade_tempo')) {
+                $dados['expires_at'] = $this->calcularExpiracao(
+                    (int) $request->tempo_exibicao,
+                    $request->unidade_tempo
+                );
+            }
+
+            if (Schema::hasColumn('avisos', 'favorito')) {
+                $dados['favorito'] = $request->boolean('favorito');
+            }
+
+            if (Schema::hasColumn('avisos', 'updated_at')) {
+                $dados['updated_at'] = now();
             }
 
             DB::table('avisos')
                 ->where('id', $id)
                 ->update($dados);
 
-            return back()->with('success', 'Aviso atualizado com sucesso!');
+            return redirect()
+                ->route('avisos')
+                ->with('success', 'Aviso atualizado com sucesso!');
 
         } catch (\Throwable $e) {
             return back()
@@ -186,9 +173,33 @@ class AvisoController extends Controller
         }
     }
 
-    // =========================
-    // EXCLUIR AVISO
-    // =========================
+    public function toggleFavorito($id)
+    {
+        try {
+            if (!Schema::hasColumn('avisos', 'favorito')) {
+                return back()->with('error', 'A coluna favorito ainda não existe. Rode a migration primeiro.');
+            }
+
+            $aviso = Aviso::findOrFail($id);
+            $novoStatus = ! (bool) ($aviso->favorito ?? false);
+
+            DB::table('avisos')
+                ->where('id', $id)
+                ->update([
+                    'favorito' => $novoStatus,
+                    'updated_at' => now(),
+                ]);
+
+            return back()->with('success', $novoStatus
+                ? 'Aviso marcado como favorito!'
+                : 'Aviso removido dos favoritos!'
+            );
+
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Erro ao alterar favorito: ' . $e->getMessage());
+        }
+    }
+
     public function destroy($id)
     {
         try {
@@ -196,7 +207,9 @@ class AvisoController extends Controller
                 ->where('id', $id)
                 ->delete();
 
-            return back()->with('success', 'Aviso excluído com sucesso!');
+            return redirect()
+                ->route('avisos')
+                ->with('success', 'Aviso excluído com sucesso!');
 
         } catch (\Throwable $e) {
             return back()
@@ -204,44 +217,23 @@ class AvisoController extends Controller
         }
     }
 
-    // =========================
-    // NORMALIZAR CATEGORIA
-    // =========================
     private function normalizarCategoria($categoria)
     {
-        /*
-         * Antes seu sistema usava "informativo".
-         * Agora vamos trabalhar visualmente com "importante".
-         * Para não quebrar códigos antigos, se vier informativo,
-         * salvamos como importante.
-         */
         if ($categoria === 'informativo') {
             return 'importante';
         }
 
-        return $categoria;
+        return $categoria ?: 'importante';
     }
 
-    // =========================
-    // CALCULAR EXPIRAÇÃO DO AVISO
-    // =========================
     private function calcularExpiracao($tempo, $unidade)
     {
-        $tempo = (int) $tempo;
+        $data = Carbon::now();
 
-        if ($tempo <= 0) {
-            $tempo = 24;
-            $unidade = 'horas';
-        }
-
-        if ($unidade === 'minutos') {
-            return now()->addMinutes($tempo);
-        }
-
-        if ($unidade === 'dias') {
-            return now()->addDays($tempo);
-        }
-
-        return now()->addHours($tempo);
+        return match ($unidade) {
+            'minutos' => $data->addMinutes($tempo),
+            'dias' => $data->addDays($tempo),
+            default => $data->addHours($tempo),
+        };
     }
 }

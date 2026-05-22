@@ -4,6 +4,16 @@
 
 @section('content')
 
+@php
+    $avisosHistorico = collect($avisos ?? [])->sortByDesc(function ($aviso) {
+        return (int) ($aviso->favorito ?? 0);
+    })->values();
+
+    $totalFavoritos = $avisosHistorico->filter(function ($aviso) {
+        return (bool) ($aviso->favorito ?? false);
+    })->count();
+@endphp
+
 <style>
     html, body {
         background: #F3F7F3 !important;
@@ -90,7 +100,83 @@
 
                         </div>
 
-                        <form method="POST" action="{{ route('avisos.store') }}">
+                        <!-- HISTÓRICO PARA REUTILIZAR -->
+                        @if($avisosHistorico->count() > 0)
+                            <div class="mb-6 bg-[#F8FBF8] border border-[#DCE7DE] rounded-3xl p-4">
+                                <div class="flex items-start justify-between gap-3 mb-3">
+                                    <div>
+                                        <p class="text-[11px] uppercase tracking-widest font-extrabold text-[#60756B]">
+                                            Histórico de avisos
+                                        </p>
+                                        <h3 class="text-base font-extrabold text-[#003C2F] mt-1">
+                                            Reutilizar aviso pronto
+                                        </h3>
+                                        <p class="text-xs text-[#60756B] mt-1">
+                                            Favoritos aparecem primeiro. Clique em usar para preencher o formulário.
+                                        </p>
+                                    </div>
+
+                                    <span class="shrink-0 bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-[11px] font-extrabold">
+                                        {{ $totalFavoritos }} favorito(s)
+                                    </span>
+                                </div>
+
+                                <div class="max-h-[310px] overflow-y-auto pr-1 space-y-3">
+                                    @foreach($avisosHistorico as $historicoAviso)
+                                        @php
+                                            $historicoCategoria = strtolower($historicoAviso->categoria ?? $historicoAviso->tipo ?? 'importante');
+                                            $historicoMensagem = $historicoAviso->mensagem ?? $historicoAviso->descricao ?? '';
+                                            $historicoFavorito = (bool) ($historicoAviso->favorito ?? false);
+                                        @endphp
+
+                                        <div class="bg-white border {{ $historicoFavorito ? 'border-yellow-200 ring-1 ring-yellow-100' : 'border-[#E3EBE4]' }} rounded-2xl p-3">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <div class="flex items-center gap-2 mb-1">
+                                                        @if($historicoFavorito)
+                                                            <span class="text-yellow-500 text-sm">★</span>
+                                                        @endif
+
+                                                        <p class="text-sm font-extrabold text-[#003C2F] truncate">
+                                                            {{ $historicoAviso->titulo }}
+                                                        </p>
+                                                    </div>
+
+                                                    <p class="text-xs text-[#60756B] line-clamp-2">
+                                                        {{ $historicoMensagem }}
+                                                    </p>
+                                                </div>
+
+                                                <div class="flex items-center gap-1 shrink-0">
+                                                    <form method="POST" action="{{ route('avisos.toggle-favorito', $historicoAviso->id) }}">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <button type="submit"
+                                                                class="w-9 h-9 rounded-xl {{ $historicoFavorito ? 'bg-yellow-100 text-yellow-600' : 'bg-[#F1F6F2] text-[#8A9B92]' }} hover:bg-yellow-100 hover:text-yellow-600 transition flex items-center justify-center"
+                                                                title="{{ $historicoFavorito ? 'Remover dos favoritos' : 'Marcar como favorito' }}">
+                                                            ★
+                                                        </button>
+                                                    </form>
+
+                                                    <button type="button"
+                                                            onclick='usarAvisoDoHistorico(
+                                                                @json($historicoAviso->titulo),
+                                                                @json($historicoMensagem),
+                                                                @json($historicoCategoria),
+                                                                @json($historicoFavorito)
+                                                            )'
+                                                            class="px-3 h-9 rounded-xl bg-[#004D3A] text-white text-xs font-extrabold hover:bg-[#003C2F] transition">
+                                                        Usar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        <form method="POST" action="{{ route('avisos.store') }}" id="formCriarAviso">
                             @csrf
 
                             <div class="space-y-5">
@@ -103,6 +189,7 @@
 
                                     <input type="text"
                                            name="titulo"
+                                           id="tituloAviso"
                                            value="{{ old('titulo') }}"
                                            placeholder="Ex: Novo módulo disponível"
                                            class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
@@ -116,6 +203,7 @@
                                     </label>
 
                                     <select name="categoria"
+                                            id="categoriaAviso"
                                             class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
                                             required>
                                         <option value="urgente" {{ old('categoria') === 'urgente' ? 'selected' : '' }}>
@@ -141,12 +229,14 @@
                                     <div class="grid grid-cols-2 gap-3">
                                         <input type="number"
                                                name="tempo_exibicao"
+                                               id="tempoExibicaoAviso"
                                                min="1"
                                                value="{{ old('tempo_exibicao', 24) }}"
                                                class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
                                                required>
 
                                         <select name="unidade_tempo"
+                                                id="unidadeTempoAviso"
                                                 class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition"
                                                 required>
                                             <option value="minutos" {{ old('unidade_tempo') === 'minutos' ? 'selected' : '' }}>
@@ -175,6 +265,7 @@
                                     </label>
 
                                     <textarea name="mensagem"
+                                              id="mensagemAviso"
                                               rows="5"
                                               placeholder="Digite a mensagem do aviso..."
                                               class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-medium placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition resize-none"
@@ -199,6 +290,24 @@
                                         Publicar agora
                                     </span>
                                 </div>
+
+                                <!-- FAVORITO -->
+                                <label class="flex items-start gap-3 bg-[#F8FBF8] border border-[#DCE7DE] rounded-2xl px-4 py-3 cursor-pointer hover:bg-[#EAF5EF] transition">
+                                    <input type="checkbox"
+                                           name="favorito"
+                                           id="favoritoAviso"
+                                           value="1"
+                                           class="mt-1 w-4 h-4 accent-[#004D3A]">
+
+                                    <span>
+                                        <span class="block text-sm font-extrabold text-[#003C2F]">
+                                            Marcar como favorito
+                                        </span>
+                                        <span class="block text-xs text-[#60756B] mt-1">
+                                            Favoritos aparecem no topo do histórico para reutilizar mais rápido.
+                                        </span>
+                                    </span>
+                                </label>
 
                                 <!-- BOTÃO -->
                                 <button type="submit"
@@ -346,6 +455,35 @@
                                             </div>
 
                                             <div class="flex items-center gap-2 shrink-0">
+
+                                                @php
+                                                    $avisoFavorito = (bool) ($aviso->favorito ?? false);
+                                                @endphp
+
+                                                <!-- FAVORITAR -->
+                                                <form method="POST" action="{{ route('avisos.toggle-favorito', $aviso->id) }}">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit"
+                                                            class="w-10 h-10 rounded-xl border transition flex items-center justify-center
+                                                                {{ $avisoFavorito ? 'bg-yellow-100 border-yellow-200 text-yellow-600' : 'bg-white border-[#DCE7DE] text-[#8A9B92] hover:bg-yellow-50 hover:text-yellow-600' }}"
+                                                            title="{{ $avisoFavorito ? 'Remover dos favoritos' : 'Marcar como favorito' }}">
+                                                        ★
+                                                    </button>
+                                                </form>
+
+                                                <!-- REUTILIZAR -->
+                                                <button type="button"
+                                                        onclick='usarAvisoDoHistorico(
+                                                            @json($aviso->titulo),
+                                                            @json($mensagemAviso),
+                                                            @json($categoria),
+                                                            @json($avisoFavorito)
+                                                        )'
+                                                        class="w-10 h-10 rounded-xl bg-white border border-[#DCE7DE] hover:bg-[#EAF5EF] text-[#004D3A] transition flex items-center justify-center"
+                                                        title="Reutilizar aviso">
+                                                    ↺
+                                                </button>
 
                                                 <!-- EDITAR -->
                                                 <button type="button"
@@ -638,7 +776,44 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
+    function usarAvisoDoHistorico(titulo, mensagem, categoria, favorito) {
+        const tituloInput = document.getElementById('tituloAviso');
+        const mensagemInput = document.getElementById('mensagemAviso');
+        const categoriaInput = document.getElementById('categoriaAviso');
+        const tempoInput = document.getElementById('tempoExibicaoAviso');
+        const unidadeInput = document.getElementById('unidadeTempoAviso');
+        const favoritoInput = document.getElementById('favoritoAviso');
+        const form = document.getElementById('formCriarAviso');
+
+        if (tituloInput) tituloInput.value = titulo ?? '';
+        if (mensagemInput) mensagemInput.value = mensagem ?? '';
+
+        if (categoriaInput) {
+            const categoriaFinal = categoria === 'informativo' ? 'importante' : (categoria ?? 'importante');
+            categoriaInput.value = categoriaFinal;
+        }
+
+        if (tempoInput && !tempoInput.value) tempoInput.value = 24;
+        if (unidadeInput && !unidadeInput.value) unidadeInput.value = 'horas';
+        if (favoritoInput) favoritoInput.checked = !!favorito;
+
+        if (form) {
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'success',
+                title: 'Aviso carregado!',
+                text: 'O aviso do histórico foi colocado no formulário. Agora é só revisar e salvar.',
+                confirmButtonColor: '#004D3A'
+            });
+        }
+    }
+
     function abrirModalEditarAviso(id, titulo, mensagem, categoria) {
         const modal = document.getElementById('modalEditarAviso');
         const form = document.getElementById('formEditarAviso');
