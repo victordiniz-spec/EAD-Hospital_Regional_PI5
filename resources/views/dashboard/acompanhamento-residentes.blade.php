@@ -189,9 +189,9 @@
                                         </div>
 
                                         <div class="bg-white border border-[#DCE7DE] rounded-2xl px-3 py-2">
-                                            <p class="text-[10px] uppercase tracking-widest text-[#60756B] font-extrabold">Sem atividade</p>
+                                            <p class="text-[10px] uppercase tracking-widest text-[#60756B] font-extrabold">Dias sem progresso</p>
                                             <p class="text-lg font-extrabold text-yellow-600">
-                                                {{ $residente->dias_sem_atividade ?? '-' }}
+                                                {{ $residente->dias_sem_atividade === null ? '-' : (int) $residente->dias_sem_atividade }}
                                             </p>
                                         </div>
                                     </div>

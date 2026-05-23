@@ -449,7 +449,20 @@ class DashboardController extends Controller
 
             if ($ultimaAtividade) {
                 try {
-                    $diasSemAtividade = \Carbon\Carbon::parse($ultimaAtividade)->diffInDays(now());
+                    /*
+                    |--------------------------------------------------------------------------
+                    | DIAS SEM PROGRESSO
+                    |--------------------------------------------------------------------------
+                    | O Carbon 3 pode retornar diffInDays com casas decimais quando compara
+                    | data + hora. Para o painel ficar limpo, usamos startOfDay() e
+                    | convertemos para inteiro. Se a atividade foi hoje, fica 0.
+                    */
+                    $diasSemAtividade = (int) floor(
+                        \Carbon\Carbon::parse($ultimaAtividade)
+                            ->timezone('America/Sao_Paulo')
+                            ->startOfDay()
+                            ->diffInDays(now()->timezone('America/Sao_Paulo')->startOfDay())
+                    );
                 } catch (\Throwable $e) {
                     $diasSemAtividade = null;
                 }
