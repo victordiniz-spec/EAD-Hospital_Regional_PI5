@@ -368,4 +368,155 @@ class DashboardController extends Controller
             'avisosRecentes'
         ));
     }
+
+    // =========================
+    // 📊 ACOMPANHAMENTO DOS RESIDENTES
+    // =========================
+    public function acompanhamentoResidentes()
+    {
+        $tiposAlunos = $this->tiposAlunos;
+
+        $residentes = User::whereIn('tipo', $tiposAlunos)
+            ->where('tipo', '!=', 'super_admin')
+            ->orderBy('name')
+            ->get();
+
+        $residentesAtivos = $residentes->where('status', 'aprovado')->count();
+
+        $residentesPendentesAprovacao = User::whereIn('tipo', $tiposAlunos)
+            ->where('status', 'pendente')
+            ->count();
+
+        $totalAulas = DB::getSchemaBuilder()->hasTable('aulas')
+            ? DB::table('aulas')->count()
+            : 0;
+
+        $totalAvaliacoes = DB::getSchemaBuilder()->hasTable('avaliacoes')
+            ? DB::table('avaliacoes')
+                ->where(function ($query) {
+                    $query->where('tipo', 'normal')
+                        ->orWhere('tipo', 'pos_teste')
+                        ->orWhere('tipo', 'pós-teste')
+                        ->orWhereNull('tipo');
+                })
+                ->count()
+            : 0;
+
+        $linhasResidentes = collect();
+
+        foreach ($residentes as $residente) {
+            $aulasAssistidas = 0;
+            $avaliacoesFeitas = 0;
+            $media = 0;
+
+            if (DB::getSchemaBuilder()->hasTable('aulas_assistidas')) {
+                $aulasAssistidas = DB::table('aulas_assistidas')
+                    ->where('aluno_id', $residente->id)
+                    ->where('assistido', true)
+                    ->distinct('aula_id')
+                    ->count('aula_id');
+            }
+
+            if (DB::getSchemaBuilder()->hasTable('notas')) {
+                $avaliacoesFeitas = DB::table('notas')
+                    ->where('aluno_id', $residente->id)
+                    ->distinct('avaliacao_id')
+                    ->count('avaliacao_id');
+
+                $media = DB::table('notas')
+                    ->where('aluno_id', $residente->id)
+                    ->avg('nota') ?? 0;
+            }
+
+            $progresso = $totalAulas > 0 ? round(($aulasAssistidas / $totalAulas) * 100) : 0;
+            $postestesPendentes = max($totalAvaliacoes - $avaliacoesFeitas, 0);
+
+            $ultimaAtividade = null;
+
+            if (DB::getSchemaBuilder()->hasTable('aulas_assistidas')) {
+                $ultimaAtividade = DB::table('aulas_assistidas')
+                    ->where('aluno_id', $residente->id)
+                    ->max('updated_at');
+            }
+
+            if (!$ultimaAtividade && DB::getSchemaBuilder()->hasTable('notas')) {
+                $ultimaAtividade = DB::table('notas')
+                    ->where('aluno_id', $residente->id)
+                    ->max('created_at');
+            }
+
+            $diasSemAtividade = null;
+
+            if ($ultimaAtividade) {
+                try {
+                    $diasSemAtividade = \Carbon\Carbon::parse($ultimaAtividade)->diffInDays(now());
+                } catch (\Throwable $e) {
+                    $diasSemAtividade = null;
+                }
+            }
+
+            $emRisco = $residente->status === 'aprovado'
+                && (
+                    $progresso < 50
+                    || $postestesPendentes > 0
+                    || ($diasSemAtividade !== null && $diasSemAtividade >= 7)
+                );
+
+            $quaseCertificado = $residente->status === 'aprovado'
+                && $progresso >= 70
+                && round($media, 1) >= 7;
+
+            $linhasResidentes->push((object) [
+                'id' => $residente->id,
+                'name' => $residente->name,
+                'email' => $residente->email,
+                'cpf' => $residente->cpf ?? null,
+                'tipo' => $residente->tipo,
+                'status' => $residente->status,
+                'aulas_assistidas' => $aulasAssistidas,
+                'total_aulas' => $totalAulas,
+                'progresso' => $progresso,
+                'avaliacoes_feitas' => $avaliacoesFeitas,
+                'total_avaliacoes' => $totalAvaliacoes,
+                'postestes_pendentes' => $postestesPendentes,
+                'media' => round($media, 1),
+                'ultima_atividade' => $ultimaAtividade,
+                'dias_sem_atividade' => $diasSemAtividade,
+                'em_risco' => $emRisco,
+                'quase_certificado' => $quaseCertificado,
+            ]);
+        }
+
+        $alunosEmRisco = $linhasResidentes->where('em_risco', true)->count();
+        $certificadosQuaseLiberados = $linhasResidentes->where('quase_certificado', true)->count();
+        $postestesPendentes = $linhasResidentes->sum('postestes_pendentes');
+        $mediaGeralTurma = $linhasResidentes->count() > 0 ? round($linhasResidentes->avg('media'), 1) : 0;
+
+        $rankingEvolucao = $linhasResidentes
+            ->sortByDesc('progresso')
+            ->take(5)
+            ->values();
+
+        $residentesEmRiscoLista = $linhasResidentes
+            ->where('em_risco', true)
+            ->sortBy('progresso')
+            ->take(8)
+            ->values();
+
+        return view('dashboard.acompanhamento-residentes', compact(
+            'residentes',
+            'residentesAtivos',
+            'residentesPendentesAprovacao',
+            'totalAulas',
+            'totalAvaliacoes',
+            'linhasResidentes',
+            'alunosEmRisco',
+            'certificadosQuaseLiberados',
+            'postestesPendentes',
+            'mediaGeralTurma',
+            'rankingEvolucao',
+            'residentesEmRiscoLista'
+        ));
+    }
+
 }

@@ -10,6 +10,12 @@
             'icone' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75"/>',
         ],
         [
+            'titulo' => 'Acompanhamento',
+            'url' => route('acompanhamento.residentes'),
+            'ativo' => request()->routeIs('acompanhamento.residentes'),
+            'icone' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 13.5h3.75v6H3v-6zM10.125 9h3.75v10.5h-3.75V9zM17.25 4.5H21v15h-3.75v-15zM3 21h18"/>',
+        ],
+        [
             'titulo' => 'Videoaulas',
             'url' => route('videoaulas'),
             'ativo' => request()->routeIs('videoaulas') || request()->routeIs('aulas.*'),

@@ -113,6 +113,13 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================
+    // 📊 ACOMPANHAMENTO DOS RESIDENTES
+    // =========================
+    Route::get('/acompanhamento-residentes', [DashboardController::class, 'acompanhamentoResidentes'])
+        ->name('acompanhamento.residentes');
+
+
+    // =========================
     // 👤 USUÁRIOS
     // =========================
     Route::get('/controle-usuarios', [DashboardController::class, 'controleUsuarios'])
