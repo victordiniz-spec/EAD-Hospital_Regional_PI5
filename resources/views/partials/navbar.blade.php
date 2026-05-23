@@ -244,6 +244,86 @@
             </div>
         @endif
 
+
+        @if($mostrarPendentesProfessor)
+            <!-- ALERTAS AUTOMÁTICOS DO PROFESSOR -->
+            <div class="relative shrink-0">
+
+                <button type="button"
+                        onclick="toggleDropdownAlertasProfessorNavbar()"
+                        class="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#F8FBF8] border border-[#DCE7DE] flex items-center justify-center text-[#004D3A] hover:bg-[#EAF5EF] transition shadow-sm"
+                        title="Alertas automáticos do professor">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="w-5 h-5 sm:w-6 sm:h-6"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              d="M14.857 17.082a23.848 23.848 0 0 1-5.714 0M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/>
+                    </svg>
+
+                    <span id="badgeAlertasProfessorNavbar"
+                          class="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-green-600 text-white text-[10px] font-extrabold flex items-center justify-center ring-2 ring-white">
+                        ✓
+                    </span>
+                </button>
+
+                <!-- DROPDOWN ALERTAS PROFESSOR -->
+                <div id="dropdownAlertasProfessorNavbar"
+                     class="hidden fixed sm:absolute right-3 sm:right-0 top-[72px] sm:top-auto sm:mt-3 w-[calc(100vw-24px)] sm:w-[430px] bg-white border border-[#E3EBE4] rounded-3xl shadow-2xl overflow-hidden z-[999]">
+
+                    <div class="p-5 border-b border-[#E3EBE4] bg-[#F8FBF8]">
+
+                        <div class="flex items-start justify-between gap-3">
+
+                            <div>
+                                <h3 class="text-lg font-extrabold text-[#003C2F]">
+                                    Alertas do professor
+                                </h3>
+
+                                <p id="textoStatusAlertasProfessorNavbar" class="text-xs text-[#60756B] mt-1">
+                                    Verificando acompanhamento da turma...
+                                </p>
+                            </div>
+
+                            <a href="{{ route('acompanhamento.residentes') }}"
+                               class="text-xs bg-[#004D3A] text-white px-3 py-2 rounded-xl font-bold hover:bg-[#003C2F] transition whitespace-nowrap">
+                                Acompanhamento
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                    <div id="listaAlertasProfessorNavbar" class="max-h-[390px] overflow-y-auto p-3 space-y-3">
+                        <div class="p-6 text-center text-[#60756B]">
+                            <div class="w-12 h-12 rounded-full bg-[#EAF5EF] text-[#004D3A] mx-auto mb-3 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="w-6 h-6"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="1.8"
+                                          d="M12 6v6l4 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0z"/>
+                                </svg>
+                            </div>
+
+                            <p class="text-sm font-bold">
+                                Carregando alertas...
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        @endif
+
         @if($mostrarAvisosAluno)
             <!-- NOTIFICAÇÕES DE AVISOS -->
             <div class="relative shrink-0">
@@ -733,9 +813,11 @@
 
             const menuPerfil = document.getElementById('menuPerfilNavbar');
             const avisos = document.getElementById('dropdownAvisosNavbar');
+            const alertasProfessor = document.getElementById('dropdownAlertasProfessorNavbar');
 
             if (menuPerfil) menuPerfil.classList.add('hidden');
             if (avisos) avisos.classList.add('hidden');
+            if (alertasProfessor) alertasProfessor.classList.add('hidden');
 
             verificarPendentesNavbar();
         }
@@ -747,6 +829,280 @@
         });
     </script>
 @endif
+
+
+@if($mostrarPendentesProfessor)
+    <script>
+        let totalAlertasProfessorNavbarAtual = 0;
+        let idsAlertasProfessorNavbarAtual = [];
+        let primeiraVerificacaoAlertasProfessor = true;
+        const urlAlertasProfessorNavbar = "{{ url('/navbar/alertas-professor') }}";
+
+        function classeAlertaProfessorNavbar(nivel) {
+            if (nivel === 'danger') {
+                return {
+                    borda: 'border-l-red-500',
+                    bolinha: 'bg-red-100 text-red-700',
+                    badge: 'bg-red-100 text-red-700',
+                    texto: 'Crítico'
+                };
+            }
+
+            if (nivel === 'warning') {
+                return {
+                    borda: 'border-l-yellow-500',
+                    bolinha: 'bg-yellow-100 text-yellow-700',
+                    badge: 'bg-yellow-100 text-yellow-700',
+                    texto: 'Atenção'
+                };
+            }
+
+            if (nivel === 'success') {
+                return {
+                    borda: 'border-l-green-500',
+                    bolinha: 'bg-green-100 text-green-700',
+                    badge: 'bg-green-100 text-green-700',
+                    texto: 'Ótimo'
+                };
+            }
+
+            return {
+                borda: 'border-l-blue-500',
+                bolinha: 'bg-blue-100 text-blue-700',
+                badge: 'bg-blue-100 text-blue-700',
+                texto: 'Info'
+            };
+        }
+
+        function iconeAlertaProfessorNavbar(tipo) {
+            if (tipo === 'pendente') return '👤';
+            if (tipo === 'sem_progresso') return '⏱️';
+            if (tipo === 'baixo_progresso') return '📉';
+            if (tipo === 'posteste_pendente') return '📝';
+            if (tipo === 'media_baixa') return '⚠️';
+            if (tipo === 'quase_certificado') return '🎓';
+            return '🔔';
+        }
+
+        function escaparHtmlNavbar(texto) {
+            return String(texto ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+
+        function atualizarBadgeAlertasProfessorNavbar(total) {
+            const badge = document.getElementById('badgeAlertasProfessorNavbar');
+            const textoStatus = document.getElementById('textoStatusAlertasProfessorNavbar');
+
+            if (!badge) return;
+
+            if (total > 0) {
+                badge.innerText = total > 99 ? '99+' : total;
+                badge.className = 'absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-extrabold flex items-center justify-center ring-2 ring-white animate-pulse';
+
+                if (textoStatus) {
+                    textoStatus.innerText = total + ' alerta(s) importante(s) no acompanhamento.';
+                }
+            } else {
+                badge.innerText = '✓';
+                badge.className = 'absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-green-600 text-white text-[10px] font-extrabold flex items-center justify-center ring-2 ring-white';
+
+                if (textoStatus) {
+                    textoStatus.innerText = 'Nenhum alerta crítico no momento.';
+                }
+            }
+        }
+
+        function montarItemAlertaProfessorNavbar(alerta) {
+            const classe = classeAlertaProfessorNavbar(alerta.nivel);
+            const icone = iconeAlertaProfessorNavbar(alerta.tipo);
+            const titulo = escaparHtmlNavbar(alerta.titulo);
+            const mensagem = escaparHtmlNavbar(alerta.mensagem);
+            const detalhe = alerta.detalhe ? `<p class="text-[11px] text-[#60756B] mt-2 font-semibold leading-relaxed">${escaparHtmlNavbar(alerta.detalhe)}</p>` : '';
+            const data = alerta.data ? `<p class="text-[10px] text-[#8A9B92] mt-2 font-bold">${escaparHtmlNavbar(alerta.data)}</p>` : '';
+            const acao = alerta.acao_url ? `
+                <a href="${alerta.acao_url}"
+                   class="inline-flex mt-3 bg-[#004D3A] text-white px-3 py-2 rounded-xl text-xs font-extrabold hover:bg-[#003C2F] transition">
+                    ${escaparHtmlNavbar(alerta.acao_texto || 'Ver detalhes')}
+                </a>
+            ` : '';
+
+            return `
+                <div class="alerta-professor-navbar-item bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 border-l-4 ${classe.borda}"
+                     data-alerta-id="${escaparHtmlNavbar(alerta.id)}">
+
+                    <div class="flex items-start gap-3">
+                        <div class="w-11 h-11 rounded-2xl ${classe.bolinha} flex items-center justify-center font-extrabold shrink-0">
+                            ${icone}
+                        </div>
+
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-start justify-between gap-2">
+                                <h4 class="font-extrabold text-[#003C2F] text-sm leading-tight break-words">
+                                    ${titulo}
+                                </h4>
+
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold ${classe.badge} whitespace-nowrap">
+                                    ${classe.texto}
+                                </span>
+                            </div>
+
+                            <p class="text-xs text-[#60756B] mt-2 leading-relaxed">
+                                ${mensagem}
+                            </p>
+
+                            ${detalhe}
+                            ${data}
+                            ${acao}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderizarAlertasProfessorNavbar(alertas) {
+            const lista = document.getElementById('listaAlertasProfessorNavbar');
+
+            if (!lista) return;
+
+            if (!alertas || alertas.length === 0) {
+                lista.innerHTML = `
+                    <div class="p-6 text-center text-[#60756B]">
+                        <div class="w-12 h-12 rounded-full bg-[#EAF5EF] text-[#004D3A] mx-auto mb-3 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="w-6 h-6"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="1.8"
+                                      d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                            </svg>
+                        </div>
+
+                        <p class="text-sm font-bold">Nenhum alerta importante agora.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            lista.innerHTML = alertas.map(montarItemAlertaProfessorNavbar).join('');
+        }
+
+        function mostrarToastNovoAlertaProfessorNavbar(alerta, totalNovos) {
+            let toast = document.getElementById('toastNovoAlertaProfessorNavbar');
+
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toastNovoAlertaProfessorNavbar';
+                toast.className = 'fixed bottom-5 right-5 z-[9999] w-[calc(100vw-40px)] sm:w-[370px] bg-white border border-[#E3EBE4] rounded-3xl shadow-2xl p-4 transition-all duration-300';
+                document.body.appendChild(toast);
+            }
+
+            const titulo = totalNovos > 1
+                ? totalNovos + ' novos alertas do professor'
+                : (alerta && alerta.titulo ? alerta.titulo : 'Novo alerta do professor');
+
+            const mensagem = alerta && alerta.mensagem
+                ? alerta.mensagem
+                : 'Há uma nova situação importante para acompanhar.';
+
+            toast.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-red-100 text-red-700 flex items-center justify-center font-extrabold shrink-0">
+                        🔔
+                    </div>
+
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-extrabold text-[#003C2F]">${escaparHtmlNavbar(titulo)}</p>
+                        <p class="text-xs text-[#60756B] mt-1 leading-relaxed">${escaparHtmlNavbar(mensagem)}</p>
+
+                        <div class="mt-3 flex gap-2">
+                            <button type="button"
+                                    onclick="toggleDropdownAlertasProfessorNavbar()"
+                                    class="bg-[#004D3A] text-white px-3 py-2 rounded-xl text-xs font-extrabold hover:bg-[#003C2F] transition">
+                                Ver alertas
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="this.closest('#toastNovoAlertaProfessorNavbar').remove()" class="text-[#8A9B92] hover:text-[#003C2F] font-bold">
+                        ×
+                    </button>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const atual = document.getElementById('toastNovoAlertaProfessorNavbar');
+                if (atual) atual.remove();
+            }, 9000);
+        }
+
+        async function verificarAlertasProfessorNavbar() {
+            try {
+                const resposta = await fetch(urlAlertasProfessorNavbar, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    cache: 'no-store'
+                });
+
+                if (!resposta.ok) return;
+
+                const dados = await resposta.json();
+                const total = parseInt(dados.total || 0);
+                const alertas = dados.alertas || [];
+                const novosIds = alertas.map(alerta => alerta.id);
+                const idsNovosDetectados = novosIds.filter(id => !idsAlertasProfessorNavbarAtual.includes(id));
+
+                atualizarBadgeAlertasProfessorNavbar(total);
+                renderizarAlertasProfessorNavbar(alertas);
+
+                if (!primeiraVerificacaoAlertasProfessor && idsNovosDetectados.length > 0) {
+                    const primeiroNovo = alertas.find(alerta => idsNovosDetectados.includes(alerta.id));
+                    mostrarToastNovoAlertaProfessorNavbar(primeiroNovo, idsNovosDetectados.length);
+                }
+
+                totalAlertasProfessorNavbarAtual = total;
+                idsAlertasProfessorNavbarAtual = novosIds;
+                primeiraVerificacaoAlertasProfessor = false;
+            } catch (erro) {
+                console.warn('Não foi possível verificar alertas do professor agora.', erro);
+            }
+        }
+
+        function toggleDropdownAlertasProfessorNavbar() {
+            const dropdown = document.getElementById('dropdownAlertasProfessorNavbar');
+
+            if (!dropdown) return;
+
+            dropdown.classList.toggle('hidden');
+
+            const menuPerfil = document.getElementById('menuPerfilNavbar');
+            const avisos = document.getElementById('dropdownAvisosNavbar');
+            const pendentes = document.getElementById('dropdownPendentesNavbar');
+        const alertasProfessor = document.getElementById('dropdownAlertasProfessorNavbar');
+
+            if (menuPerfil) menuPerfil.classList.add('hidden');
+            if (avisos) avisos.classList.add('hidden');
+            if (pendentes) pendentes.classList.add('hidden');
+
+            verificarAlertasProfessorNavbar();
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            verificarAlertasProfessorNavbar();
+            setInterval(verificarAlertasProfessorNavbar, 15000);
+        });
+    </script>
+@endif
+
 
 @if($mostrarAvisosAluno)
     <script>
@@ -816,9 +1172,14 @@
             dropdown.classList.toggle('hidden');
 
             const menuPerfil = document.getElementById('menuPerfilNavbar');
+            const alertasProfessor = document.getElementById('dropdownAlertasProfessorNavbar');
 
             if (menuPerfil) {
                 menuPerfil.classList.add('hidden');
+            }
+
+            if (alertasProfessor) {
+                alertasProfessor.classList.add('hidden');
             }
 
             atualizarAvisosNavbar();
@@ -854,6 +1215,10 @@
             pendentes.classList.add('hidden');
         }
 
+        if (alertasProfessor) {
+            alertasProfessor.classList.add('hidden');
+        }
+
         menu.classList.toggle('hidden');
     }
 
@@ -861,10 +1226,12 @@
         const menuPerfil = document.getElementById('menuPerfilNavbar');
         const dropdownAvisos = document.getElementById('dropdownAvisosNavbar');
         const dropdownPendentes = document.getElementById('dropdownPendentesNavbar');
+        const dropdownAlertasProfessor = document.getElementById('dropdownAlertasProfessorNavbar');
 
         const clicouNoPerfil = event.target.closest('[onclick="toggleMenuPerfilNavbar()"]');
         const clicouNoAvisos = event.target.closest('[onclick="toggleDropdownAvisosNavbar()"]');
         const clicouNoPendentes = event.target.closest('[onclick="toggleDropdownPendentesNavbar()"]');
+        const clicouNoAlertasProfessor = event.target.closest('[onclick="toggleDropdownAlertasProfessorNavbar()"]');
 
         if (menuPerfil && !menuPerfil.contains(event.target) && !clicouNoPerfil) {
             menuPerfil.classList.add('hidden');
@@ -877,6 +1244,10 @@
         if (dropdownPendentes && !dropdownPendentes.contains(event.target) && !clicouNoPendentes) {
             dropdownPendentes.classList.add('hidden');
         }
+
+        if (dropdownAlertasProfessor && !dropdownAlertasProfessor.contains(event.target) && !clicouNoAlertasProfessor) {
+            dropdownAlertasProfessor.classList.add('hidden');
+        }
     });
 
     document.addEventListener('keydown', function (event) {
@@ -884,10 +1255,12 @@
             const menuPerfil = document.getElementById('menuPerfilNavbar');
             const dropdownAvisos = document.getElementById('dropdownAvisosNavbar');
             const dropdownPendentes = document.getElementById('dropdownPendentesNavbar');
+            const dropdownAlertasProfessor = document.getElementById('dropdownAlertasProfessorNavbar');
 
             if (menuPerfil) menuPerfil.classList.add('hidden');
             if (dropdownAvisos) dropdownAvisos.classList.add('hidden');
             if (dropdownPendentes) dropdownPendentes.classList.add('hidden');
+            if (dropdownAlertasProfessor) dropdownAlertasProfessor.classList.add('hidden');
         }
     });
 </script>

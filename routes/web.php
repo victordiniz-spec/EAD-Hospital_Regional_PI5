@@ -275,6 +275,253 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================
+    // 🔔 ALERTAS AUTOMÁTICOS DO PROFESSOR (NAVBAR)
+    // =========================
+    Route::get('/navbar/alertas-professor', function () {
+        $usuarioLogado = auth()->user();
+
+        if (!$usuarioLogado) {
+            return response()->json([
+                'success' => false,
+                'total' => 0,
+                'alertas' => [],
+                'message' => 'Usuário não autenticado.',
+            ]);
+        }
+
+        $tipo = strtolower($usuarioLogado->tipo ?? 'usuario');
+
+        $podeVerAlertasProfessor = in_array($tipo, [
+            'super_admin',
+            'admin',
+            'administrador',
+            'professor',
+        ]);
+
+        if (!$podeVerAlertasProfessor) {
+            return response()->json([
+                'success' => true,
+                'total' => 0,
+                'alertas' => [],
+            ]);
+        }
+
+        $alertas = collect();
+
+        $schema = DB::getSchemaBuilder();
+        $tiposAlunos = ['residente', 'preceptor'];
+
+        // 1. Usuários pendentes de aprovação
+        if ($schema->hasTable('users')) {
+            $pendentes = DB::table('users')
+                ->whereIn('tipo', $tiposAlunos)
+                ->where(function ($q) {
+                    $q->where('status', 'pendente')
+                        ->orWhere('status', 'aguardando')
+                        ->orWhere('status', 'aguardando_aprovacao')
+                        ->orWhere('status', 'aguardando aprovação');
+                })
+                ->orderByDesc('created_at')
+                ->limit(5)
+                ->get();
+
+            foreach ($pendentes as $pendente) {
+                $criadoEm = null;
+
+                if (!empty($pendente->created_at)) {
+                    try {
+                        $criadoEm = \Carbon\Carbon::parse($pendente->created_at)
+                            ->timezone('America/Sao_Paulo')
+                            ->format('d/m/Y H:i');
+                    } catch (\Throwable $e) {
+                        $criadoEm = $pendente->created_at;
+                    }
+                }
+
+                $alertas->push([
+                    'id' => 'pendente_' . $pendente->id,
+                    'tipo' => 'pendente',
+                    'nivel' => 'warning',
+                    'icone' => 'usuario',
+                    'titulo' => 'Novo usuário aguardando aprovação',
+                    'mensagem' => ($pendente->name ?? 'Usuário sem nome') . ' solicitou acesso ao sistema.',
+                    'detalhe' => trim(($pendente->email ?? '') . (!empty($pendente->cpf) ? ' • CPF: ' . $pendente->cpf : '')),
+                    'data' => $criadoEm,
+                    'acao_texto' => 'Aprovar no controle',
+                    'acao_url' => route('controle.usuarios'),
+                ]);
+            }
+        }
+
+        $totalAulas = $schema->hasTable('aulas')
+            ? DB::table('aulas')->count()
+            : 0;
+
+        $totalAvaliacoes = $schema->hasTable('avaliacoes')
+            ? DB::table('avaliacoes')
+                ->where(function ($query) {
+                    $query->where('tipo', 'normal')
+                        ->orWhere('tipo', 'pos_teste')
+                        ->orWhere('tipo', 'pós-teste')
+                        ->orWhereNull('tipo');
+                })
+                ->count()
+            : 0;
+
+        if ($schema->hasTable('users')) {
+            $residentes = DB::table('users')
+                ->whereIn('tipo', $tiposAlunos)
+                ->where('status', 'aprovado')
+                ->orderBy('name')
+                ->get();
+
+            foreach ($residentes as $residente) {
+                $aulasAssistidas = 0;
+                $avaliacoesFeitas = 0;
+                $media = 0;
+                $ultimaAtividade = null;
+
+                if ($schema->hasTable('aulas_assistidas')) {
+                    $aulasAssistidas = DB::table('aulas_assistidas')
+                        ->where('aluno_id', $residente->id)
+                        ->where('assistido', true)
+                        ->distinct('aula_id')
+                        ->count('aula_id');
+
+                    $ultimaAtividade = DB::table('aulas_assistidas')
+                        ->where('aluno_id', $residente->id)
+                        ->max('updated_at');
+                }
+
+                if ($schema->hasTable('notas')) {
+                    $avaliacoesFeitas = DB::table('notas')
+                        ->where('aluno_id', $residente->id)
+                        ->distinct('avaliacao_id')
+                        ->count('avaliacao_id');
+
+                    $media = DB::table('notas')
+                        ->where('aluno_id', $residente->id)
+                        ->avg('nota') ?? 0;
+
+                    if (!$ultimaAtividade) {
+                        $ultimaAtividade = DB::table('notas')
+                            ->where('aluno_id', $residente->id)
+                            ->max('created_at');
+                    }
+                }
+
+                $progresso = $totalAulas > 0
+                    ? (int) round(($aulasAssistidas / $totalAulas) * 100)
+                    : 0;
+
+                $postestesPendentes = max($totalAvaliacoes - $avaliacoesFeitas, 0);
+
+                $diasSemProgresso = null;
+
+                if ($ultimaAtividade) {
+                    try {
+                        $diasSemProgresso = (int) floor(
+                            \Carbon\Carbon::parse($ultimaAtividade)
+                                ->timezone('America/Sao_Paulo')
+                                ->startOfDay()
+                                ->diffInDays(now()->timezone('America/Sao_Paulo')->startOfDay())
+                        );
+                    } catch (\Throwable $e) {
+                        $diasSemProgresso = null;
+                    }
+                }
+
+                if ($diasSemProgresso !== null && $diasSemProgresso >= 7) {
+                    $alertas->push([
+                        'id' => 'sem_progresso_' . $residente->id,
+                        'tipo' => 'sem_progresso',
+                        'nivel' => 'danger',
+                        'icone' => 'tempo',
+                        'titulo' => 'Residente sem progresso há ' . $diasSemProgresso . ' dia(s)',
+                        'mensagem' => ($residente->name ?? 'Residente') . ' não registra aula assistida ou pós-teste recente.',
+                        'detalhe' => 'Progresso atual: ' . $progresso . '%',
+                        'data' => null,
+                        'acao_texto' => 'Ver acompanhamento',
+                        'acao_url' => route('acompanhamento.residentes'),
+                    ]);
+                }
+
+                if ($progresso < 50 && ($aulasAssistidas > 0 || $postestesPendentes > 0)) {
+                    $alertas->push([
+                        'id' => 'baixo_progresso_' . $residente->id,
+                        'tipo' => 'baixo_progresso',
+                        'nivel' => 'warning',
+                        'icone' => 'grafico',
+                        'titulo' => 'Baixo progresso no curso',
+                        'mensagem' => ($residente->name ?? 'Residente') . ' está com apenas ' . $progresso . '% de progresso.',
+                        'detalhe' => $aulasAssistidas . ' de ' . $totalAulas . ' aula(s) concluída(s).',
+                        'data' => null,
+                        'acao_texto' => 'Ver acompanhamento',
+                        'acao_url' => route('acompanhamento.residentes'),
+                    ]);
+                }
+
+                if ($postestesPendentes > 0) {
+                    $alertas->push([
+                        'id' => 'posteste_pendente_' . $residente->id,
+                        'tipo' => 'posteste_pendente',
+                        'nivel' => 'info',
+                        'icone' => 'teste',
+                        'titulo' => 'Pós-teste pendente',
+                        'mensagem' => ($residente->name ?? 'Residente') . ' possui ' . $postestesPendentes . ' pós-teste(s) pendente(s).',
+                        'detalhe' => 'Pós-testes feitos: ' . $avaliacoesFeitas . ' de ' . $totalAvaliacoes . '.',
+                        'data' => null,
+                        'acao_texto' => 'Ver acompanhamento',
+                        'acao_url' => route('acompanhamento.residentes'),
+                    ]);
+                }
+
+                if ($media > 0 && $media < 7) {
+                    $alertas->push([
+                        'id' => 'media_baixa_' . $residente->id,
+                        'tipo' => 'media_baixa',
+                        'nivel' => 'danger',
+                        'icone' => 'nota',
+                        'titulo' => 'Média abaixo do ideal',
+                        'mensagem' => ($residente->name ?? 'Residente') . ' está com média ' . number_format($media, 1, ',', '.') . '.',
+                        'detalhe' => 'Acompanhar desempenho nas avaliações.',
+                        'data' => null,
+                        'acao_texto' => 'Ver acompanhamento',
+                        'acao_url' => route('acompanhamento.residentes'),
+                    ]);
+                }
+
+                if ($progresso >= 70 && $media >= 7) {
+                    $alertas->push([
+                        'id' => 'quase_certificado_' . $residente->id,
+                        'tipo' => 'quase_certificado',
+                        'nivel' => 'success',
+                        'icone' => 'certificado',
+                        'titulo' => 'Residente quase liberando certificado',
+                        'mensagem' => ($residente->name ?? 'Residente') . ' já tem bom progresso e média favorável.',
+                        'detalhe' => 'Progresso: ' . $progresso . '% • Média: ' . number_format($media, 1, ',', '.'),
+                        'data' => null,
+                        'acao_texto' => 'Ver certificados',
+                        'acao_url' => route('certificados.criar'),
+                    ]);
+                }
+            }
+        }
+
+        $alertas = $alertas
+            ->take(20)
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'total' => $alertas->count(),
+            'alertas' => $alertas,
+            'acompanhamento_url' => route('acompanhamento.residentes'),
+        ]);
+    })->name('navbar.alertas-professor');
+
+
+    // =========================
     // 🎥 VIDEOAULAS / CURSOS / BIBLIOTECA
     // =========================
     Route::get('/videoaulas', [AulaController::class, 'index'])
