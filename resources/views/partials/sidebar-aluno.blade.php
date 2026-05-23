@@ -35,75 +35,196 @@
     ];
 @endphp
 
-<button type="button" onclick="abrirSidebarAluno()"
-    class="lg:hidden fixed left-4 top-[calc(env(safe-area-inset-top)+16px)] z-[9997] bg-[#004D3A] text-white p-3 rounded-2xl shadow-2xl border border-white/40 hover:bg-[#003C2F] active:scale-95 transition"
-    aria-label="Abrir menu do aluno">
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+<!-- BOTÃO MOBILE - ABRIR SIDEBAR -->
+<button
+    type="button"
+    onclick="abrirSidebarAluno()"
+    class="
+        lg:hidden fixed left-4 top-[calc(env(safe-area-inset-top)+16px)] z-[9997]
+        bg-[#004D3A] text-white p-3 rounded-2xl shadow-2xl
+        border border-white/40 hover:bg-[#003C2F] active:scale-95 transition
+    "
+    aria-label="Abrir menu do aluno"
+>
+    <svg xmlns="http://www.w3.org/2000/svg"
+         class="w-6 h-6"
+         fill="none"
+         viewBox="0 0 24 24"
+         stroke="currentColor">
+        <path stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16" />
     </svg>
 </button>
 
-<div id="overlaySidebarAluno" onclick="fecharSidebarAluno()" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] hidden lg:hidden"></div>
+<!-- OVERLAY MOBILE -->
+<div
+    id="overlaySidebarAluno"
+    onclick="fecharSidebarAluno()"
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] hidden lg:hidden">
+</div>
 
-<aside id="sidebarAluno"
-    class="sidebar-aluno group/sidebar fixed lg:sticky top-0 left-0 z-[9999] w-72 lg:w-72 min-h-screen h-screen bg-[#F8FBF8] dark:bg-[#071811] text-[#003C2F] dark:text-[#EAF5EF] border-r border-[#DCE7DE] dark:border-white/10 px-5 py-5 flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-all duration-300 ease-in-out shadow-2xl lg:shadow-none overflow-y-auto overflow-x-hidden"
-    data-collapsed="false">
+<!-- SIDEBAR ALUNO -->
+<aside
+    id="sidebarAluno"
+    class="
+        sidebar-aluno
+        fixed lg:sticky top-0 left-0 z-[9999]
+        w-72 lg:w-72 min-h-screen h-screen
+        bg-white text-[#003C2F]
+        border-r border-[#E3EBE4]
+        px-5 py-5
+        flex flex-col justify-between
+        transform -translate-x-full lg:translate-x-0
+        transition-all duration-300 ease-in-out
+        shadow-2xl lg:shadow-none
+        overflow-y-auto overflow-x-hidden
+    "
+    data-collapsed="false"
+>
 
     <div class="min-w-0">
+
+        <!-- FECHAR MOBILE -->
         <div class="lg:hidden flex justify-end mb-4">
-            <button type="button" onclick="fecharSidebarAluno()" class="bg-[#EAF5EF] dark:bg-white/10 hover:bg-[#DCE7DE] dark:hover:bg-white/15 text-[#003C2F] dark:text-white p-2 rounded-xl transition" aria-label="Fechar menu">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <button
+                type="button"
+                onclick="fecharSidebarAluno()"
+                class="bg-[#F1F6F2] hover:bg-[#E6EFE8] text-[#003C2F] p-2 rounded-xl transition"
+                aria-label="Fechar menu"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="w-5 h-5"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
 
+        <!-- LOGO / MARCA -->
         <div class="flex items-center gap-3 mb-8 px-1">
-            <div class="w-14 h-14 rounded-3xl bg-white dark:bg-white/10 border border-[#DCE7DE] dark:border-white/10 shadow-sm flex items-center justify-center shrink-0 overflow-hidden">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-10 h-10 object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <span class="hidden w-full h-full items-center justify-center bg-[#004D3A] text-white font-extrabold">IR</span>
+            <div class="
+                w-14 h-14 rounded-full bg-white
+                border border-[#DCE7DE]
+                shadow-sm flex items-center justify-center shrink-0 overflow-hidden
+            ">
+                <img src="{{ asset('images/logo.png') }}"
+                     alt="Logo"
+                     class="w-full h-full object-cover rounded-full"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+
+                <span class="hidden w-full h-full items-center justify-center bg-[#004D3A] text-white font-extrabold rounded-full">
+                    IR
+                </span>
             </div>
 
             <div class="sidebar-label min-w-0 transition-all duration-300">
-                <h1 class="text-lg font-extrabold leading-tight truncate">Integrar ReSaúde</h1>
-                <p class="text-xs font-bold text-[#60756B] dark:text-[#9DB7AA] truncate">Área do aluno</p>
+                <h1 class="text-lg font-extrabold leading-tight truncate">
+                    Integrar ReSaúde
+                </h1>
+                <p class="text-xs font-bold text-[#60756B] truncate">
+                    Área do aluno
+                </p>
             </div>
         </div>
 
+        <!-- BOTÃO RECOLHER DESKTOP -->
         <div class="hidden lg:flex mb-5">
-            <button type="button" onclick="alternarSidebarAluno()"
-                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white dark:bg-white/10 border border-[#DCE7DE] dark:border-white/10 text-[#004D3A] dark:text-[#EAF5EF] hover:bg-[#EAF5EF] dark:hover:bg-white/15 transition font-extrabold text-xs"
-                title="Recolher ou expandir menu">
-                <svg id="iconeRecolherAluno" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            <button
+                type="button"
+                onclick="alternarSidebarAluno()"
+                class="
+                    w-full flex items-center justify-center gap-2
+                    px-4 py-3 rounded-2xl
+                    bg-[#F8FBF8]
+                    border border-[#DCE7DE]
+                    text-[#004D3A]
+                    hover:bg-[#EAF5EF]
+                    transition font-extrabold text-xs
+                "
+                title="Recolher ou expandir menu"
+            >
+                <svg id="iconeRecolherAluno"
+                     xmlns="http://www.w3.org/2000/svg"
+                     class="w-5 h-5 shrink-0 transition-transform"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15 19l-7-7 7-7" />
                 </svg>
+
                 <span class="sidebar-label">Recolher menu</span>
             </button>
         </div>
 
+        <!-- MENU -->
         <nav class="space-y-7 text-sm font-bold">
+
             <div>
-                <p class="sidebar-label px-4 mb-2 text-[11px] uppercase tracking-widest text-[#60756B] dark:text-[#9DB7AA] font-extrabold">
+                <p class="sidebar-label px-4 mb-2 text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
                     Menu principal
                 </p>
 
                 <div class="space-y-2">
                     @foreach($itensAluno as $item)
                         @if(!empty($item['button']))
-                            <button type="button" onclick="{{ $item['onclick'] }}" title="{{ $item['titulo'] }}"
-                                class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition text-left {{ $item['ativo'] ? 'bg-[#004D3A] text-white shadow-lg shadow-[#004D3A]/15' : 'text-[#3F5D51] dark:text-[#D5E7DD] hover:bg-[#EAF5EF] dark:hover:bg-white/10' }}">
+                            <button type="button"
+                                    onclick="{{ $item['onclick'] }}"
+                                    title="{{ $item['titulo'] }}"
+                                    class="
+                                        sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition text-left
+                                        {{ $item['ativo']
+                                            ? 'bg-[#004D3A] text-white shadow-lg shadow-[#004D3A]/15'
+                                            : 'text-[#3F5D51] hover:bg-[#EAF5EF]'
+                                        }}
+                                    ">
                                 <span class="sidebar-icon w-6 h-6 flex items-center justify-center shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">{!! $item['icone'] !!}</svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="w-5 h-5"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        {!! $item['icone'] !!}
+                                    </svg>
                                 </span>
-                                <span class="sidebar-label truncate">{{ $item['titulo'] }}</span>
+
+                                <span class="sidebar-label truncate">
+                                    {{ $item['titulo'] }}
+                                </span>
                             </button>
                         @else
-                            <a href="{{ $item['url'] }}" onclick="{{ $item['onclick'] }}" title="{{ $item['titulo'] }}"
-                                class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-2xl transition {{ $item['ativo'] ? 'bg-[#004D3A] text-white shadow-lg shadow-[#004D3A]/15' : 'text-[#3F5D51] dark:text-[#D5E7DD] hover:bg-[#EAF5EF] dark:hover:bg-white/10' }}">
+                            <a href="{{ $item['url'] }}"
+                               onclick="{{ $item['onclick'] }}"
+                               title="{{ $item['titulo'] }}"
+                               class="
+                                    sidebar-item flex items-center gap-3 px-4 py-3 rounded-2xl transition
+                                    {{ $item['ativo']
+                                        ? 'bg-[#004D3A] text-white shadow-lg shadow-[#004D3A]/15'
+                                        : 'text-[#3F5D51] hover:bg-[#EAF5EF]'
+                                    }}
+                               ">
                                 <span class="sidebar-icon w-6 h-6 flex items-center justify-center shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">{!! $item['icone'] !!}</svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="w-5 h-5"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        {!! $item['icone'] !!}
+                                    </svg>
                                 </span>
-                                <span class="sidebar-label truncate">{{ $item['titulo'] }}</span>
+
+                                <span class="sidebar-label truncate">
+                                    {{ $item['titulo'] }}
+                                </span>
                             </a>
                         @endif
                     @endforeach
@@ -112,107 +233,200 @@
 
             @if($ehSuperAdmin)
                 <div>
-                    <p class="sidebar-label px-4 mb-2 text-[11px] uppercase tracking-widest text-[#60756B] dark:text-[#9DB7AA] font-extrabold">
+                    <p class="sidebar-label px-4 mb-2 text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
                         Administração
                     </p>
 
-                    <a href="{{ route('dashboard.professor') }}" onclick="fecharSidebarAluno()" title="Painel Admin"
-                       class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-2xl transition bg-yellow-50 dark:bg-yellow-400/10 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-300/20 hover:bg-yellow-100 dark:hover:bg-yellow-400/20">
+                    <a href="{{ route('dashboard.professor') }}"
+                       onclick="fecharSidebarAluno()"
+                       title="Painel Admin"
+                       class="
+                            sidebar-item flex items-center gap-3 px-4 py-3 rounded-2xl transition
+                            bg-yellow-50 text-yellow-800
+                            border border-yellow-200 hover:bg-yellow-100
+                       ">
                         <span class="sidebar-icon w-6 h-6 flex items-center justify-center shrink-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M10.5 6h9.75M10.5 12h9.75M10.5 18h9.75M3.75 6h.008v.008H3.75V6zm0 6h.008v.008H3.75V12zm0 6h.008v.008H3.75V18z"/>
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="w-5 h-5"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="1.7"
+                                      d="M10.5 6h9.75M10.5 12h9.75M10.5 18h9.75M3.75 6h.008v.008H3.75V6zm0 6h.008v.008H3.75V12zm0 6h.008v.008H3.75V18z"/>
                             </svg>
                         </span>
-                        <span class="sidebar-label truncate">Painel Admin</span>
+
+                        <span class="sidebar-label truncate">
+                            Painel Admin
+                        </span>
                     </a>
                 </div>
             @endif
+
         </nav>
+
     </div>
 
+    <!-- PERFIL / SAIR -->
     <div class="mt-8 space-y-3">
-        <div class="sidebar-profile flex items-center gap-3 px-3 py-3 rounded-3xl bg-white dark:bg-white/10 border border-[#DCE7DE] dark:border-white/10 shadow-sm">
-            <div class="w-11 h-11 rounded-2xl bg-[#004D3A] text-white flex items-center justify-center font-extrabold shrink-0">
-                {{ strtoupper(mb_substr($usuarioLogado->name ?? 'A', 0, 1)) }}
+
+        <div class="
+            sidebar-profile flex items-center gap-3 px-3 py-3 rounded-3xl
+            bg-[#F8FBF8]
+            border border-[#DCE7DE]
+            shadow-sm
+        ">
+            <div class="w-11 h-11 rounded-full bg-[#004D3A] text-white flex items-center justify-center font-extrabold shrink-0 overflow-hidden">
+                @if(!empty($usuarioLogado->foto ?? null))
+                    <img src="{{ asset($usuarioLogado->foto) }}"
+                         alt="Foto"
+                         class="w-full h-full object-cover rounded-full">
+                @else
+                    {{ strtoupper(mb_substr($usuarioLogado->name ?? 'A', 0, 1)) }}
+                @endif
             </div>
 
             <div class="sidebar-label min-w-0">
-                <p class="text-sm font-extrabold truncate">{{ $usuarioLogado->name ?? 'Aluno' }}</p>
-                <p class="text-xs font-bold text-[#60756B] dark:text-[#9DB7AA] truncate">{{ ucfirst($usuarioLogado->tipo ?? 'aluno') }}</p>
+                <p class="text-sm font-extrabold truncate">
+                    {{ $usuarioLogado->name ?? 'Aluno' }}
+                </p>
+                <p class="text-xs font-bold text-[#60756B] truncate">
+                    {{ ucfirst($usuarioLogado->tipo ?? 'aluno') }}
+                </p>
             </div>
         </div>
 
-        <button type="button" onclick="abrirModalSairAluno()" title="Sair"
-                class="sidebar-item w-full flex items-center justify-center gap-3 px-4 py-3 rounded-2xl bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-300 font-extrabold hover:bg-red-100 dark:hover:bg-red-500/20 transition border border-red-100 dark:border-red-400/10">
+        <button type="button"
+                onclick="abrirModalSairAluno()"
+                title="Sair"
+                class="
+                    sidebar-item w-full flex items-center justify-center gap-3
+                    px-4 py-3 rounded-2xl
+                    bg-red-50
+                    text-red-600
+                    font-extrabold hover:bg-red-100 transition
+                    border border-red-100
+                ">
+
             <span class="sidebar-icon w-6 h-6 flex items-center justify-center shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6A2.25 2.25 0 0 0 5.25 5.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"/>
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="w-5 h-5"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.7"
+                          d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6A2.25 2.25 0 0 0 5.25 5.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"/>
                 </svg>
             </span>
-            <span class="sidebar-label">Sair</span>
+
+            <span class="sidebar-label">
+                Sair
+            </span>
         </button>
     </div>
+
 </aside>
 
-<div id="modalSenhaProvaFinalSidebar" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-[10000] px-4">
-    <div class="bg-white dark:bg-[#071811] w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center border border-yellow-100 dark:border-yellow-300/20">
-        <div class="w-16 h-16 mx-auto rounded-full bg-yellow-100 dark:bg-yellow-400/10 text-yellow-700 dark:text-yellow-200 flex items-center justify-center mb-4">
+<!-- MODAL SENHA PROVA FINAL TESTE -->
+<div id="modalSenhaProvaFinalSidebar"
+     class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-[10000] px-4">
+
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center border border-yellow-100">
+
+        <div class="w-16 h-16 mx-auto rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center mb-4">
             <span class="text-2xl">🔐</span>
         </div>
 
-        <h2 class="text-xl font-extrabold text-gray-800 dark:text-white mb-2">Acesso de teste</h2>
-        <p class="text-sm text-gray-500 dark:text-[#9DB7AA] mb-5 leading-relaxed">
+        <h2 class="text-xl font-extrabold text-gray-800 mb-2">
+            Acesso de teste
+        </h2>
+
+        <p class="text-sm text-gray-500 mb-5 leading-relaxed">
             Digite a senha temporária para liberar a prova final apenas para teste.
         </p>
 
-        <input type="password" id="senhaProvaFinalSidebar" placeholder="Digite a senha"
-            class="w-full px-4 py-3 rounded-2xl border border-yellow-200 dark:border-yellow-300/20 bg-yellow-50 dark:bg-yellow-400/10 text-gray-800 dark:text-white text-center font-bold focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-3">
+        <input
+            type="password"
+            id="senhaProvaFinalSidebar"
+            placeholder="Digite a senha"
+            class="w-full px-4 py-3 rounded-2xl border border-yellow-200 bg-yellow-50 text-gray-800 text-center font-bold focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-3"
+        >
 
-        <p id="erroSenhaProvaFinalSidebar" class="hidden text-sm text-red-600 dark:text-red-300 font-bold mb-4">
+        <p id="erroSenhaProvaFinalSidebar"
+           class="hidden text-sm text-red-600 font-bold mb-4">
             Senha incorreta. Tente novamente.
         </p>
 
         <div class="flex gap-3">
-            <button type="button" onclick="fecharModalSenhaProvaFinalSidebar()" class="w-1/2 px-4 py-3 rounded-2xl bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white font-bold hover:bg-gray-200 dark:hover:bg-white/15 transition">
+            <button type="button"
+                    onclick="fecharModalSenhaProvaFinalSidebar()"
+                    class="w-1/2 px-4 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition">
                 Cancelar
             </button>
 
-            <button type="button" onclick="validarSenhaProvaFinalSidebar()" class="w-1/2 px-4 py-3 rounded-2xl bg-[#004D3A] text-white font-bold hover:bg-[#003C2F] transition">
+            <button type="button"
+                    onclick="validarSenhaProvaFinalSidebar()"
+                    class="w-1/2 px-4 py-3 rounded-2xl bg-[#004D3A] text-white font-bold hover:bg-[#003C2F] transition">
                 Entrar
             </button>
         </div>
 
-        <a href="{{ route('prova.final') }}" class="block mt-4 text-xs text-gray-500 dark:text-[#9DB7AA] hover:text-[#004D3A] dark:hover:text-[#8EF3C5] font-bold">
+        <a href="{{ route('prova.final') }}"
+           class="block mt-4 text-xs text-gray-500 hover:text-[#004D3A] font-bold">
             Entrar sem senha e verificar liberação normal
         </a>
+
     </div>
 </div>
 
-<div id="modalSairAluno" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-[10000] px-4">
-    <div class="bg-white dark:bg-[#071811] w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center border border-[#E3EBE4] dark:border-white/10">
-        <div class="w-16 h-16 mx-auto rounded-full bg-red-100 dark:bg-red-500/10 flex items-center justify-center mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-red-600 dark:text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v3.75m0 3.75h.008v.008H12V16.5zm9-4.5a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+<!-- MODAL DE CONFIRMAÇÃO DE SAIR -->
+<div id="modalSairAluno"
+     class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-[10000] px-4">
+
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center border border-[#E3EBE4]">
+
+        <div class="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="w-8 h-8 text-red-600"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="1.8"
+                      d="M12 9v3.75m0 3.75h.008v.008H12V16.5zm9-4.5a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
             </svg>
         </div>
 
-        <h2 class="text-xl font-extrabold text-gray-800 dark:text-white mb-2">Deseja sair?</h2>
-        <p class="text-sm text-gray-500 dark:text-[#9DB7AA] mb-6">
+        <h2 class="text-xl font-extrabold text-gray-800 mb-2">
+            Deseja sair?
+        </h2>
+
+        <p class="text-sm text-gray-500 mb-6">
             Você será desconectado da sua conta e voltará para a tela de login.
         </p>
 
         <div class="flex gap-3">
-            <button type="button" onclick="fecharModalSairAluno()" class="w-1/2 px-4 py-3 rounded-2xl bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white font-bold hover:bg-gray-200 dark:hover:bg-white/15 transition">
+            <button type="button"
+                    onclick="fecharModalSairAluno()"
+                    class="w-1/2 px-4 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition">
                 Cancelar
             </button>
 
             <form method="POST" action="{{ route('logout') }}" class="w-1/2">
                 @csrf
-                <button type="submit" class="w-full px-4 py-3 rounded-2xl bg-red-600 text-white font-bold hover:bg-red-700 transition shadow">
+
+                <button type="submit"
+                        class="w-full px-4 py-3 rounded-2xl bg-red-600 text-white font-bold hover:bg-red-700 transition shadow">
                     Sim, sair
                 </button>
             </form>
         </div>
+
     </div>
 </div>
 
