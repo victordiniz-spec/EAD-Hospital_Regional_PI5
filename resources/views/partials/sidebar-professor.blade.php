@@ -2,6 +2,11 @@
     $usuarioLogado = auth()->user();
     $ehSuperAdmin = auth()->check() && ($usuarioLogado->tipo ?? null) === 'super_admin';
 
+    $abaAvisosAtual = request('aba', 'meus');
+    $avisosAbertoSidebar = request()->routeIs('avisos') || request()->routeIs('avisos.*');
+    $avisosCriarAtivo = request()->routeIs('avisos') && $abaAvisosAtual === 'criar';
+    $avisosMeusAtivo = request()->routeIs('avisos') && $abaAvisosAtual !== 'criar';
+
     $itensProfessor = [
         [
             'titulo' => 'Home',
@@ -38,12 +43,6 @@
             'url' => route('controle.usuarios'),
             'ativo' => request()->routeIs('controle.usuarios'),
             'icone' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M18 18.72a8.94 8.94 0 0 0-6-2.22 8.94 8.94 0 0 0-6 2.22M15 11.25a3 3 0 1 0-6 0 3 3 0 0 0 6 0z"/>',
-        ],
-        [
-            'titulo' => 'Avisos',
-            'url' => route('avisos'),
-            'ativo' => request()->routeIs('avisos') || request()->routeIs('avisos.*'),
-            'icone' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M14.857 17.082a23.848 23.848 0 0 1-5.714 0M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/>',
         ],
     ];
 @endphp
@@ -214,6 +213,81 @@
                             </span>
                         </a>
                     @endforeach
+
+                    <!-- CASCATA DE AVISOS -->
+                    <div class="sidebar-cascade">
+                        <button type="button"
+                                onclick="alternarCascataAvisosProfessor()"
+                                title="Avisos"
+                                class="
+                                    sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition text-left
+                                    {{ $avisosAbertoSidebar
+                                        ? 'bg-[#004D3A] text-white shadow-lg shadow-[#004D3A]/15'
+                                        : 'text-[#3F5D51] hover:bg-[#EAF5EF]'
+                                    }}
+                                ">
+                            <span class="sidebar-icon w-6 h-6 flex items-center justify-center shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="w-5 h-5"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="1.7"
+                                          d="M14.857 17.082a23.848 23.848 0 0 1-5.714 0M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/>
+                                </svg>
+                            </span>
+
+                            <span class="sidebar-label truncate flex-1">
+                                Avisos
+                            </span>
+
+                            <span id="iconeCascataAvisosProfessor"
+                                  class="sidebar-label transition-transform duration-300 {{ $avisosAbertoSidebar ? 'rotate-180' : '' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="w-4 h-4"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="m19 9-7 7-7-7"/>
+                                </svg>
+                            </span>
+                        </button>
+
+                        <div id="cascataAvisosProfessor"
+                             class="{{ $avisosAbertoSidebar ? '' : 'hidden' }} sidebar-submenu mt-2 ml-10 space-y-2">
+                            <a href="{{ route('avisos', ['aba' => 'criar']) }}"
+                               onclick="fecharSidebarProfessor()"
+                               class="
+                                    sidebar-subitem flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-extrabold transition
+                                    {{ $avisosCriarAtivo
+                                        ? 'bg-[#EAF5EF] text-[#004D3A] border border-[#DCE7DE]'
+                                        : 'text-[#60756B] hover:bg-[#F8FBF8] hover:text-[#004D3A]'
+                                    }}
+                               ">
+                                <span class="w-2 h-2 rounded-full {{ $avisosCriarAtivo ? 'bg-[#00A63E]' : 'bg-[#AFC5B5]' }}"></span>
+                                <span class="sidebar-label truncate">Criar aviso</span>
+                            </a>
+
+                            <a href="{{ route('avisos', ['aba' => 'meus']) }}"
+                               onclick="fecharSidebarProfessor()"
+                               class="
+                                    sidebar-subitem flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-extrabold transition
+                                    {{ $avisosMeusAtivo
+                                        ? 'bg-[#EAF5EF] text-[#004D3A] border border-[#DCE7DE]'
+                                        : 'text-[#60756B] hover:bg-[#F8FBF8] hover:text-[#004D3A]'
+                                    }}
+                               ">
+                                <span class="w-2 h-2 rounded-full {{ $avisosMeusAtivo ? 'bg-[#00A63E]' : 'bg-[#AFC5B5]' }}"></span>
+                                <span class="sidebar-label truncate">Meus avisos</span>
+                            </a>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -391,6 +465,10 @@
         padding-right: 0.65rem;
     }
 
+    #sidebarProfessor[data-collapsed="true"] .sidebar-submenu {
+        display: none !important;
+    }
+
     #sidebarProfessor[data-collapsed="true"] #iconeRecolherProfessor {
         transform: rotate(180deg);
     }
@@ -418,6 +496,26 @@
 </style>
 
 <script>
+
+    function alternarCascataAvisosProfessor() {
+        const submenu = document.getElementById('cascataAvisosProfessor');
+        const icone = document.getElementById('iconeCascataAvisosProfessor');
+        const sidebar = document.getElementById('sidebarProfessor');
+
+        if (!submenu) return;
+
+        if (sidebar && sidebar.getAttribute('data-collapsed') === 'true') {
+            window.location.href = "{{ route('avisos', ['aba' => 'meus']) }}";
+            return;
+        }
+
+        submenu.classList.toggle('hidden');
+
+        if (icone) {
+            icone.classList.toggle('rotate-180');
+        }
+    }
+
     function abrirSidebarProfessor() {
         const sidebar = document.getElementById('sidebarProfessor');
         const overlay = document.getElementById('overlaySidebarProfessor');

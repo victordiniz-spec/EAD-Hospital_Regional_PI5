@@ -5,6 +5,7 @@
 @section('content')
 
 @php
+    $abaAtualAvisos = request('aba', 'meus');
     $avisosHistorico = collect($avisos ?? [])->sortByDesc(function ($aviso) {
         return (int) ($aviso->favorito ?? 0);
     })->values();
@@ -46,11 +47,11 @@
                 <div>
 
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight">
-                        Avisos
+                        Central de Avisos
                     </h1>
 
                     <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
-                        Crie avisos com tempo de exibição. Avisos urgentes aparecem em destaque para o aluno ao entrar na plataforma.
+                        Crie avisos para os alunos e acompanhe todos os avisos que você já cadastrou.
                     </p>
                 </div>
 
@@ -66,12 +67,38 @@
 
             </div>
 
+
+            <!-- ABAS DA CENTRAL DE AVISOS -->
+            <div class="mb-7 bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <a href="{{ route('avisos', ['aba' => 'criar']) }}"
+                       class="flex items-center justify-center gap-2 px-5 py-4 rounded-2xl text-sm font-extrabold transition
+                            {{ $abaAtualAvisos === 'criar'
+                                ? 'bg-[#004D3A] text-white shadow-lg shadow-[#004D3A]/15'
+                                : 'bg-[#F8FBF8] text-[#004D3A] hover:bg-[#EAF5EF]'
+                            }}">
+                        <span>＋</span>
+                        Criar aviso
+                    </a>
+
+                    <a href="{{ route('avisos', ['aba' => 'meus']) }}"
+                       class="flex items-center justify-center gap-2 px-5 py-4 rounded-2xl text-sm font-extrabold transition
+                            {{ $abaAtualAvisos !== 'criar'
+                                ? 'bg-[#004D3A] text-white shadow-lg shadow-[#004D3A]/15'
+                                : 'bg-[#F8FBF8] text-[#004D3A] hover:bg-[#EAF5EF]'
+                            }}">
+                        <span>☰</span>
+                        Meus avisos
+                    </a>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 xl:grid-cols-12 gap-7">
 
                 <!-- FORMULÁRIO -->
-                <div class="xl:col-span-4">
+                <div id="abaCriarAviso" class="{{ $abaAtualAvisos === 'criar' ? 'xl:col-span-12' : 'hidden' }}">
 
-                    <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6 sticky top-6">
+                    <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6">
 
                         <div class="flex items-center gap-3 mb-6">
 
@@ -124,6 +151,7 @@
                                 <div class="max-h-[310px] overflow-y-auto pr-1 space-y-3">
                                     @foreach($avisosHistorico as $historicoAviso)
                                         @php
+    $abaAtualAvisos = request('aba', 'meus');
                                             $historicoCategoria = strtolower($historicoAviso->categoria ?? $historicoAviso->tipo ?? 'importante');
                                             $historicoMensagem = $historicoAviso->mensagem ?? $historicoAviso->descricao ?? '';
                                             $historicoFavorito = (bool) ($historicoAviso->favorito ?? false);
@@ -335,7 +363,7 @@
                 </div>
 
                 <!-- LISTA -->
-                <div class="xl:col-span-8">
+                <div id="abaMeusAvisos" class="{{ $abaAtualAvisos !== 'criar' ? 'xl:col-span-12' : 'hidden' }}">
 
                     <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm overflow-hidden">
 
@@ -357,11 +385,11 @@
 
                                 <div>
                                     <h2 class="text-xl font-extrabold text-[#003C2F]">
-                                        Avisos recentes
+                                        Meus avisos
                                     </h2>
 
                                     <p class="text-xs text-[#60756B] mt-1">
-                                        Urgentes aparecem primeiro. Avisos expirados não aparecem para o aluno.
+                                        Aqui ficam todos os avisos que você criou para os alunos. Favoritos e urgentes aparecem em destaque.
                                     </p>
                                 </div>
                             </div>
@@ -379,6 +407,7 @@
                                 @forelse($avisos as $aviso)
 
                                     @php
+    $abaAtualAvisos = request('aba', 'meus');
                                         $categoria = strtolower($aviso->categoria ?? $aviso->tipo ?? 'importante');
                                         $urgente = $categoria === 'urgente';
                                         $expirado = isset($aviso->expires_at) && $aviso->expires_at && \Carbon\Carbon::parse($aviso->expires_at)->isPast();
@@ -457,6 +486,7 @@
                                             <div class="flex items-center gap-2 shrink-0">
 
                                                 @php
+    $abaAtualAvisos = request('aba', 'meus');
                                                     $avisoFavorito = (bool) ($aviso->favorito ?? false);
                                                 @endphp
 
@@ -801,6 +831,9 @@
         if (favoritoInput) favoritoInput.checked = !!favorito;
 
         if (form) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('aba', 'criar');
+            window.history.replaceState({}, '', url.toString());
             form.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
