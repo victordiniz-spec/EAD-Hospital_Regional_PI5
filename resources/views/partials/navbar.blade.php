@@ -452,6 +452,7 @@
 
         <!-- NOME E TIPO DO USUÁRIO -->
         <button type="button"
+                data-toggle-perfil-navbar
                 onclick="toggleMenuPerfilNavbar()"
                 class="text-right min-w-0 max-w-[150px] sm:max-w-[260px] hover:bg-[#F8FBF8] px-2 py-1.5 rounded-2xl transition">
 
@@ -469,6 +470,7 @@
         <div class="relative shrink-0">
 
             <button type="button"
+                    data-toggle-perfil-navbar
                     onclick="toggleMenuPerfilNavbar()"
                     class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#00A63E] flex items-center justify-center text-white font-bold shadow-md ring-4 ring-green-100 hover:scale-105 transition"
                     title="Menu do perfil">
@@ -476,7 +478,7 @@
             </button>
 
             <div id="menuPerfilNavbar"
-                 class="hidden fixed sm:absolute right-3 sm:right-0 top-[72px] sm:top-auto sm:mt-3 w-[calc(100vw-24px)] sm:w-[300px] bg-white border border-[#E3EBE4] rounded-3xl shadow-2xl overflow-hidden z-[999]">
+                 class="hidden fixed sm:absolute right-3 sm:right-0 top-[72px] sm:top-auto sm:mt-3 w-[calc(100vw-24px)] sm:w-[300px] bg-white border border-[#E3EBE4] rounded-3xl shadow-2xl overflow-hidden z-[9999]">
 
                 <!-- TOPO DO MENU -->
                 <div class="p-5 bg-[#F8FBF8] border-b border-[#E3EBE4]">
@@ -1087,7 +1089,6 @@
             const menuPerfil = document.getElementById('menuPerfilNavbar');
             const avisos = document.getElementById('dropdownAvisosNavbar');
             const pendentes = document.getElementById('dropdownPendentesNavbar');
-        const alertasProfessor = document.getElementById('dropdownAlertasProfessorNavbar');
 
             if (menuPerfil) menuPerfil.classList.add('hidden');
             if (avisos) avisos.classList.add('hidden');
@@ -1204,6 +1205,7 @@
         const menu = document.getElementById('menuPerfilNavbar');
         const avisos = document.getElementById('dropdownAvisosNavbar');
         const pendentes = document.getElementById('dropdownPendentesNavbar');
+        const alertasProfessor = document.getElementById('dropdownAlertasProfessorNavbar');
 
         if (!menu) return;
 
@@ -1228,7 +1230,7 @@
         const dropdownPendentes = document.getElementById('dropdownPendentesNavbar');
         const dropdownAlertasProfessor = document.getElementById('dropdownAlertasProfessorNavbar');
 
-        const clicouNoPerfil = event.target.closest('[onclick="toggleMenuPerfilNavbar()"]');
+        const clicouNoPerfil = event.target.closest('[data-toggle-perfil-navbar]') || event.target.closest('[onclick="toggleMenuPerfilNavbar()"]');
         const clicouNoAvisos = event.target.closest('[onclick="toggleDropdownAvisosNavbar()"]');
         const clicouNoPendentes = event.target.closest('[onclick="toggleDropdownPendentesNavbar()"]');
         const clicouNoAlertasProfessor = event.target.closest('[onclick="toggleDropdownAlertasProfessorNavbar()"]');
@@ -1263,4 +1265,43 @@
             if (dropdownAlertasProfessor) dropdownAlertasProfessor.classList.add('hidden');
         }
     });
+</script>
+
+<script>
+    if (typeof alternarTemaSistema !== 'function') {
+        function aplicarTemaSistemaNavbar() {
+            const temaSalvo = localStorage.getItem('tema_sistema') || localStorage.getItem('theme') || 'light';
+            const html = document.documentElement;
+            const iconeLua = document.querySelector('[data-tema-icone-lua]');
+            const iconeSol = document.querySelector('[data-tema-icone-sol]');
+            const texto = document.querySelector('[data-tema-texto]');
+
+            if (temaSalvo === 'dark') {
+                html.classList.add('dark');
+
+                if (iconeLua) iconeLua.classList.add('hidden');
+                if (iconeSol) iconeSol.classList.remove('hidden');
+                if (texto) texto.innerText = 'Modo claro';
+            } else {
+                html.classList.remove('dark');
+
+                if (iconeLua) iconeLua.classList.remove('hidden');
+                if (iconeSol) iconeSol.classList.add('hidden');
+                if (texto) texto.innerText = 'Modo escuro';
+            }
+        }
+
+        function alternarTemaSistema() {
+            const html = document.documentElement;
+            const temaAtual = html.classList.contains('dark') ? 'dark' : 'light';
+            const novoTema = temaAtual === 'dark' ? 'light' : 'dark';
+
+            localStorage.setItem('tema_sistema', novoTema);
+            localStorage.setItem('theme', novoTema);
+
+            aplicarTemaSistemaNavbar();
+        }
+
+        document.addEventListener('DOMContentLoaded', aplicarTemaSistemaNavbar);
+    }
 </script>
