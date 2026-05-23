@@ -47,51 +47,30 @@
                 <div>
 
                     <h1 class="text-3xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight">
-                        Central de Avisos
+                        {{ $abaAtualAvisos === 'criar' ? 'Criar aviso' : 'Meus avisos' }}
                     </h1>
 
                     <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
-                        Crie avisos para os alunos e acompanhe todos os avisos que você já cadastrou.
+                        @if($abaAtualAvisos === 'criar')
+                            Crie avisos com tempo de exibição para aparecerem na área do aluno.
+                        @else
+                            Veja, edite, reutilize, favorite ou exclua somente os avisos que você já criou.
+                        @endif
                     </p>
                 </div>
 
                 <div class="bg-white border border-[#E3EBE4] rounded-3xl px-5 py-4 shadow-sm">
                     <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                        Total de avisos
+                        {{ $abaAtualAvisos === 'criar' ? 'Nova publicação' : 'Total de meus avisos' }}
                     </p>
 
                     <p class="text-2xl font-extrabold text-[#004D3A] mt-1">
-                        {{ $avisos->count() }}
+                        {{ $abaAtualAvisos === 'criar' ? 'Aviso' : $avisos->count() }}
                     </p>
                 </div>
 
             </div>
 
-
-            <!-- ABAS DA CENTRAL DE AVISOS -->
-            <div class="mb-7 bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-3">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <a href="{{ route('avisos', ['aba' => 'criar']) }}"
-                       class="flex items-center justify-center gap-2 px-5 py-4 rounded-2xl text-sm font-extrabold transition
-                            {{ $abaAtualAvisos === 'criar'
-                                ? 'bg-[#004D3A] text-white shadow-lg shadow-[#004D3A]/15'
-                                : 'bg-[#F8FBF8] text-[#004D3A] hover:bg-[#EAF5EF]'
-                            }}">
-                        <span>＋</span>
-                        Criar aviso
-                    </a>
-
-                    <a href="{{ route('avisos', ['aba' => 'meus']) }}"
-                       class="flex items-center justify-center gap-2 px-5 py-4 rounded-2xl text-sm font-extrabold transition
-                            {{ $abaAtualAvisos !== 'criar'
-                                ? 'bg-[#004D3A] text-white shadow-lg shadow-[#004D3A]/15'
-                                : 'bg-[#F8FBF8] text-[#004D3A] hover:bg-[#EAF5EF]'
-                            }}">
-                        <span>☰</span>
-                        Meus avisos
-                    </a>
-                </div>
-            </div>
 
             <div class="grid grid-cols-1 xl:grid-cols-12 gap-7">
 
@@ -592,7 +571,7 @@
                                         </h3>
 
                                         <p class="text-sm text-[#60756B] mt-2">
-                                            Crie o primeiro aviso usando o formulário ao lado.
+                                            Nenhum aviso criado ainda. Use a opção “Criar aviso” na sidebar para cadastrar o primeiro.
                                         </p>
 
                                     </div>
