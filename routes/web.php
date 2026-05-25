@@ -10,6 +10,7 @@ use App\Http\Controllers\AulaController;
 use App\Http\Controllers\AvaliacaoController;
 use App\Http\Controllers\AvisoController;
 use App\Http\Controllers\CertificadoController;
+use App\Http\Controllers\SuporteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -682,6 +683,24 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/avisos/{id}', [AvisoController::class, 'destroy'])
         ->name('avisos.destroy');
+    
+    // =========================
+    // 💬 CENTRAL DE SUPORTE / FAQ
+    // =========================
+    Route::get('/suporte', [SuporteController::class, 'index'])
+        ->name('suporte.index');
+
+    Route::get('/suporte/admin', [SuporteController::class, 'admin'])
+        ->name('suporte.admin');
+
+    Route::post('/suporte/duvidas', [SuporteController::class, 'store'])
+        ->name('suporte.store');
+
+    Route::put('/suporte/duvidas/{id}', [SuporteController::class, 'update'])
+        ->name('suporte.update');
+
+    Route::delete('/suporte/duvidas/{id}', [SuporteController::class, 'destroy'])
+        ->name('suporte.destroy');
 
 
     // =========================

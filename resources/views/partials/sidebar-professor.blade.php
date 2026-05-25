@@ -44,6 +44,12 @@
             'ativo' => request()->routeIs('controle.usuarios'),
             'icone' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M18 18.72a8.94 8.94 0 0 0-6-2.22 8.94 8.94 0 0 0-6 2.22M15 11.25a3 3 0 1 0-6 0 3 3 0 0 0 6 0z"/>',
         ],
+        [
+            'titulo' => 'Suporte',
+            'url' => route('suporte.admin'),
+            'ativo' => request()->routeIs('suporte.*'),
+            'icone' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0zm3.75 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0zm3.75 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0zM21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 0 1-3.58-.66L3 21l1.66-4.15A7.55 7.55 0 0 1 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>',
+        ],
     ];
 @endphp
 

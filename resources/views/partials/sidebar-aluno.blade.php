@@ -32,6 +32,13 @@
             'onclick' => 'fecharSidebarAluno()',
             'icone' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>',
         ],
+        [
+            'titulo' => 'Suporte',
+            'url' => route('suporte.index'),
+            'ativo' => request()->routeIs('suporte.index'),
+            'onclick' => 'fecharSidebarAluno()',
+            'icone' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0zm3.75 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0zm3.75 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0zM21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 0 1-3.58-.66L3 21l1.66-4.15A7.55 7.55 0 0 1 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>',
+        ],
     ];
 @endphp
 

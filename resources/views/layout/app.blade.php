@@ -59,12 +59,18 @@
             }
         })();
     </script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     @vite('resources/css/app.css')
 
     <style>
         html,
         body {
+            font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-weight: 400;
+            letter-spacing: -0.01em;
             transition: background-color 0.25s ease, color 0.25s ease;
         }
 
@@ -113,6 +119,7 @@
         html.dark aside p,
         html.dark aside span {
             color: #E5E7EB !important;
+            letter-spacing: -0.025em;
         }
 
         html.dark aside a {
@@ -382,7 +389,7 @@
     </style>
 </head>
 
-<body class="text-gray-800 bg-[#F3F7F3] min-h-screen">
+<body class="text-gray-800 bg-[#F3F7F3] min-h-screen font-['Outfit'] antialiased">
 
     <div id="app" class="w-full min-h-screen">
 
