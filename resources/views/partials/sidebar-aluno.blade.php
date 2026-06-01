@@ -82,7 +82,7 @@
         bg-white text-[#003C2F]
         border-r border-[#E3EBE4]
         px-5 py-5
-        flex flex-col justify-between
+        flex flex-col
         transform -translate-x-full lg:translate-x-0
         transition-all duration-300 ease-in-out
         shadow-2xl lg:shadow-none
@@ -91,7 +91,7 @@
     data-collapsed="false"
 >
 
-    <div class="min-w-0">
+    <div class="sidebar-conteudo min-w-0">
 
         <!-- FECHAR MOBILE -->
         <div class="lg:hidden flex justify-end mb-4">
@@ -277,7 +277,7 @@
     </div>
 
     <!-- PERFIL / SAIR -->
-    <div class="mt-8 space-y-3">
+    <div class="sidebar-rodape mt-6 space-y-3">
 
         <div class="
             sidebar-profile flex items-center gap-3 px-3 py-3 rounded-3xl
@@ -438,6 +438,66 @@
 </div>
 
 <style>
+    /*
+    |--------------------------------------------------------------------------
+    | CORREÇÃO DE ALTURA / RODAPÉ DA SIDEBAR
+    |--------------------------------------------------------------------------
+    | Mantém o perfil e o botão sair visíveis, sem cortar o final da sidebar.
+    | O menu de cima rola sozinho quando tiver muitos itens.
+    */
+    #sidebarAluno {
+        height: 100vh !important;
+        max-height: 100vh !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
+        padding-bottom: calc(1.25rem + env(safe-area-inset-bottom)) !important;
+    }
+
+    #sidebarAluno .sidebar-conteudo {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding-right: 0.15rem !important;
+        margin-right: -0.15rem !important;
+    }
+
+    #sidebarAluno .sidebar-rodape {
+        flex: 0 0 auto !important;
+        margin-top: 1rem !important;
+        padding-top: 0.75rem !important;
+        background: #ffffff !important;
+    }
+
+    #sidebarAluno .sidebar-conteudo::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #sidebarAluno .sidebar-conteudo::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    #sidebarAluno .sidebar-conteudo::-webkit-scrollbar-thumb {
+        background: #DCE7DE;
+        border-radius: 999px;
+    }
+
+    #sidebarAluno .sidebar-conteudo::-webkit-scrollbar-thumb:hover {
+        background: #AFC5B5;
+    }
+
+
+    #sidebarAluno[data-collapsed="true"] .sidebar-rodape {
+        margin-top: 0.85rem !important;
+        padding-top: 0.6rem !important;
+    }
+
+    #sidebarAluno[data-collapsed="true"] .sidebar-conteudo {
+        padding-right: 0 !important;
+        margin-right: 0 !important;
+    }
+
     #sidebarAluno[data-collapsed="true"] {
         width: 6rem;
         padding-left: 1rem;
@@ -546,6 +606,22 @@
     }
 
     @media (max-width: 1023px) {
+
+        #sidebarAluno {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+
+        #sidebarAluno .sidebar-conteudo {
+            overflow: visible !important;
+            padding-right: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        #sidebarAluno .sidebar-rodape {
+            margin-top: 1.25rem !important;
+        }
+
         #sidebarAluno[data-collapsed="true"] {
             width: 18rem;
             padding-left: 1.25rem;
