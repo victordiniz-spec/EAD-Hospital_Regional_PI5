@@ -22,18 +22,22 @@ class AulaController extends Controller
     {
         $cursos = Curso::orderBy('id', 'desc')->get();
 
-        if ($cursos->count() === 0) {
-            $curso = Curso::create([
-                'nome' => 'Curso Principal',
-                'descricao' => 'Curso padrão do sistema',
-                'professor_id' => auth()->id(),
-            ]);
+        /*
+        |--------------------------------------------------------------------------
+        | IMPORTANTE
+        |--------------------------------------------------------------------------
+        | Antes o sistema criava automaticamente o "Curso Principal" quando não
+        | existia nenhum curso cadastrado. Isso fazia parecer que o curso excluído
+        | voltava ao atualizar a página.
+        |
+        | Agora, se não houver curso, a tela abre vazia e o professor cria
+        | manualmente quando quiser.
+        */
+        $cursoAtual = null;
+        $modulos = collect();
+        $aulas = collect();
 
-            $cursos = Curso::orderBy('id', 'desc')->get();
-            $cursoAtual = $curso;
-        } else {
-            $cursoAtual = null;
-
+        if ($cursos->count() > 0) {
             if ($request->filled('curso_id')) {
                 $cursoAtual = Curso::where('id', $request->curso_id)->first();
             }
@@ -41,18 +45,18 @@ class AulaController extends Controller
             if (!$cursoAtual) {
                 $cursoAtual = $cursos->first();
             }
+
+            $modulos = Modulo::where('curso_id', $cursoAtual->id)
+                ->orderBy('ordem')
+                ->orderBy('id')
+                ->get();
+
+            $aulas = Aula::with('modulo')
+                ->where('curso_id', $cursoAtual->id)
+                ->orderBy('modulo_id')
+                ->orderBy('id')
+                ->get();
         }
-
-        $modulos = Modulo::where('curso_id', $cursoAtual->id)
-            ->orderBy('ordem')
-            ->orderBy('id')
-            ->get();
-
-        $aulas = Aula::with('modulo')
-            ->where('curso_id', $cursoAtual->id)
-            ->orderBy('modulo_id')
-            ->orderBy('id')
-            ->get();
 
         return view('dashboard.videoaulas', compact(
             'cursos',

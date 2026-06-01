@@ -206,7 +206,7 @@
             <!-- LISTA -->
             <div id="listaCursosBiblioteca" class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
 
-                @forelse($cursos as $curso)
+                @forelse($cursos as $indiceCurso => $curso)
 
                     @php
                         $totalModulos = DB::table('modulos')
@@ -260,7 +260,11 @@
 
                                 <div class="min-w-0">
                                     <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                        Curso #{{ $curso->id }}
+                                        Curso #{{ str_pad($indiceCurso + 1, 2, '0', STR_PAD_LEFT) }}
+                                    </p>
+
+                                    <p class="text-[10px] text-[#8A9B92] font-bold mt-1">
+                                        Código interno: {{ $curso->id }}
                                     </p>
 
                                     <h2 class="titulo-curso-biblioteca text-2xl font-extrabold text-[#003C2F] mt-2 break-words">
