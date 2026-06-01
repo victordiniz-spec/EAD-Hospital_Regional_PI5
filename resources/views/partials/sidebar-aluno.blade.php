@@ -444,6 +444,58 @@
         padding-right: 1rem;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | SIDEBAR RECOLHIDA - ÍCONES CENTRALIZADOS
+    |--------------------------------------------------------------------------
+    | Quando a sidebar fica menor, o texto some e cada item vira um quadrado.
+    | Essas regras removem o espaço do texto/gap e centralizam o SVG no meio.
+    */
+    #sidebarAluno[data-collapsed="true"] .sidebar-item {
+        width: 3.75rem !important;
+        min-width: 3.75rem !important;
+        height: 3.75rem !important;
+        min-height: 3.75rem !important;
+        padding: 0 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0 !important;
+        text-align: center !important;
+    }
+
+    #sidebarAluno[data-collapsed="true"] .sidebar-icon {
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        flex: none !important;
+    }
+
+    #sidebarAluno[data-collapsed="true"] .sidebar-icon svg {
+        display: block !important;
+        margin: auto !important;
+        width: 1.35rem !important;
+        height: 1.35rem !important;
+    }
+
+    #sidebarAluno[data-collapsed="true"] nav > div > .space-y-2 {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+
+    #sidebarAluno[data-collapsed="true"] .sidebar-cascade {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
     #sidebarAluno[data-collapsed="true"] .sidebar-label {
         width: 0;
         opacity: 0;
@@ -452,20 +504,45 @@
         white-space: nowrap;
     }
 
-    #sidebarAluno[data-collapsed="true"] .sidebar-item {
-        justify-content: center;
-        padding-left: 0.85rem;
-        padding-right: 0.85rem;
-    }
 
     #sidebarAluno[data-collapsed="true"] .sidebar-profile {
-        justify-content: center;
-        padding-left: 0.65rem;
-        padding-right: 0.65rem;
+        width: 3.75rem !important;
+        min-width: 3.75rem !important;
+        height: 3.75rem !important;
+        min-height: 3.75rem !important;
+        padding: 0 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0 !important;
     }
 
     #sidebarAluno[data-collapsed="true"] #iconeRecolherAluno {
         transform: rotate(180deg);
+    }
+
+
+
+    #sidebarAluno[data-collapsed="true"] > div:first-child > .flex.items-center.gap-3.mb-8 {
+        justify-content: center !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        gap: 0 !important;
+    }
+
+    #sidebarAluno[data-collapsed="true"] .hidden.lg\:flex.mb-5 {
+        justify-content: center !important;
+    }
+
+    #sidebarAluno[data-collapsed="true"] .hidden.lg\:flex.mb-5 button {
+        width: 3.75rem !important;
+        height: 3.75rem !important;
+        min-width: 3.75rem !important;
+        min-height: 3.75rem !important;
+        padding: 0 !important;
+        gap: 0 !important;
     }
 
     @media (max-width: 1023px) {
@@ -485,7 +562,26 @@
 
         #sidebarAluno[data-collapsed="true"] .sidebar-item,
         #sidebarAluno[data-collapsed="true"] .sidebar-profile {
-            justify-content: flex-start;
+            width: auto !important;
+            min-width: 0 !important;
+            height: auto !important;
+            min-height: 0 !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            justify-content: flex-start !important;
+            gap: 0.75rem !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        #sidebarAluno[data-collapsed="true"] .sidebar-icon {
+            width: 1.5rem !important;
+            height: 1.5rem !important;
+            flex: 0 0 auto !important;
+        }
+
+        #sidebarAluno[data-collapsed="true"] nav > div > .space-y-2 {
+            display: block !important;
         }
     }
 </style>
