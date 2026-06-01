@@ -228,6 +228,26 @@
         }
     }
 
+    function alertaProfessorAindaDentroDoPrazo($data, $dias = 7) {
+        if (empty($data)) {
+            return true;
+        }
+
+        try {
+            return Carbon::parse($data)
+                ->timezone('America/Sao_Paulo')
+                ->greaterThanOrEqualTo(now()->timezone('America/Sao_Paulo')->subDays($dias));
+        } catch (\Throwable $e) {
+            return true;
+        }
+    }
+
+    $alertasSistemaProfessor = $alertasSistemaProfessor
+        ->filter(function ($alerta) {
+            return alertaProfessorAindaDentroDoPrazo($alerta->data ?? null, 7);
+        })
+        ->values();
+
     $alertasSistemaProfessor = $alertasSistemaProfessor
         ->sortByDesc(function ($alerta) {
             $peso = match ($alerta->categoria) {
@@ -321,7 +341,7 @@
                         @if($abaAtualAvisos === 'criar')
                             Crie avisos para os alunos e reutilize mensagens que já foram enviadas anteriormente.
                         @else
-                            Aqui aparecem os avisos automáticos do sistema sobre alunos, usuários, progresso, pós-testes e certificados.
+                            Aqui aparecem os avisos automáticos do sistema sobre alunos, usuários, progresso, pós-testes e certificados. Eles ficam disponíveis por até 7 dias.
                         @endif
                     </p>
                 </div>
@@ -690,7 +710,7 @@
                             </h2>
 
                             <p class="text-xs text-[#60756B] mt-1">
-                                Informações importantes sobre alunos, progresso, pós-testes, aprovações e certificados.
+                                Informações importantes sobre alunos, progresso, pós-testes, aprovações e certificados. Alertas antigos somem automaticamente depois de 7 dias.
                             </p>
                         </div>
 

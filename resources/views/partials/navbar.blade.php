@@ -285,7 +285,7 @@
                                 </h3>
 
                                 <p id="textoStatusAlertasProfessorNavbar" class="text-xs text-[#60756B] mt-1">
-                                    Verificando acompanhamento da turma...
+                                    Verificando acompanhamento da turma... Os alertas somem da navbar após 24 horas.
                                 </p>
                             </div>
 
@@ -839,6 +839,49 @@
         let idsAlertasProfessorNavbarAtual = [];
         let primeiraVerificacaoAlertasProfessor = true;
         const urlAlertasProfessorNavbar = "{{ url('/navbar/alertas-professor') }}";
+        const tempoVidaAlertasProfessorNavbarMs = 24 * 60 * 60 * 1000;
+        const chaveAlertasProfessorNavbar = 'integrar_resaude_alertas_professor_primeira_visualizacao';
+
+        function idSeguroAlertaProfessorNavbar(alerta) {
+            if (alerta && alerta.id !== undefined && alerta.id !== null && alerta.id !== '') {
+                return String(alerta.id);
+            }
+
+            return String((alerta?.tipo || 'alerta') + '-' + (alerta?.titulo || '') + '-' + (alerta?.mensagem || '')).slice(0, 180);
+        }
+
+        function obterMapaAlertasProfessorNavbar() {
+            try {
+                return JSON.parse(localStorage.getItem(chaveAlertasProfessorNavbar) || '{}') || {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function salvarMapaAlertasProfessorNavbar(mapa) {
+            try {
+                localStorage.setItem(chaveAlertasProfessorNavbar, JSON.stringify(mapa));
+            } catch (e) {}
+        }
+
+        function filtrarAlertasProfessorNavbarPorTempo(alertas) {
+            const agora = Date.now();
+            const mapa = obterMapaAlertasProfessorNavbar();
+            const novoMapa = {};
+
+            const alertasValidos = (alertas || []).filter((alerta) => {
+                const id = idSeguroAlertaProfessorNavbar(alerta);
+                const primeiraVisualizacao = Number(mapa[id] || agora);
+
+                novoMapa[id] = primeiraVisualizacao;
+
+                return (agora - primeiraVisualizacao) <= tempoVidaAlertasProfessorNavbarMs;
+            });
+
+            salvarMapaAlertasProfessorNavbar(novoMapa);
+
+            return alertasValidos;
+        }
 
         function classeAlertaProfessorNavbar(nivel) {
             if (nivel === 'danger') {
@@ -1058,16 +1101,17 @@
                 if (!resposta.ok) return;
 
                 const dados = await resposta.json();
-                const total = parseInt(dados.total || 0);
-                const alertas = dados.alertas || [];
-                const novosIds = alertas.map(alerta => alerta.id);
+                const alertasRecebidos = dados.alertas || [];
+                const alertas = filtrarAlertasProfessorNavbarPorTempo(alertasRecebidos);
+                const total = alertas.length;
+                const novosIds = alertas.map(alerta => idSeguroAlertaProfessorNavbar(alerta));
                 const idsNovosDetectados = novosIds.filter(id => !idsAlertasProfessorNavbarAtual.includes(id));
 
                 atualizarBadgeAlertasProfessorNavbar(total);
                 renderizarAlertasProfessorNavbar(alertas);
 
                 if (!primeiraVerificacaoAlertasProfessor && idsNovosDetectados.length > 0) {
-                    const primeiroNovo = alertas.find(alerta => idsNovosDetectados.includes(alerta.id));
+                    const primeiroNovo = alertas.find(alerta => idsNovosDetectados.includes(idSeguroAlertaProfessorNavbar(alerta)));
                     mostrarToastNovoAlertaProfessorNavbar(primeiroNovo, idsNovosDetectados.length);
                 }
 
