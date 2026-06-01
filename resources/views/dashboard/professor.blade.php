@@ -6,6 +6,9 @@
 
 @php
     use Illuminate\Support\Facades\DB;
+    use Carbon\Carbon;
+
+    Carbon::setLocale('pt_BR');
 
     $mesesNomes = [
         1 => 'JAN',
@@ -533,7 +536,7 @@
                                     </span>
 
                                     <span class="text-[10px] text-[#8A9B92] whitespace-nowrap">
-                                        {{ $aviso->created_at ? $aviso->created_at->diffForHumans() : '' }}
+                                        {{ $aviso->created_at ? Carbon::parse($aviso->created_at)->locale('pt_BR')->diffForHumans() : '' }}
                                     </span>
                                 </div>
 
@@ -569,7 +572,7 @@
                     <button onclick="abrirModalAviso()"
                             class="mt-6 w-full border border-dashed border-[#AFC5B5] text-[#004D3A] rounded-2xl py-3 text-sm font-bold hover:bg-[#F1F6F2] transition flex items-center justify-center gap-2">
                         <span>＋</span>
-                        Criar Novo Aviso
+                        Criar novo aviso
                     </button>
                 </div>
 
@@ -851,7 +854,7 @@
                                                         </span>
 
                                                         <span class="text-[11px] text-[#8A9B92]">
-                                                            {{ $aprovado->updated_at ? \Carbon\Carbon::parse($aprovado->updated_at)->diffForHumans() : '-' }}
+                                                            {{ $aprovado->updated_at ? Carbon::parse($aprovado->updated_at)->locale('pt_BR')->diffForHumans() : '-' }}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -1042,7 +1045,7 @@
                                         </td>
 
                                         <td class="px-4 py-3 text-[#60756B] text-xs">
-                                            {{ $aviso->created_at ? $aviso->created_at->diffForHumans() : '-' }}
+                                            {{ $aviso->created_at ? Carbon::parse($aviso->created_at)->locale('pt_BR')->diffForHumans() : '-' }}
                                         </td>
 
                                         <td class="px-4 py-3">
