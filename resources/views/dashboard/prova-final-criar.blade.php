@@ -42,6 +42,7 @@
 
     $tituloProva = old('titulo', data_get($provaFinalExistente, 'titulo', 'Prova Final'));
     $notaMinima = old('nota_minima', data_get($provaFinalExistente, 'nota_minima', 70));
+    $tempoMinimo = old('tempo_minimo', data_get($provaFinalExistente, 'tempo_minimo', 0));
     $tempoLimite = old('tempo_limite', data_get($provaFinalExistente, 'tempo_limite', 60));
     $tentativas = old('tentativas', data_get($provaFinalExistente, 'tentativas', 2));
 @endphp
@@ -336,7 +337,7 @@
                                 </div>
 
                                 <p class="text-[11px] text-[#60756B] mt-2">
-                                    O aluno só poderá enviar a prova final depois de atingir esse tempo. Use 0 para não exigir tempo mínimo.
+                                    O aluno só poderá finalizar a prova depois de atingir esse tempo. Use 0 para não exigir tempo mínimo.
                                 </p>
                             </div>
 
@@ -904,6 +905,11 @@
                     <p class="text-xs text-[#60756B] mt-1">
                         Questões:
                         <strong>{{ $perguntasExistentes->count() }}</strong>
+                    </p>
+
+                    <p class="text-xs text-[#60756B] mt-1">
+                        Tempo mínimo:
+                        <strong>{{ $tempoMinimo }} minutos</strong>
                     </p>
 
                     <p class="text-xs text-[#60756B] mt-1">
