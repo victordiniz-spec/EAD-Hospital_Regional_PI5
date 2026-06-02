@@ -162,6 +162,14 @@
     $tentativas = isset($avaliacao) && isset($avaliacao->tentativas)
         ? $avaliacao->tentativas
         : 2;
+
+    $tempoMinimoProva = isset($avaliacao) && Schema::hasColumn('avaliacoes', 'tempo_minimo')
+        ? (int) ($avaliacao->tempo_minimo ?? 0)
+        : 0;
+
+    $tempoLimiteProva = isset($avaliacao) && isset($avaliacao->tempo_limite)
+        ? (int) ($avaliacao->tempo_limite ?? 60)
+        : 60;
 @endphp
 
 <style>
@@ -222,14 +230,26 @@
                 </div>
 
                 @if(isset($avaliacao))
-                    <div class="bg-white border border-[#E3EBE4] rounded-3xl px-5 py-4 shadow-sm">
-                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                            Tempo limite
-                        </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="bg-white border border-[#E3EBE4] rounded-3xl px-5 py-4 shadow-sm">
+                            <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                Tempo mínimo
+                            </p>
 
-                        <p class="text-2xl font-extrabold text-[#004D3A] mt-1">
-                            {{ $avaliacao->tempo_limite ?? 60 }} min
-                        </p>
+                            <p class="text-2xl font-extrabold text-[#004D3A] mt-1">
+                                {{ $tempoMinimoProva }} min
+                            </p>
+                        </div>
+
+                        <div class="bg-white border border-[#E3EBE4] rounded-3xl px-5 py-4 shadow-sm">
+                            <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                Tempo máximo
+                            </p>
+
+                            <p class="text-2xl font-extrabold text-[#004D3A] mt-1">
+                                {{ $tempoLimiteProva }} min
+                            </p>
+                        </div>
                     </div>
                 @endif
 
@@ -483,6 +503,25 @@
                                  style="width: 100%;">
                             </div>
                         </div>
+
+                        <div class="mt-4 pt-3 border-t border-[#E3EBE4]">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                    Tempo mínimo
+                                </p>
+
+                                <p id="statusTempoMinimoProva" class="text-xs font-extrabold text-yellow-700">
+                                    Aguardando...
+                                </p>
+                            </div>
+
+                            <div class="mt-2 h-2 bg-[#FFF7D6] rounded-full overflow-hidden">
+                                <div id="barraTempoMinimoProva"
+                                     class="h-full bg-yellow-500 rounded-full transition-all duration-500"
+                                     style="width: 0%;">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 xl:grid-cols-12 gap-7">
@@ -523,11 +562,21 @@
 
                                     <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 flex items-center justify-between gap-3">
                                         <span class="text-sm font-bold text-[#60756B]">
-                                            Tempo limite
+                                            Tempo mínimo
                                         </span>
 
                                         <span class="text-lg font-extrabold text-[#004D3A]">
-                                            {{ $avaliacao->tempo_limite ?? 60 }} min
+                                            {{ $tempoMinimoProva }} min
+                                        </span>
+                                    </div>
+
+                                    <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 flex items-center justify-between gap-3">
+                                        <span class="text-sm font-bold text-[#60756B]">
+                                            Tempo máximo
+                                        </span>
+
+                                        <span class="text-lg font-extrabold text-[#004D3A]">
+                                            {{ $tempoLimiteProva }} min
                                         </span>
                                     </div>
 
@@ -555,7 +604,9 @@
 
                                 <div class="mt-5 bg-green-50 border border-green-100 rounded-2xl p-4 text-green-800 text-xs leading-relaxed">
                                     Leia com atenção. O cronômetro começa somente quando você clicar em <strong>Sim, iniciar</strong>.
-                                    Ao terminar o tempo, a prova será enviada automaticamente.
+                                    O botão <strong>Finalizar Prova</strong> ficará bloqueado até atingir o tempo mínimo de
+                                    <strong>{{ $tempoMinimoProva }} minuto(s)</strong>.
+                                    Ao terminar o tempo máximo, a prova será enviada automaticamente.
                                 </div>
 
                             </div>
@@ -659,11 +710,17 @@
                                     <p class="text-sm text-[#60756B]">
                                         Revise suas respostas antes de enviar a prova.
                                     </p>
+
+                                    <p id="mensagemTempoMinimoFinalizar" class="text-sm text-yellow-700 font-extrabold mt-2">
+                                        O botão será liberado após atingir o tempo mínimo da prova.
+                                    </p>
                                 </div>
 
                                 <button type="button"
+                                        id="btnFinalizarProva"
                                         onclick="confirmarEnvioProva()"
-                                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#004D3A] text-white px-7 py-3 rounded-2xl shadow-lg hover:bg-[#003C2F] transition text-sm font-extrabold">
+                                        disabled
+                                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#004D3A] text-white px-7 py-3 rounded-2xl shadow-lg hover:bg-[#003C2F] transition text-sm font-extrabold disabled:opacity-50 disabled:cursor-not-allowed">
                                     Finalizar Prova
                                 </button>
 
@@ -734,16 +791,81 @@
 @if(isset($avaliacao) && $provaLiberada)
 <script>
     let intervaloCronometroProva = null;
-    let tempoTotalProvaSegundos = {{ (int) ($avaliacao->tempo_limite ?? 60) }} * 60;
+    let tempoTotalProvaSegundos = {{ $tempoLimiteProva }} * 60;
+    let tempoMinimoProvaSegundos = {{ $tempoMinimoProva }} * 60;
     let tempoRestanteProvaSegundos = tempoTotalProvaSegundos;
+    let tempoDecorridoProvaSegundos = 0;
     let provaFinalIniciada = false;
     let provaFinalEnviando = false;
+    let saidaProvaConfirmada = false;
 
     function formatarTempoProva(segundos) {
         const minutos = Math.floor(segundos / 60);
         const restoSegundos = segundos % 60;
 
         return String(minutos).padStart(2, '0') + ':' + String(restoSegundos).padStart(2, '0');
+    }
+
+    function tempoMinimoAtingidoProva() {
+        return tempoMinimoProvaSegundos <= 0 || tempoDecorridoProvaSegundos >= tempoMinimoProvaSegundos;
+    }
+
+    function segundosFaltantesTempoMinimoProva() {
+        return Math.max(0, tempoMinimoProvaSegundos - tempoDecorridoProvaSegundos);
+    }
+
+    function atualizarBloqueioBotaoFinalizarProva() {
+        const btn = document.getElementById('btnFinalizarProva');
+        const mensagem = document.getElementById('mensagemTempoMinimoFinalizar');
+        const status = document.getElementById('statusTempoMinimoProva');
+        const barraMinimo = document.getElementById('barraTempoMinimoProva');
+
+        const atingido = tempoMinimoAtingidoProva();
+        const faltam = segundosFaltantesTempoMinimoProva();
+
+        if (btn) {
+            btn.disabled = !atingido;
+        }
+
+        if (mensagem) {
+            if (atingido) {
+                mensagem.innerText = 'Tempo mínimo atingido. Você já pode finalizar a prova quando desejar.';
+                mensagem.classList.remove('text-yellow-700');
+                mensagem.classList.add('text-green-700');
+            } else {
+                mensagem.innerText = 'Aguarde mais ' + formatarTempoProva(faltam) + ' para liberar o botão de finalizar.';
+                mensagem.classList.remove('text-green-700');
+                mensagem.classList.add('text-yellow-700');
+            }
+        }
+
+        if (status) {
+            if (atingido) {
+                status.innerText = 'Liberado';
+                status.classList.remove('text-yellow-700');
+                status.classList.add('text-green-700');
+            } else {
+                status.innerText = 'Faltam ' + formatarTempoProva(faltam);
+                status.classList.remove('text-green-700');
+                status.classList.add('text-yellow-700');
+            }
+        }
+
+        if (barraMinimo) {
+            const porcentagemMinimo = tempoMinimoProvaSegundos > 0
+                ? Math.min(100, Math.round((tempoDecorridoProvaSegundos / tempoMinimoProvaSegundos) * 100))
+                : 100;
+
+            barraMinimo.style.width = porcentagemMinimo + '%';
+
+            if (atingido) {
+                barraMinimo.classList.remove('bg-yellow-500');
+                barraMinimo.classList.add('bg-green-600');
+            } else {
+                barraMinimo.classList.remove('bg-green-600');
+                barraMinimo.classList.add('bg-yellow-500');
+            }
+        }
     }
 
     function atualizarVisualCronometroProva() {
@@ -786,6 +908,8 @@
                 caixaEl.classList.add('border-[#004D3A]');
             }
         }
+
+        atualizarBloqueioBotaoFinalizarProva();
     }
 
     function iniciarCronometroProvaFinal() {
@@ -793,6 +917,7 @@
 
         provaFinalIniciada = true;
         tempoRestanteProvaSegundos = tempoTotalProvaSegundos;
+        tempoDecorridoProvaSegundos = 0;
 
         const cronometro = document.getElementById('cronometroProvaFinal');
 
@@ -804,6 +929,7 @@
 
         intervaloCronometroProva = setInterval(() => {
             tempoRestanteProvaSegundos--;
+            tempoDecorridoProvaSegundos++;
             atualizarVisualCronometroProva();
 
             if (tempoRestanteProvaSegundos <= 0) {
@@ -845,7 +971,8 @@
                     <br><br>
                     Ao clicar em <strong>Sim, iniciar</strong>, o cronômetro começará imediatamente.
                     <br><br>
-                    Tempo limite: <strong>{{ $avaliacao->tempo_limite ?? 60 }} minutos</strong>.<br>
+                    Tempo mínimo: <strong>{{ $tempoMinimoProva }} minuto(s)</strong>.<br>
+                    Tempo máximo: <strong>{{ $tempoLimiteProva }} minuto(s)</strong>.<br>
                     Tentativas: <strong>{{ $tentativas }}</strong>.
                 </p>
             `,
@@ -872,6 +999,18 @@
         const form = document.getElementById('formProvaFinalAluno');
 
         if (!form) return;
+
+        if (!tempoMinimoAtingidoProva()) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Tempo mínimo não atingido',
+                text: 'Você precisa aguardar mais ' + formatarTempoProva(segundosFaltantesTempoMinimoProva()) + ' antes de finalizar a prova.',
+                confirmButtonText: 'Entendi',
+                confirmButtonColor: '#004D3A'
+            });
+
+            return;
+        }
 
         if (!form.reportValidity()) {
             Swal.fire({
@@ -906,10 +1045,66 @@
         });
     }
 
+    function confirmarSaidaProvaFinal(urlDestino = null) {
+        if (!provaFinalIniciada || provaFinalEnviando || saidaProvaConfirmada) {
+            if (urlDestino) {
+                window.location.href = urlDestino;
+            }
+
+            return;
+        }
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Tem certeza que deseja sair da prova?',
+            html: `
+                <p style="color:#60756B; font-size:14px; line-height:1.6;">
+                    Se você sair agora, ao voltar para a prova final, o tempo mínimo será iniciado novamente do zero.
+                    <br><br>
+                    As respostas que ainda não foram enviadas também poderão ser perdidas.
+                </p>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Sim, sair da prova',
+            cancelButtonText: 'Continuar fazendo',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#004D3A',
+            allowOutsideClick: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                saidaProvaConfirmada = true;
+
+                if (intervaloCronometroProva) {
+                    clearInterval(intervaloCronometroProva);
+                }
+
+                if (urlDestino) {
+                    window.location.href = urlDestino;
+                } else {
+                    window.location.href = "{{ route('dashboard.aluno') }}";
+                }
+            }
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a');
+
+        if (!link) return;
+        if (!provaFinalIniciada || provaFinalEnviando || saidaProvaConfirmada) return;
+
+        const href = link.getAttribute('href');
+
+        if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+
+        e.preventDefault();
+        confirmarSaidaProvaFinal(href);
+    }, true);
+
     window.addEventListener('beforeunload', function(e) {
-        if (provaFinalIniciada && !provaFinalEnviando) {
+        if (provaFinalIniciada && !provaFinalEnviando && !saidaProvaConfirmada) {
             e.preventDefault();
-            e.returnValue = '';
+            e.returnValue = 'Se você sair agora, o tempo mínimo da prova final será reiniciado.';
         }
     });
 </script>
