@@ -150,7 +150,11 @@
                                     </span>
 
                                     <span class="inline-flex items-center bg-[#F8FBF8] border border-[#E3EBE4] text-[#60756B] px-3 py-1 rounded-full text-xs font-bold">
-                                        {{ $tempoLimite }} minutos
+                                        Mínimo: {{ $tempoMinimo }} minutos
+                                    </span>
+
+                                    <span class="inline-flex items-center bg-[#F8FBF8] border border-[#E3EBE4] text-[#60756B] px-3 py-1 rounded-full text-xs font-bold">
+                                        Máximo: {{ $tempoLimite }} minutos
                                     </span>
 
                                     <span class="inline-flex items-center bg-[#F8FBF8] border border-[#E3EBE4] text-[#60756B] px-3 py-1 rounded-full text-xs font-bold">
@@ -294,10 +298,52 @@
                                 </p>
                             </div>
 
-                            <!-- TEMPO -->
+                            <!-- TEMPO MÍNIMO -->
                             <div class="mb-5">
                                 <label class="block text-[11px] font-extrabold text-[#60756B] uppercase tracking-widest mb-2">
-                                    Tempo limite
+                                    Tempo mínimo para finalizar
+                                </label>
+
+                                <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 flex items-center justify-between gap-3">
+
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-[#004D3A]">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="w-5 h-5"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round"
+                                                      stroke-linejoin="round"
+                                                      stroke-width="1.8"
+                                                      d="M12 6v6l4 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                                            </svg>
+                                        </div>
+
+                                        <span class="text-sm font-bold text-[#60756B]">
+                                            Minutos
+                                        </span>
+                                    </div>
+
+                                    <input
+                                        type="number"
+                                        name="tempo_minimo"
+                                        id="tempo_minimo"
+                                        value="{{ $tempoMinimo }}"
+                                        min="0"
+                                        class="w-24 px-3 py-2 rounded-xl bg-white border border-[#DCE7DE] text-[#004D3A] text-center font-extrabold focus:outline-none focus:ring-2 focus:ring-[#00A63E]"
+                                    >
+                                </div>
+
+                                <p class="text-[11px] text-[#60756B] mt-2">
+                                    O aluno só poderá enviar a prova final depois de atingir esse tempo. Use 0 para não exigir tempo mínimo.
+                                </p>
+                            </div>
+
+                            <!-- TEMPO MÁXIMO -->
+                            <div class="mb-5">
+                                <label class="block text-[11px] font-extrabold text-[#60756B] uppercase tracking-widest mb-2">
+                                    Tempo máximo para responder
                                 </label>
 
                                 <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 flex items-center justify-between gap-3">
@@ -861,7 +907,12 @@
                     </p>
 
                     <p class="text-xs text-[#60756B] mt-1">
-                        Tempo limite:
+                        Tempo mínimo:
+                        <strong>{{ $tempoMinimo }} minutos</strong>
+                    </p>
+
+                    <p class="text-xs text-[#60756B] mt-1">
+                        Tempo máximo:
                         <strong>{{ $tempoLimite }} minutos</strong>
                     </p>
 
@@ -1238,6 +1289,51 @@
 
             const perguntas = document.querySelectorAll('.pergunta-bloco');
             const btn = document.getElementById('btnPublicar');
+
+            const tempoMinimoInput = document.getElementById('tempo_minimo');
+            const tempoLimiteInput = form.querySelector('input[name="tempo_limite"]');
+
+            const tempoMinimo = tempoMinimoInput ? parseInt(tempoMinimoInput.value || 0) : 0;
+            const tempoLimite = tempoLimiteInput ? parseInt(tempoLimiteInput.value || 0) : 0;
+
+            if (tempoMinimo < 0) {
+                e.preventDefault();
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Tempo mínimo inválido',
+                    text: 'O tempo mínimo da prova final não pode ser negativo.',
+                    confirmButtonColor: '#004D3A'
+                });
+
+                return;
+            }
+
+            if (tempoLimite <= 0) {
+                e.preventDefault();
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Tempo máximo obrigatório',
+                    text: 'Informe um tempo máximo maior que zero para a prova final.',
+                    confirmButtonColor: '#004D3A'
+                });
+
+                return;
+            }
+
+            if (tempoMinimo > 0 && tempoMinimo > tempoLimite) {
+                e.preventDefault();
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Tempo inválido',
+                    text: 'O tempo mínimo não pode ser maior que o tempo máximo da prova final.',
+                    confirmButtonColor: '#004D3A'
+                });
+
+                return;
+            }
 
             if (perguntas.length === 0) {
                 e.preventDefault();

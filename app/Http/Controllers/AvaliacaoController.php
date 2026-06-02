@@ -96,6 +96,21 @@ class AvaliacaoController extends Controller
                 ->with('error', 'O tempo mínimo não pode ser maior que o tempo máximo do pós-teste.');
         }
 
+        $tempoMinimoFinal = (int) $request->input('tempo_minimo', 0);
+        $tempoMaximoFinal = (int) $request->input('tempo_limite', 60);
+
+        if ($tempoMaximoFinal <= 0) {
+            return back()
+                ->withInput()
+                ->with('error', 'Informe um tempo máximo maior que zero para a prova final.');
+        }
+
+        if ($tempoMinimoFinal > 0 && $tempoMinimoFinal > $tempoMaximoFinal) {
+            return back()
+                ->withInput()
+                ->with('error', 'O tempo mínimo não pode ser maior que o tempo máximo da prova final.');
+        }
+
         DB::beginTransaction();
 
         try {
@@ -174,6 +189,7 @@ class AvaliacaoController extends Controller
     {
         $request->validate([
             'titulo' => 'required|string|max:255',
+            'tempo_minimo' => 'nullable|integer|min:0',
             'tempo_limite' => 'nullable|integer|min:1',
             'nota_minima' => 'nullable|numeric|min:0|max:100',
             'tentativas' => 'nullable|integer|min:1',
@@ -204,11 +220,15 @@ class AvaliacaoController extends Controller
 
             $dadosAvaliacao = [
                 'titulo' => $request->titulo,
-                'tempo_limite' => $request->tempo_limite ?? 60,
+                'tempo_limite' => $tempoMaximoFinal,
                 'tipo' => 'final',
                 'qtd_perguntas' => count($request->perguntas ?? []),
                 'updated_at' => now(),
             ];
+
+            if (Schema::hasColumn('avaliacoes', 'tempo_minimo')) {
+                $dadosAvaliacao['tempo_minimo'] = $tempoMinimoFinal;
+            }
 
             if (Schema::hasColumn('avaliacoes', 'nota_minima')) {
                 $dadosAvaliacao['nota_minima'] = $request->nota_minima ?? 70;
@@ -527,6 +547,19 @@ class AvaliacaoController extends Controller
                 ->with('error', 'Prova final ainda não foi criada.');
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | REGISTRA O INÍCIO DA PROVA FINAL NA SESSÃO
+        |--------------------------------------------------------------------------
+        | Isso permite validar tempo mínimo e tempo máximo no servidor.
+        | Se o aluno tentar enviar antes do tempo mínimo, o controller bloqueia.
+        */
+        $chaveInicio = $this->chaveInicioAvaliacao($avaliacao->id, $alunoId);
+
+        if (!session()->has($chaveInicio)) {
+            session()->put($chaveInicio, now()->toDateTimeString());
+        }
+
         $perguntas = DB::table('perguntas')
             ->where('avaliacao_id', $avaliacao->id)
             ->get()
@@ -577,6 +610,30 @@ class AvaliacaoController extends Controller
                 ->with('error', 'Prova final não encontrada.');
         }
 
+        $avaliacao = DB::table('avaliacoes')
+            ->where('id', $avaliacaoId)
+            ->where('tipo', 'final')
+            ->first();
+
+        if (!$avaliacao) {
+            return redirect()
+                ->route('dashboard.aluno')
+                ->with('error', 'Prova final não encontrada.');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDA TEMPO MÍNIMO E TEMPO MÁXIMO DA PROVA FINAL
+        |--------------------------------------------------------------------------
+        | A prova final usa os mesmos campos:
+        | tempo_minimo e tempo_limite, em minutos.
+        */
+        $validacaoTempo = $this->validarTempoAvaliacao($avaliacao, $avaliacaoId, $alunoId, 'prova final');
+
+        if ($validacaoTempo !== true) {
+            return back()->with('error', $validacaoTempo);
+        }
+
         $perguntas = DB::table('perguntas')
             ->where('avaliacao_id', $avaliacaoId)
             ->get();
@@ -608,6 +665,8 @@ class AvaliacaoController extends Controller
 
         $this->salvarNota($alunoId, $avaliacaoId, $nota);
         $this->salvarRespostasAluno($alunoId, $avaliacaoId, $perguntas, $request->respostas ?? []);
+
+        session()->forget($this->chaveInicioAvaliacao($avaliacaoId, $alunoId));
 
         if ($nota >= 7) {
             return redirect()
@@ -798,13 +857,13 @@ class AvaliacaoController extends Controller
     // =========================
     // FUNÇÃO AUXILIAR: VALIDAR TEMPO MÍNIMO E TEMPO MÁXIMO
     // =========================
-    private function validarTempoAvaliacao($avaliacao, $avaliacaoId, $alunoId)
+    private function validarTempoAvaliacao($avaliacao, $avaliacaoId, $alunoId, $nomeAvaliacao = 'pós-teste')
     {
         $chaveInicio = $this->chaveInicioAvaliacao($avaliacaoId, $alunoId);
 
         if (!session()->has($chaveInicio)) {
             session()->put($chaveInicio, now()->toDateTimeString());
-            return 'Não foi possível confirmar o tempo de início do pós-teste. Abra o pós-teste novamente e tente finalizar depois.';
+            return 'Não foi possível confirmar o tempo de início do ' . $nomeAvaliacao . '. Abra novamente e tente finalizar depois.';
         }
 
         $inicio = Carbon::parse(session()->get($chaveInicio));
@@ -827,7 +886,7 @@ class AvaliacaoController extends Controller
             $faltamSegundos = ($tempoMinimo * 60) - $segundosDecorridos;
             $faltamMinutos = ceil($faltamSegundos / 60);
 
-            return 'Você precisa permanecer pelo menos ' . $tempoMinimo . ' minuto(s) no pós-teste antes de finalizar. Aguarde mais aproximadamente ' . $faltamMinutos . ' minuto(s).';
+            return 'Você precisa permanecer pelo menos ' . $tempoMinimo . ' minuto(s) no ' . $nomeAvaliacao . ' antes de finalizar. Aguarde mais aproximadamente ' . $faltamMinutos . ' minuto(s).';
         }
 
         /*
@@ -839,7 +898,7 @@ class AvaliacaoController extends Controller
         if ($tempoMaximo > 0 && $segundosDecorridos > (($tempoMaximo * 60) + 60)) {
             session()->forget($chaveInicio);
 
-            return 'O tempo máximo do pós-teste foi ultrapassado. Abra novamente e tente responder dentro do tempo definido.';
+            return 'O tempo máximo do ' . $nomeAvaliacao . ' foi ultrapassado. Abra novamente e tente responder dentro do tempo definido.';
         }
 
         return true;
