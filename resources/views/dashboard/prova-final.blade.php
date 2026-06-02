@@ -171,17 +171,7 @@
         ? (int) ($avaliacao->tempo_limite ?? 60)
         : 60;
 
-    /*
-    |--------------------------------------------------------------------------
-    | MODO DE EXIBIÇÃO DA PROVA FINAL
-    |--------------------------------------------------------------------------
-    | Ao clicar no menu "Prova Final", o aluno vê a tela de requisitos,
-    | igual ao certificado.
-    |
-    | A tela limpa, sem sidebar/navbar, aparece somente quando ele clicar
-    | em "Fazer prova final" ou usar o acesso de teste.
-    */
-    $modoProvaFinal = $provaLiberada && (request('iniciar') === '1' || $acessoTeste);
+    $modoProvaFinal = isset($avaliacao) && $provaLiberada && (request('iniciar') === '1' || $acessoTeste);
 
     $requisitosProva = [
         [
@@ -382,9 +372,7 @@
 
                 </div>
 
-            @endif
-
-            @if(isset($avaliacao) && !$provaLiberada)
+            @elseif(!$provaLiberada)
 
                 <!-- PROVA BLOQUEADA -->
                 <div class="grid grid-cols-1 xl:grid-cols-12 gap-7">
@@ -422,12 +410,10 @@
                             @endif
 
                             <div class="mt-6 bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5">
-
                                 <div class="flex items-center justify-between mb-3">
                                     <p class="text-sm font-extrabold text-[#003C2F]">
                                         Progresso para liberar a prova final
                                     </p>
-
                                     <p class="text-sm font-extrabold text-[#004D3A]">
                                         {{ $porcentagemConclusao }}%
                                     </p>
@@ -440,16 +426,13 @@
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-
                                     <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4">
                                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
                                             Progresso atual
                                         </p>
-
                                         <p class="text-2xl font-extrabold mt-1 {{ $porcentagemConclusao >= 70 ? 'text-green-600' : 'text-red-600' }}">
                                             {{ $porcentagemConclusao }}%
                                         </p>
-
                                         <p class="text-xs text-[#60756B] mt-1">
                                             Mínimo necessário: 70%
                                         </p>
@@ -459,11 +442,9 @@
                                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
                                             Falta para liberar
                                         </p>
-
                                         <p class="text-2xl font-extrabold mt-1 {{ $faltamPorcentagem <= 0 ? 'text-green-600' : 'text-red-600' }}">
                                             {{ $faltamPorcentagem }}%
                                         </p>
-
                                         <p class="text-xs text-[#60756B] mt-1">
                                             Pontos percentuais restantes.
                                         </p>
@@ -473,8 +454,7 @@
                                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
                                             Videoaulas assistidas
                                         </p>
-
-                                        <p class="text-2xl font-extrabold mt-1 {{ $totalAulasAssistidas > 0 ? 'text-green-600' : 'text-red-600' }}">
+                                        <p class="text-2xl font-extrabold mt-1 {{ $aulasOk ? 'text-green-600' : 'text-red-600' }}">
                                             {{ $totalAulasAssistidas }} / {{ $totalAulas }}
                                         </p>
                                     </div>
@@ -483,14 +463,11 @@
                                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
                                             Pós-testes feitos
                                         </p>
-
-                                        <p class="text-2xl font-extrabold mt-1 {{ $totalPosTestes == 0 || $totalPosTestesFeitos > 0 ? 'text-green-600' : 'text-red-600' }}">
+                                        <p class="text-2xl font-extrabold mt-1 {{ $posTestesOk ? 'text-green-600' : 'text-red-600' }}">
                                             {{ $totalPosTestesFeitos }} / {{ $totalPosTestes }}
                                         </p>
                                     </div>
-
                                 </div>
-
                             </div>
 
                             <div class="flex flex-col sm:flex-row gap-3 mt-6">
@@ -505,129 +482,51 @@
                                     Acesso de teste
                                 </button>
                             </div>
-
                         </div>
-
                     </div>
 
                     <aside class="xl:col-span-4">
                         <div class="bg-white border border-[#E3EBE4] rounded-3xl p-6 shadow-sm">
-
                             <h3 class="text-xl font-extrabold text-[#003C2F] mb-4">
                                 Requisitos para fazer a prova
                             </h3>
 
                             <div class="space-y-4">
-
                                 @foreach($requisitosProva as $requisito)
                                     <div class="flex items-start gap-3">
                                         <div class="w-9 h-9 rounded-xl {{ $requisito['ok'] ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0 font-bold">
                                             {{ $requisito['ok'] ? '✓' : '!' }}
                                         </div>
-
                                         <div>
-                                            <p class="font-bold text-[#003C2F]">
-                                                {{ $requisito['titulo'] }}
-                                            </p>
-
-                                            <p class="text-sm text-[#60756B]">
-                                                {{ $requisito['descricao'] }}
-                                            </p>
+                                            <p class="font-bold text-[#003C2F]">{{ $requisito['titulo'] }}</p>
+                                            <p class="text-sm text-[#60756B]">{{ $requisito['descricao'] }}</p>
                                         </div>
                                     </div>
                                 @endforeach
-
                             </div>
 
                             <div class="mt-6 bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4">
-                                <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                    Resumo
-                                </p>
-
-                                <p class="text-2xl font-extrabold text-[#004D3A] mt-1">
-                                    {{ $requisitosConcluidosProva }} / {{ $totalRequisitosProva }}
-                                </p>
-
-                                <p class="text-xs text-[#60756B] mt-1">
-                                    requisito(s) em andamento/concluído(s).
-                                </p>
+                                <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">Resumo</p>
+                                <p class="text-2xl font-extrabold text-[#004D3A] mt-1">{{ $requisitosConcluidosProva }} / {{ $totalRequisitosProva }}</p>
+                                <p class="text-xs text-[#60756B] mt-1">requisito(s) em andamento/concluído(s).</p>
                             </div>
-
                         </div>
                     </aside>
-
                 </div>
 
-            @else
-                                            !
-                                        @endif
-                                    </div>
-
-                                    <div>
-                                        <p class="font-bold text-[#003C2F]">
-                                            Assistir as aulas do curso
-                                        </p>
-
-                                        <p class="text-sm text-[#60756B]">
-                                            {{ $totalAulasAssistidas }} de {{ $totalAulas }} concluídas.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-start gap-3">
-                                    <div class="w-9 h-9 rounded-xl {{ $posTestesOk ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0">
-                                        @if($posTestesOk)
-                                            ✓
-                                        @else
-                                            !
-                                        @endif
-                                    </div>
-
-                                    <div>
-                                        <p class="font-bold text-[#003C2F]">
-                                            Concluir os pós-testes do curso
-                                        </p>
-
-                                        <p class="text-sm text-[#60756B]">
-                                            {{ $totalPosTestesFeitos }} de {{ $totalPosTestes }} concluídos.
-                                        </p>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                        </div>
-                    </aside>
-
-                </div>
-
-            @endif
-
-            @if(isset($avaliacao) && $provaLiberada && !$modoProvaFinal)
+            @elseif(!$modoProvaFinal)
 
                 <!-- PROVA LIBERADA - TELA DE ENTRADA -->
                 <div class="grid grid-cols-1 xl:grid-cols-12 gap-7">
-
                     <div class="xl:col-span-8">
-
                         <div class="bg-white border border-[#E3EBE4] rounded-3xl p-6 sm:p-8 shadow-sm">
-
                             <div class="w-20 h-20 rounded-full bg-green-100 text-green-700 flex items-center justify-center mb-5">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="w-10 h-10"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round"
-                                          stroke-linejoin="round"
-                                          stroke-width="1.8"
-                                          d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
                                 </svg>
                             </div>
 
-                            <h2 class="text-2xl sm:text-3xl font-extrabold text-[#003C2F] mb-3">
-                                Prova final liberada
-                            </h2>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold text-[#003C2F] mb-3">Prova final liberada</h2>
 
                             <p class="text-[#60756B] text-sm leading-relaxed max-w-2xl">
                                 Você atingiu o progresso mínimo necessário para realizar a prova final.
@@ -635,129 +534,75 @@
                             </p>
 
                             @if($cursoAtual)
-                                <p class="text-sm text-[#004D3A] font-extrabold mt-3">
-                                    Curso atual: {{ $cursoAtual->nome }}
-                                </p>
+                                <p class="text-sm text-[#004D3A] font-extrabold mt-3">Curso atual: {{ $cursoAtual->nome }}</p>
                             @endif
 
                             <div class="mt-6 bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5">
-
                                 <div class="flex items-center justify-between mb-3">
-                                    <p class="text-sm font-extrabold text-[#003C2F]">
-                                        Progresso para prova final
-                                    </p>
-
-                                    <p class="text-sm font-extrabold text-[#004D3A]">
-                                        {{ $porcentagemConclusao }}%
-                                    </p>
+                                    <p class="text-sm font-extrabold text-[#003C2F]">Progresso para prova final</p>
+                                    <p class="text-sm font-extrabold text-[#004D3A]">{{ $porcentagemConclusao }}%</p>
                                 </div>
 
                                 <div class="w-full h-3 bg-[#E8EFE9] rounded-full overflow-hidden">
-                                    <div class="h-full bg-[#004D3A] rounded-full transition-all duration-700"
-                                         style="width: {{ min(100, $porcentagemConclusao) }}%;">
-                                    </div>
+                                    <div class="h-full bg-[#004D3A] rounded-full transition-all duration-700" style="width: {{ min(100, $porcentagemConclusao) }}%;"></div>
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-
                                     <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4">
-                                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                            Tempo mínimo
-                                        </p>
-
-                                        <p class="text-2xl font-extrabold text-[#004D3A] mt-1">
-                                            {{ $tempoMinimoProva }} min
-                                        </p>
+                                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">Tempo mínimo</p>
+                                        <p class="text-2xl font-extrabold text-[#004D3A] mt-1">{{ $tempoMinimoProva }} min</p>
                                     </div>
 
                                     <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4">
-                                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                            Tempo máximo
-                                        </p>
-
-                                        <p class="text-2xl font-extrabold text-[#004D3A] mt-1">
-                                            {{ $tempoLimiteProva }} min
-                                        </p>
+                                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">Tempo máximo</p>
+                                        <p class="text-2xl font-extrabold text-[#004D3A] mt-1">{{ $tempoLimiteProva }} min</p>
                                     </div>
 
                                     <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4">
-                                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                            Questões
-                                        </p>
-
-                                        <p class="text-2xl font-extrabold text-[#004D3A] mt-1">
-                                            {{ $avaliacao->perguntas->count() }}
-                                        </p>
+                                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">Questões</p>
+                                        <p class="text-2xl font-extrabold text-[#004D3A] mt-1">{{ $avaliacao->perguntas->count() }}</p>
                                     </div>
 
                                     <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4">
-                                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                            Tentativas
-                                        </p>
-
-                                        <p class="text-2xl font-extrabold text-[#004D3A] mt-1">
-                                            {{ $tentativas }}
-                                        </p>
+                                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">Tentativas</p>
+                                        <p class="text-2xl font-extrabold text-[#004D3A] mt-1">{{ $tentativas }}</p>
                                     </div>
-
                                 </div>
-
                             </div>
 
                             <div class="flex flex-col sm:flex-row gap-3 mt-6">
-                                <a href="{{ route('prova.final') }}?iniciar=1"
-                                   class="inline-flex items-center justify-center bg-[#004D3A] text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#003C2F] transition">
+                                <a href="{{ route('prova.final') }}?iniciar=1" class="inline-flex items-center justify-center bg-[#004D3A] text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#003C2F] transition">
                                     Fazer prova final
                                 </a>
 
-                                <button type="button"
-                                        onclick="abrirAcessoTesteProva()"
-                                        class="inline-flex items-center justify-center bg-yellow-100 text-yellow-800 border border-yellow-200 px-6 py-3 rounded-2xl font-bold hover:bg-yellow-200 transition">
+                                <button type="button" onclick="abrirAcessoTesteProva()" class="inline-flex items-center justify-center bg-yellow-100 text-yellow-800 border border-yellow-200 px-6 py-3 rounded-2xl font-bold hover:bg-yellow-200 transition">
                                     Acesso de teste
                                 </button>
                             </div>
-
                         </div>
-
                     </div>
 
                     <aside class="xl:col-span-4">
                         <div class="bg-white border border-[#E3EBE4] rounded-3xl p-6 shadow-sm">
-
-                            <h3 class="text-xl font-extrabold text-[#003C2F] mb-4">
-                                Requisitos
-                            </h3>
-
+                            <h3 class="text-xl font-extrabold text-[#003C2F] mb-4">Requisitos</h3>
                             <div class="space-y-4">
-
                                 @foreach($requisitosProva as $requisito)
                                     <div class="flex items-start gap-3">
                                         <div class="w-9 h-9 rounded-xl {{ $requisito['ok'] ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0 font-bold">
                                             {{ $requisito['ok'] ? '✓' : '!' }}
                                         </div>
-
                                         <div>
-                                            <p class="font-bold text-[#003C2F]">
-                                                {{ $requisito['titulo'] }}
-                                            </p>
-
-                                            <p class="text-sm text-[#60756B]">
-                                                {{ $requisito['descricao'] }}
-                                            </p>
+                                            <p class="font-bold text-[#003C2F]">{{ $requisito['titulo'] }}</p>
+                                            <p class="text-sm text-[#60756B]">{{ $requisito['descricao'] }}</p>
                                         </div>
                                     </div>
                                 @endforeach
-
                             </div>
-
                         </div>
                     </aside>
-
                 </div>
 
-            @endif
-
-            @if(isset($avaliacao) && $provaLiberada && $modoProvaFinal)
+            @else
 
                 <!-- PROVA LIBERADA -->
                 <form action="{{ route('prova.final.responder') }}" method="POST" id="formProvaFinalAluno">
@@ -840,21 +685,11 @@
 
                                     <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 flex items-center justify-between gap-3">
                                         <span class="text-sm font-bold text-[#60756B]">
-                                            Tempo mínimo
+                                            Tempo limite
                                         </span>
 
                                         <span class="text-lg font-extrabold text-[#004D3A]">
-                                            {{ $tempoMinimoProva }} min
-                                        </span>
-                                    </div>
-
-                                    <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 flex items-center justify-between gap-3">
-                                        <span class="text-sm font-bold text-[#60756B]">
-                                            Tempo máximo
-                                        </span>
-
-                                        <span class="text-lg font-extrabold text-[#004D3A]">
-                                            {{ $tempoLimiteProva }} min
+                                            {{ $avaliacao->tempo_limite ?? 60 }} min
                                         </span>
                                     </div>
 
@@ -882,9 +717,7 @@
 
                                 <div class="mt-5 bg-green-50 border border-green-100 rounded-2xl p-4 text-green-800 text-xs leading-relaxed">
                                     Leia com atenção. O cronômetro começa somente quando você clicar em <strong>Sim, iniciar</strong>.
-                                    O botão <strong>Finalizar Prova</strong> ficará bloqueado até atingir o tempo mínimo de
-                                    <strong>{{ $tempoMinimoProva }} minuto(s)</strong>.
-                                    Ao terminar o tempo máximo, a prova será enviada automaticamente.
+                                    Ao terminar o tempo, a prova será enviada automaticamente.
                                 </div>
 
                             </div>
@@ -1075,7 +908,6 @@
     let tempoDecorridoProvaSegundos = 0;
     let provaFinalIniciada = false;
     let provaFinalEnviando = false;
-    let saidaProvaConfirmada = false;
 
     function formatarTempoProva(segundos) {
         const minutos = Math.floor(segundos / 60);
@@ -1293,62 +1125,10 @@
         });
     }
 
-    function confirmarSaidaProvaFinal(urlDestino = null) {
-        if (!provaFinalIniciada || provaFinalEnviando || saidaProvaConfirmada) {
-            if (urlDestino) {
-                window.location.href = urlDestino;
-            }
-
-            return;
-        }
-
-        Swal.fire({
-            icon: 'warning',
-            title: 'Tem certeza que deseja sair da prova?',
-            html: `
-                <p style="color:#60756B; font-size:14px; line-height:1.6;">
-                    Se você sair agora, ao voltar para a prova final, o tempo mínimo será iniciado novamente do zero.
-                    <br><br>
-                    As respostas que ainda não foram enviadas também poderão ser perdidas.
-                </p>
-            `,
-            showCancelButton: true,
-            confirmButtonText: 'Sim, sair da prova',
-            cancelButtonText: 'Continuar fazendo',
-            confirmButtonColor: '#dc2626',
-            cancelButtonColor: '#004D3A',
-            allowOutsideClick: false
-        }).then((result) => {
-            if (result.isConfirmed) {
-                saidaProvaConfirmada = true;
-
-                if (intervaloCronometroProva) {
-                    clearInterval(intervaloCronometroProva);
-                }
-
-                window.location.href = urlDestino || "{{ route('dashboard.aluno') }}";
-            }
-        });
-    }
-
-    document.addEventListener('click', function(e) {
-        const link = e.target.closest('a');
-
-        if (!link) return;
-        if (!provaFinalIniciada || provaFinalEnviando || saidaProvaConfirmada) return;
-
-        const href = link.getAttribute('href');
-
-        if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
-
-        e.preventDefault();
-        confirmarSaidaProvaFinal(href);
-    }, true);
-
     window.addEventListener('beforeunload', function(e) {
-        if (provaFinalIniciada && !provaFinalEnviando && !saidaProvaConfirmada) {
+        if (provaFinalIniciada && !provaFinalEnviando) {
             e.preventDefault();
-            e.returnValue = 'Se você sair agora, o tempo mínimo da prova final será reiniciado.';
+            e.returnValue = '';
         }
     });
 </script>
