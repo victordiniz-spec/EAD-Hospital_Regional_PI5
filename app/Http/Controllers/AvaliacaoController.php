@@ -96,21 +96,6 @@ class AvaliacaoController extends Controller
                 ->with('error', 'O tempo mínimo não pode ser maior que o tempo máximo do pós-teste.');
         }
 
-        $tempoMinimoFinal = (int) $request->input('tempo_minimo', 0);
-        $tempoMaximoFinal = (int) $request->input('tempo_limite', 60);
-
-        if ($tempoMaximoFinal <= 0) {
-            return back()
-                ->withInput()
-                ->with('error', 'Informe um tempo máximo maior que zero para a prova final.');
-        }
-
-        if ($tempoMinimoFinal > 0 && $tempoMinimoFinal > $tempoMaximoFinal) {
-            return back()
-                ->withInput()
-                ->with('error', 'O tempo mínimo não pode ser maior que o tempo máximo da prova final.');
-        }
-
         DB::beginTransaction();
 
         try {
@@ -198,6 +183,21 @@ class AvaliacaoController extends Controller
             'titulo.required' => 'Informe o título da prova final.',
             'perguntas.required' => 'Adicione pelo menos uma pergunta na prova final.',
         ]);
+
+        $tempoMinimoFinal = (int) $request->input('tempo_minimo', 0);
+        $tempoMaximoFinal = (int) $request->input('tempo_limite', 60);
+
+        if ($tempoMaximoFinal <= 0) {
+            return back()
+                ->withInput()
+                ->with('error', 'Informe um tempo máximo maior que zero para a prova final.');
+        }
+
+        if ($tempoMinimoFinal > 0 && $tempoMinimoFinal > $tempoMaximoFinal) {
+            return back()
+                ->withInput()
+                ->with('error', 'O tempo mínimo não pode ser maior que o tempo máximo da prova final.');
+        }
 
         DB::beginTransaction();
 
