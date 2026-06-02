@@ -984,7 +984,7 @@
     <div class="modal-player-card bg-white rounded-3xl p-3 sm:p-4 relative border border-[#DFE8E1] shadow-2xl">
 
         <button type="button"
-                onclick="fecharModal()"
+                onclick="confirmarSaidaVideoAula()"
                 class="absolute top-3 right-3 sm:right-4 w-10 h-10 rounded-2xl bg-white/90 text-[#52645E] hover:text-red-600 hover:bg-red-50 transition z-[10060] flex items-center justify-center text-3xl leading-none shadow">
             ×
         </button>
@@ -1050,7 +1050,7 @@
 
         <div class="mt-4 flex flex-col sm:flex-row sm:justify-between gap-3">
             <button type="button"
-                    onclick="fecharModal()"
+                    onclick="confirmarSaidaVideoAula()"
                     class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-2xl font-bold transition">
                 Fechar
             </button>
@@ -1337,6 +1337,10 @@ function atualizarMensagemEstadoYoutube(mensagem) {
 }
 
 function fecharModal() {
+    fecharModalDireto();
+}
+
+function fecharModalDireto() {
     document.body.classList.remove('modal-video-aberto');
 
     const modal = document.getElementById('modalVideo');
@@ -1348,8 +1352,74 @@ function fecharModal() {
 
     destruirYoutubePlayer();
 
+    tempoAssistidoVideoAtualSegundos = 0;
+    aulaConcluindoVideoAtual = false;
+    videoYoutubeTocando = false;
     aulaIdAtual = null;
     avaliacaoIdAtual = null;
+
+    prepararCronometroVideoAula();
+}
+
+function confirmarSaidaVideoAula() {
+    const modal = document.getElementById('modalVideo');
+
+    if (!modal || modal.classList.contains('hidden')) {
+        return;
+    }
+
+    if (aulaConcluindoVideoAtual) {
+        fecharModalDireto();
+        return;
+    }
+
+    try {
+        if (youtubePlayer && typeof youtubePlayer.pauseVideo === 'function') {
+            youtubePlayer.pauseVideo();
+        }
+    } catch (e) {
+        console.warn('Não foi possível pausar o vídeo antes do aviso de saída.', e);
+    }
+
+    pararContagemVideoYoutube();
+
+    const tempoAssistido = tempoAssistidoVideoSegundos();
+    const temTempoMinimo = tempoMinimoVideoAtual > 0;
+    const tempoMinimoAtingido = !temTempoMinimo || tempoAssistido >= tempoMinimoVideoAtual;
+
+    const mensagem = temTempoMinimo && !tempoMinimoAtingido
+        ? '<p>Você tem certeza que deseja sair da aula?</p>' +
+          '<p class="mt-2 text-sm text-slate-600">Se você sair agora, ao voltar para esta videoaula, o tempo mínimo de assistir aula será reiniciado do zero.</p>' +
+          '<p class="mt-2 text-sm text-slate-600">Tempo assistido agora: <strong>' + formatarTempoVideo(tempoAssistido) + '</strong> de <strong>' + formatarTempoVideo(tempoMinimoVideoAtual) + '</strong>.</p>'
+        : '<p>Você tem certeza que deseja sair da aula?</p>' +
+          '<p class="mt-2 text-sm text-slate-600">Ao sair, o cronômetro desta sessão será reiniciado quando você abrir a videoaula novamente.</p>';
+
+    Swal.fire({
+        icon: 'warning',
+        title: 'Sair da videoaula?',
+        html: mensagem,
+        showCancelButton: true,
+        confirmButtonText: 'Sim, sair da aula',
+        cancelButtonText: 'Continuar assistindo',
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#005543',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fecharModalDireto();
+            return;
+        }
+
+        if (youtubePlayer && typeof youtubePlayer.playVideo === 'function') {
+            try {
+                youtubePlayer.playVideo();
+            } catch (e) {
+                console.warn('Não foi possível retomar o vídeo automaticamente.', e);
+            }
+        }
+
+        atualizarCronometroVideoAula();
+    });
 }
 
 function formatarTempoVideo(segundos) {
@@ -1572,7 +1642,7 @@ function marcarAssistida(autoConcluir = false) {
             return data;
         })
         .then(() => {
-            fecharModal();
+            fecharModalDireto();
 
             if (avaliacaoIdAtual) {
                 Swal.fire({
@@ -1788,14 +1858,14 @@ const modalVideoAluno = document.getElementById('modalVideo');
 if (modalVideoAluno) {
     modalVideoAluno.addEventListener('click', function(e) {
         if (e.target === this) {
-            fecharModal();
+            confirmarSaidaVideoAula();
         }
     });
 }
 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        fecharModal();
+        confirmarSaidaVideoAula();
     }
 });
 </script>
