@@ -132,10 +132,53 @@
 
     /*
     |--------------------------------------------------------------------------
+    | MÉDIA DOS PONTOS DO CURSO
+    |--------------------------------------------------------------------------
+    | A prova final só será liberada se o aluno concluir todo o curso e tiver
+    | média mínima de 70% nos pós-testes/avaliações do curso.
+    */
+    $mediaPontosCurso = 0;
+    $mediaPontosTexto = '0%';
+
+    if ($totalPosTestes > 0 && Schema::hasTable('notas') && $avaliacoesPosTesteIds->count() > 0) {
+        $colunaNota = null;
+
+        foreach (['nota', 'pontuacao', 'media', 'resultado'] as $possivelColunaNota) {
+            if (Schema::hasColumn('notas', $possivelColunaNota)) {
+                $colunaNota = $possivelColunaNota;
+                break;
+            }
+        }
+
+        if ($colunaNota) {
+            $notasCurso = DB::table('notas')
+                ->where('aluno_id', $alunoId)
+                ->whereIn('avaliacao_id', $avaliacoesPosTesteIds)
+                ->whereNotNull($colunaNota)
+                ->pluck($colunaNota)
+                ->map(function ($nota) {
+                    $notaNumerica = (float) $nota;
+
+                    // Se a nota estiver no formato 0 a 10, converte para porcentagem.
+                    return $notaNumerica <= 10 ? $notaNumerica * 10 : $notaNumerica;
+                });
+
+            if ($notasCurso->count() > 0) {
+                $mediaPontosCurso = round($notasCurso->avg());
+                $mediaPontosTexto = $mediaPontosCurso . '%';
+            }
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | REGRA DE LIBERAÇÃO
     |--------------------------------------------------------------------------
-    | Agora a prova final libera com 70% do curso atual concluído.
-    | Não é mais obrigatório concluir 100% das aulas/módulos.
+    | Agora a prova final libera somente quando:
+    | 1. O curso tiver conteúdo cadastrado.
+    | 2. O aluno concluir todas as videoaulas.
+    | 3. O aluno realizar todos os pós-testes.
+    | 4. O aluno tiver média mínima de 70% nos pontos do curso.
     */
 
     $totalEtapas = $totalAulas + $totalPosTestes;
@@ -155,9 +198,14 @@
         ? $totalPosTestesFeitos >= $totalPosTestes
         : true;
 
-    $provaLiberada = ($cursoTemConteudo && $porcentagemConclusao >= 70) || $acessoTeste;
+    $mediaOk = $mediaPontosCurso >= 70;
 
-    $faltamPorcentagem = max(0, 70 - $porcentagemConclusao);
+    $cursoCompletoOk = $cursoTemConteudo && $aulasOk && $posTestesOk;
+
+    $provaLiberada = ($cursoCompletoOk && $mediaOk) || $acessoTeste;
+
+    $faltamPorcentagem = max(0, 100 - $porcentagemConclusao);
+    $faltamMedia = max(0, 70 - $mediaPontosCurso);
 
     $tentativas = isset($avaliacao) && isset($avaliacao->tentativas)
         ? $avaliacao->tentativas
@@ -175,19 +223,24 @@
 
     $requisitosProva = [
         [
-            'titulo' => 'Atingir pelo menos 70% do curso',
-            'ok' => $porcentagemConclusao >= 70,
-            'descricao' => 'Você está com ' . $porcentagemConclusao . '%. Faltam ' . $faltamPorcentagem . ' ponto(s) percentual(is).',
+            'titulo' => 'Concluir 100% do curso',
+            'ok' => $cursoCompletoOk,
+            'descricao' => 'Você está com ' . $porcentagemConclusao . '%. Para liberar a prova final, precisa concluir todo o curso.',
         ],
         [
-            'titulo' => 'Assistir às videoaulas do curso',
-            'ok' => $totalAulas > 0 && $totalAulasAssistidas > 0,
+            'titulo' => 'Assistir todas as videoaulas',
+            'ok' => $aulasOk,
             'descricao' => $totalAulasAssistidas . ' de ' . $totalAulas . ' aula(s) assistida(s).',
         ],
         [
-            'titulo' => 'Realizar os pós-testes disponíveis',
-            'ok' => $totalPosTestes == 0 || $totalPosTestesFeitos > 0,
+            'titulo' => 'Realizar todos os pós-testes',
+            'ok' => $posTestesOk,
             'descricao' => $totalPosTestesFeitos . ' de ' . $totalPosTestes . ' pós-teste(s) feito(s).',
+        ],
+        [
+            'titulo' => 'Ter média mínima de 70% nos pontos',
+            'ok' => $mediaOk,
+            'descricao' => 'Sua média atual é ' . $mediaPontosTexto . '. Faltam ' . $faltamMedia . ' ponto(s) percentual(is) para atingir 70%.',
         ],
     ];
 
@@ -400,7 +453,7 @@
 
                             <p class="text-[#60756B] text-sm leading-relaxed max-w-2xl">
                                 Você ainda não atingiu os requisitos mínimos para realizar a prova final.
-                                Confira abaixo o que falta para liberar a avaliação.
+                                Para liberar, é necessário concluir 100% do curso e alcançar média mínima de 70% nos pontos.
                             </p>
 
                             @if($cursoAtual)
@@ -412,7 +465,7 @@
                             <div class="mt-6 bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5">
                                 <div class="flex items-center justify-between mb-3">
                                     <p class="text-sm font-extrabold text-[#003C2F]">
-                                        Progresso para liberar a prova final
+                                        Progresso de conclusão do curso
                                     </p>
                                     <p class="text-sm font-extrabold text-[#004D3A]">
                                         {{ $porcentagemConclusao }}%
@@ -434,19 +487,19 @@
                                             {{ $porcentagemConclusao }}%
                                         </p>
                                         <p class="text-xs text-[#60756B] mt-1">
-                                            Mínimo necessário: 70%
+                                            Necessário: 100% do curso
                                         </p>
                                     </div>
 
                                     <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4">
                                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                            Falta para liberar
+                                            Falta para concluir
                                         </p>
                                         <p class="text-2xl font-extrabold mt-1 {{ $faltamPorcentagem <= 0 ? 'text-green-600' : 'text-red-600' }}">
                                             {{ $faltamPorcentagem }}%
                                         </p>
                                         <p class="text-xs text-[#60756B] mt-1">
-                                            Pontos percentuais restantes.
+                                            Pontos percentuais para concluir 100%.
                                         </p>
                                     </div>
 
@@ -465,6 +518,18 @@
                                         </p>
                                         <p class="text-2xl font-extrabold mt-1 {{ $posTestesOk ? 'text-green-600' : 'text-red-600' }}">
                                             {{ $totalPosTestesFeitos }} / {{ $totalPosTestes }}
+                                        </p>
+                                    </div>
+
+                                    <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4 sm:col-span-2">
+                                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                            Média dos pontos
+                                        </p>
+                                        <p class="text-2xl font-extrabold mt-1 {{ $mediaOk ? 'text-green-600' : 'text-red-600' }}">
+                                            {{ $mediaPontosTexto }}
+                                        </p>
+                                        <p class="text-xs text-[#60756B] mt-1">
+                                            Mínimo necessário: 70%.
                                         </p>
                                     </div>
                                 </div>
@@ -529,7 +594,7 @@
                             <h2 class="text-2xl sm:text-3xl font-extrabold text-[#003C2F] mb-3">Prova final liberada</h2>
 
                             <p class="text-[#60756B] text-sm leading-relaxed max-w-2xl">
-                                Você atingiu o progresso mínimo necessário para realizar a prova final.
+                                Você concluiu todo o curso e atingiu a média mínima necessária para realizar a prova final.
                                 Ao iniciar, a prova será aberta em uma tela limpa, sem menus, para evitar distrações e saídas acidentais.
                             </p>
 
@@ -539,7 +604,7 @@
 
                             <div class="mt-6 bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5">
                                 <div class="flex items-center justify-between mb-3">
-                                    <p class="text-sm font-extrabold text-[#003C2F]">Progresso para prova final</p>
+                                    <p class="text-sm font-extrabold text-[#003C2F]">Progresso do curso</p>
                                     <p class="text-sm font-extrabold text-[#004D3A]">{{ $porcentagemConclusao }}%</p>
                                 </div>
 
@@ -566,6 +631,11 @@
                                     <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4">
                                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">Tentativas</p>
                                         <p class="text-2xl font-extrabold text-[#004D3A] mt-1">{{ $tentativas }}</p>
+                                    </div>
+
+                                    <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4 sm:col-span-2">
+                                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">Média dos pontos</p>
+                                        <p class="text-2xl font-extrabold text-[#004D3A] mt-1">{{ $mediaPontosTexto }}</p>
                                     </div>
                                 </div>
                             </div>
