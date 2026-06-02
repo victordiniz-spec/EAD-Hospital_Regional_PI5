@@ -358,6 +358,22 @@
         display: block;
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | SWEETALERT ACIMA DO MODAL DA VIDEOAULA
+    |--------------------------------------------------------------------------
+    | O modal da videoaula usa z-index alto. Sem esta correção, o aviso de
+    | confirmação pode abrir atrás do vídeo e impedir o clique.
+    */
+    .swal2-container {
+        z-index: 200000 !important;
+    }
+
+    .swal2-popup {
+        z-index: 200001 !important;
+    }
+
     @media (max-width: 1024px) {
         .area-aluno-video {
             padding-left: 1rem !important;
