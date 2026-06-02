@@ -159,6 +159,30 @@
 
     $faltamPorcentagem = max(0, 70 - $porcentagemConclusao);
 
+    $requisitosProva = [
+        [
+            'titulo' => 'Atingir 70% do curso',
+            'ok' => $porcentagemConclusao >= 70,
+            'descricao' => 'Você está com ' . $porcentagemConclusao . '%. Faltam ' . $faltamPorcentagem . ' ponto(s) percentual(is).',
+        ],
+        [
+            'titulo' => 'Assistir às videoaulas',
+            'ok' => $totalAulas > 0 && $totalAulasAssistidas > 0,
+            'descricao' => $totalAulasAssistidas . ' de ' . $totalAulas . ' aula(s) assistida(s).',
+        ],
+        [
+            'titulo' => 'Realizar os pós-testes',
+            'ok' => $totalPosTestes == 0 || $totalPosTestesFeitos > 0,
+            'descricao' => $totalPosTestesFeitos . ' de ' . $totalPosTestes . ' pós-teste(s) feito(s).',
+        ],
+    ];
+
+    $totalRequisitosProva = count($requisitosProva);
+    $requisitosConcluidosProva = collect($requisitosProva)->where('ok', true)->count();
+    $progressoRequisitosProva = $totalRequisitosProva > 0
+        ? round(($requisitosConcluidosProva / $totalRequisitosProva) * 100)
+        : 0;
+
     $tentativas = isset($avaliacao) && isset($avaliacao->tentativas)
         ? $avaliacao->tentativas
         : 2;
@@ -384,7 +408,8 @@
                             </h2>
 
                             <p class="text-[#60756B] text-sm leading-relaxed max-w-2xl">
-                                Para acessar a prova final, você precisa concluir pelo menos 70% do curso atual, considerando aulas assistidas e pós-testes realizados.
+                                Você ainda não atingiu os requisitos mínimos para realizar a prova final.
+                                Confira abaixo o que falta para liberar a avaliação.
                             </p>
 
                             @if($cursoAtual)
@@ -393,17 +418,11 @@
                                 </p>
                             @endif
 
-                            @if($totalEtapas > 0)
-                                <p class="text-sm text-[#60756B] mt-2">
-                                    Você está com {{ $porcentagemConclusao }}%. Faltam {{ $faltamPorcentagem }} ponto(s) percentual(is) para liberar.
-                                </p>
-                            @endif
-
                             <div class="mt-6 bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5">
 
                                 <div class="flex items-center justify-between mb-3">
                                     <p class="text-sm font-extrabold text-[#003C2F]">
-                                        Progresso do curso atual
+                                        Progresso para liberar a prova final
                                     </p>
 
                                     <p class="text-sm font-extrabold text-[#004D3A]">
@@ -413,7 +432,7 @@
 
                                 <div class="w-full h-3 bg-[#E8EFE9] rounded-full overflow-hidden">
                                     <div class="h-full bg-[#004D3A] rounded-full transition-all duration-700"
-                                         style="width: {{ $porcentagemConclusao }}%;">
+                                         style="width: {{ min(100, $porcentagemConclusao) }}%;">
                                     </div>
                                 </div>
 
@@ -421,10 +440,38 @@
 
                                     <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4">
                                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                            Progresso atual
+                                        </p>
+
+                                        <p class="text-2xl font-extrabold mt-1 {{ $porcentagemConclusao >= 70 ? 'text-green-600' : 'text-red-600' }}">
+                                            {{ $porcentagemConclusao }}%
+                                        </p>
+
+                                        <p class="text-xs text-[#60756B] mt-1">
+                                            Mínimo necessário: 70%
+                                        </p>
+                                    </div>
+
+                                    <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4">
+                                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                            Falta para liberar
+                                        </p>
+
+                                        <p class="text-2xl font-extrabold mt-1 {{ $faltamPorcentagem <= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                            {{ $faltamPorcentagem }}%
+                                        </p>
+
+                                        <p class="text-xs text-[#60756B] mt-1">
+                                            Pontos percentuais restantes.
+                                        </p>
+                                    </div>
+
+                                    <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4">
+                                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
                                             Videoaulas assistidas
                                         </p>
 
-                                        <p class="text-2xl font-extrabold mt-1 {{ $aulasOk ? 'text-green-600' : 'text-red-600' }}">
+                                        <p class="text-2xl font-extrabold mt-1 {{ $totalAulasAssistidas > 0 ? 'text-green-600' : 'text-red-600' }}">
                                             {{ $totalAulasAssistidas }} / {{ $totalAulas }}
                                         </p>
                                     </div>
@@ -434,7 +481,7 @@
                                             Pós-testes feitos
                                         </p>
 
-                                        <p class="text-2xl font-extrabold mt-1 {{ $posTestesOk ? 'text-green-600' : 'text-red-600' }}">
+                                        <p class="text-2xl font-extrabold mt-1 {{ $totalPosTestes == 0 || $totalPosTestesFeitos > 0 ? 'text-green-600' : 'text-red-600' }}">
                                             {{ $totalPosTestesFeitos }} / {{ $totalPosTestes }}
                                         </p>
                                     </div>
@@ -464,16 +511,51 @@
                         <div class="bg-white border border-[#E3EBE4] rounded-3xl p-6 shadow-sm">
 
                             <h3 class="text-xl font-extrabold text-[#003C2F] mb-4">
-                                O que falta?
+                                Requisitos para fazer a prova
                             </h3>
 
                             <div class="space-y-4">
 
-                                <div class="flex items-start gap-3">
-                                    <div class="w-9 h-9 rounded-xl {{ $aulasOk ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0">
-                                        @if($aulasOk)
-                                            ✓
-                                        @else
+                                @foreach($requisitosProva as $requisito)
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-9 h-9 rounded-xl {{ $requisito['ok'] ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0 font-bold">
+                                            {{ $requisito['ok'] ? '✓' : '!' }}
+                                        </div>
+
+                                        <div>
+                                            <p class="font-bold text-[#003C2F]">
+                                                {{ $requisito['titulo'] }}
+                                            </p>
+
+                                            <p class="text-sm text-[#60756B]">
+                                                {{ $requisito['descricao'] }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                @endforeach
+
+                            </div>
+
+                            <div class="mt-6 bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4">
+                                <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                    Resumo
+                                </p>
+
+                                <p class="text-2xl font-extrabold text-[#004D3A] mt-1">
+                                    {{ $requisitosConcluidosProva }} / {{ $totalRequisitosProva }}
+                                </p>
+
+                                <p class="text-xs text-[#60756B] mt-1">
+                                    requisito(s) em andamento/concluído(s).
+                                </p>
+                            </div>
+
+                        </div>
+                    </aside>
+
+                </div>
+
+            @else
                                             !
                                         @endif
                                     </div>
