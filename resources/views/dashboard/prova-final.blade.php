@@ -186,17 +186,73 @@
         min-height: 100vh;
         width: 100%;
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | TELA LIMPA PARA PROVA FINAL
+    |--------------------------------------------------------------------------
+    | Nesta página o aluno fica focado somente na prova final.
+    | Não aparece sidebar, navbar ou menus de navegação.
+    */
+    .modo-prova-final {
+        min-height: 100vh;
+        background:
+            radial-gradient(circle at top left, rgba(0, 166, 62, 0.08), transparent 30%),
+            radial-gradient(circle at bottom right, rgba(0, 77, 58, 0.08), transparent 35%),
+            #F3F7F3;
+    }
+
+    .topo-prova-limpa {
+        position: sticky;
+        top: 0;
+        z-index: 60;
+        backdrop-filter: blur(14px);
+        background: rgba(243, 247, 243, 0.92);
+        border-bottom: 1px solid #DCE7DE;
+    }
+
+    @media print {
+        .nao-imprimir {
+            display: none !important;
+        }
+    }
+
 </style>
 
-<div class="flex min-h-screen w-full bg-[#F3F7F3] text-[#003C2F] overflow-x-hidden">
+<div class="modo-prova-final min-h-screen w-full text-[#003C2F] overflow-x-hidden">
 
-    @include('partials.sidebar-aluno')
+    <main class="w-full min-h-screen bg-[#F3F7F3] overflow-x-hidden">
 
-    <main class="flex-1 min-w-0 w-full bg-[#F3F7F3] overflow-x-hidden">
+        <section class="p-4 sm:p-6 lg:p-8 max-w-[1500px] mx-auto">
 
-        @include('partials.navbar')
+            <!-- TOPO LIMPO DA PROVA FINAL -->
+            <div class="topo-prova-limpa nao-imprimir -mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 mb-7 px-4 sm:px-6 lg:px-8 py-4">
+                <div class="max-w-[1500px] mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-white border border-[#DCE7DE] shadow-sm flex items-center justify-center overflow-hidden">
+                            <img src="{{ asset('images/logo.png') }}"
+                                 alt="Integrar ReSaúde"
+                                 class="w-10 h-10 object-contain"
+                                 onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=\'text-[#004D3A] font-extrabold\'>IR</span>';">
+                        </div>
 
-        <section class="p-4 sm:p-6 lg:p-8">
+                        <div>
+                            <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                Ambiente seguro de avaliação
+                            </p>
+
+                            <h2 class="text-lg sm:text-xl font-extrabold text-[#003C2F]">
+                                Prova Final — Integrar ReSaúde
+                            </h2>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 text-xs sm:text-sm font-bold text-[#60756B] bg-white border border-[#DCE7DE] rounded-2xl px-4 py-3 shadow-sm">
+                        <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                        Tela focada: sem menus durante a prova
+                    </div>
+                </div>
+            </div>
 
             <!-- CABEÇALHO -->
             <div class="mb-7 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
