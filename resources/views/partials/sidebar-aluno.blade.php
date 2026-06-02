@@ -19,10 +19,9 @@
         ],
         [
             'titulo' => 'Prova Final',
-            'url' => '#',
+            'url' => route('prova.final'),
             'ativo' => request()->routeIs('prova.final') || request()->routeIs('prova.final.*'),
-            'onclick' => 'abrirModalSenhaProvaFinalSidebar()',
-            'button' => true,
+            'onclick' => 'fecharSidebarAluno()',
             'icone' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 12h6m-6 4h6M9 8h6M5 4h14v16H5z"/>',
         ],
         [
@@ -337,58 +336,6 @@
     </div>
 
 </aside>
-
-<!-- MODAL SENHA PROVA FINAL TESTE -->
-<div id="modalSenhaProvaFinalSidebar"
-     class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-[10000] px-4">
-
-    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center border border-yellow-100">
-
-        <div class="w-16 h-16 mx-auto rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center mb-4">
-            <span class="text-2xl">🔐</span>
-        </div>
-
-        <h2 class="text-xl font-extrabold text-gray-800 mb-2">
-            Acesso de teste
-        </h2>
-
-        <p class="text-sm text-gray-500 mb-5 leading-relaxed">
-            Digite a senha temporária para liberar a prova final apenas para teste.
-        </p>
-
-        <input
-            type="password"
-            id="senhaProvaFinalSidebar"
-            placeholder="Digite a senha"
-            class="w-full px-4 py-3 rounded-2xl border border-yellow-200 bg-yellow-50 text-gray-800 text-center font-bold focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-3"
-        >
-
-        <p id="erroSenhaProvaFinalSidebar"
-           class="hidden text-sm text-red-600 font-bold mb-4">
-            Senha incorreta. Tente novamente.
-        </p>
-
-        <div class="flex gap-3">
-            <button type="button"
-                    onclick="fecharModalSenhaProvaFinalSidebar()"
-                    class="w-1/2 px-4 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition">
-                Cancelar
-            </button>
-
-            <button type="button"
-                    onclick="validarSenhaProvaFinalSidebar()"
-                    class="w-1/2 px-4 py-3 rounded-2xl bg-[#004D3A] text-white font-bold hover:bg-[#003C2F] transition">
-                Entrar
-            </button>
-        </div>
-
-        <a href="{{ route('prova.final') }}"
-           class="block mt-4 text-xs text-gray-500 hover:text-[#004D3A] font-bold">
-            Entrar sem senha e verificar liberação normal
-        </a>
-
-    </div>
-</div>
 
 <!-- MODAL DE CONFIRMAÇÃO DE SAIR -->
 <div id="modalSairAluno"
@@ -716,58 +663,6 @@
         } catch (e) {}
     }
 
-    function abrirModalSenhaProvaFinalSidebar() {
-        fecharSidebarAluno();
-
-        const modal = document.getElementById('modalSenhaProvaFinalSidebar');
-        const input = document.getElementById('senhaProvaFinalSidebar');
-        const erro = document.getElementById('erroSenhaProvaFinalSidebar');
-
-        if (!modal) return;
-
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-
-        if (input) {
-            input.value = '';
-            setTimeout(() => input.focus(), 150);
-        }
-
-        if (erro) {
-            erro.classList.add('hidden');
-        }
-    }
-
-    function fecharModalSenhaProvaFinalSidebar() {
-        const modal = document.getElementById('modalSenhaProvaFinalSidebar');
-
-        if (!modal) return;
-
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-
-    function validarSenhaProvaFinalSidebar() {
-        const input = document.getElementById('senhaProvaFinalSidebar');
-        const erro = document.getElementById('erroSenhaProvaFinalSidebar');
-
-        const senha = input ? input.value.trim() : '';
-
-        if (senha === '123') {
-            window.location.href = "{{ route('prova.final') }}?teste=123";
-            return;
-        }
-
-        if (erro) {
-            erro.classList.remove('hidden');
-        }
-
-        if (input) {
-            input.value = '';
-            input.focus();
-        }
-    }
-
     function abrirModalSairAluno() {
         fecharSidebarAluno();
 
@@ -789,7 +684,6 @@
     }
 
     const modalSairAluno = document.getElementById('modalSairAluno');
-    const modalSenhaProvaFinalSidebar = document.getElementById('modalSenhaProvaFinalSidebar');
 
     if (modalSairAluno) {
         modalSairAluno.addEventListener('click', function(e) {
@@ -799,27 +693,10 @@
         });
     }
 
-    if (modalSenhaProvaFinalSidebar) {
-        modalSenhaProvaFinalSidebar.addEventListener('click', function(e) {
-            if (e.target === this) {
-                fecharModalSenhaProvaFinalSidebar();
-            }
-        });
-    }
-
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             fecharModalSairAluno();
             fecharSidebarAluno();
-            fecharModalSenhaProvaFinalSidebar();
-        }
-
-        if (e.key === 'Enter') {
-            const modalSenha = document.getElementById('modalSenhaProvaFinalSidebar');
-
-            if (modalSenha && !modalSenha.classList.contains('hidden')) {
-                validarSenhaProvaFinalSidebar();
-            }
         }
     });
 

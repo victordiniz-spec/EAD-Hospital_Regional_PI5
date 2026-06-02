@@ -382,7 +382,9 @@
 
                 </div>
 
-            @elseif(!$provaLiberada)
+            @endif
+
+            @if(isset($avaliacao) && !$provaLiberada)
 
                 <!-- PROVA BLOQUEADA -->
                 <div class="grid grid-cols-1 xl:grid-cols-12 gap-7">
@@ -599,7 +601,9 @@
 
                 </div>
 
-            @elseif(!$modoProvaFinal)
+            @endif
+
+            @if(isset($avaliacao) && $provaLiberada && !$modoProvaFinal)
 
                 <!-- PROVA LIBERADA - TELA DE ENTRADA -->
                 <div class="grid grid-cols-1 xl:grid-cols-12 gap-7">
@@ -751,7 +755,9 @@
 
                 </div>
 
-            @else
+            @endif
+
+            @if(isset($avaliacao) && $provaLiberada && $modoProvaFinal)
 
                 <!-- PROVA LIBERADA -->
                 <form action="{{ route('prova.final.responder') }}" method="POST" id="formProvaFinalAluno">
@@ -1385,7 +1391,7 @@
         const senha = input ? input.value.trim() : '';
 
         if (senha === '123') {
-            window.location.href = "{{ route('prova.final') }}?teste=123";
+            window.location.href = "{{ route('prova.final') }}?teste=123&iniciar=1";
             return;
         }
 
