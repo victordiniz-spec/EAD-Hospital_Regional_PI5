@@ -34,6 +34,31 @@
             default => ucfirst($status ?: 'Indefinido'),
         };
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | CORREÇÃO VISUAL DA CONTAGEM
+    |--------------------------------------------------------------------------
+    | Evita aparecer 7/6 quando o banco possui mais de uma tentativa ou quando
+    | a prova final foi misturada na contagem do acompanhamento.
+    */
+    function limitarContagemAcompanhamento($feitos, $total) {
+        $feitos = (int) ($feitos ?? 0);
+        $total = (int) ($total ?? 0);
+
+        if ($total <= 0) {
+            return 0;
+        }
+
+        return min($feitos, $total);
+    }
+
+    function pendentesAcompanhamento($feitos, $total) {
+        $feitos = limitarContagemAcompanhamento($feitos, $total);
+        $total = (int) ($total ?? 0);
+
+        return max($total - $feitos, 0);
+    }
 @endphp
 
 <div class="flex min-h-screen w-full bg-[#F3F7F3] text-[#003C2F] overflow-x-hidden">
@@ -185,7 +210,7 @@
 
                                         <div class="bg-white border border-[#DCE7DE] rounded-2xl px-3 py-2">
                                             <p class="text-[10px] uppercase tracking-widest text-[#60756B] font-extrabold">Pendentes</p>
-                                            <p class="text-lg font-extrabold text-red-600">{{ $residente->postestes_pendentes }}</p>
+                                            <p class="text-lg font-extrabold text-red-600">{{ pendentesAcompanhamento($residente->avaliacoes_feitas, $residente->total_avaliacoes) }}</p>
                                         </div>
 
                                         <div class="bg-white border border-[#DCE7DE] rounded-2xl px-3 py-2">
@@ -339,9 +364,9 @@
                                     </td>
 
                                     <td class="px-5 py-4 font-bold text-[#003C2F]">
-                                        {{ $residente->avaliacoes_feitas }} / {{ $residente->total_avaliacoes }}
+                                        {{ limitarContagemAcompanhamento($residente->avaliacoes_feitas, $residente->total_avaliacoes) }} / {{ $residente->total_avaliacoes }}
                                         <div class="text-xs text-red-600 font-bold">
-                                            {{ $residente->postestes_pendentes }} pendente(s)
+                                            {{ pendentesAcompanhamento($residente->avaliacoes_feitas, $residente->total_avaliacoes) }} pendente(s)
                                         </div>
                                     </td>
 
