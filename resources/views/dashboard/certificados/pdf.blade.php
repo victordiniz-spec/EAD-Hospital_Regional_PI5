@@ -260,6 +260,30 @@
     </style>
 </head>
 
+@php
+    /*
+    |--------------------------------------------------------------------------
+    | CORREÇÃO DO APROVEITAMENTO NO PDF
+    |--------------------------------------------------------------------------
+    | Se chegar 10, entende como nota 10/10 e mostra 100,00%.
+    | Se chegar 70, 80, 100 ou "70%", mantém como porcentagem.
+    */
+    $aproveitamentoBruto = $aproveitamento ?? '70%';
+
+    if (is_numeric($aproveitamentoBruto)) {
+        $aproveitamentoNumero = (float) $aproveitamentoBruto;
+    } else {
+        $aproveitamentoLimpo = preg_replace('/[^0-9,\.]/', '', (string) $aproveitamentoBruto);
+        $aproveitamentoNumero = (float) str_replace(',', '.', $aproveitamentoLimpo);
+    }
+
+    if ($aproveitamentoNumero <= 10) {
+        $aproveitamentoNumero = $aproveitamentoNumero * 10;
+    }
+
+    $aproveitamentoFormatado = number_format($aproveitamentoNumero, 2, ',', '.') . '%';
+@endphp
+
 <body>
 
     <div class="pagina-certificado">
@@ -327,7 +351,7 @@
                             <strong>{{ $cpf ?? '---' }}</strong>
                             <br>
                             Aproveitamento:
-                            <strong>{{ $aproveitamento ?? '70%' }}</strong>
+                            <strong>{{ $aproveitamentoFormatado }}</strong>
                         </div>
 
                         <div class="data-box">

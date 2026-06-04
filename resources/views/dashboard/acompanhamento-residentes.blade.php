@@ -19,6 +19,11 @@
         }
     }
 
+    function formatarNotaAcompanhamento($nota) {
+        if ($nota === null || $nota === '') return '-';
+        return number_format((float) $nota, 1, ',', '.') . '%';
+    }
+
     function statusResidenteAcompanhamento($status) {
         $status = strtolower($status ?? '');
 
@@ -54,8 +59,8 @@
                     </h1>
 
                     <p class="text-sm text-[#60756B] mt-2 max-w-3xl leading-relaxed">
-                        Acompanhe progresso, pós-testes pendentes, alunos em risco e residentes próximos de liberar certificado.
-                        Esta tela ajuda o professor a identificar rapidamente quem precisa de atenção.
+                        Acompanhe progresso real, última aula, último pós-teste, prova final, nota final e liberação de certificado.
+                        Esta tela ajuda o professor a saber exatamente a situação de cada residente/preceptor.
                     </p>
                 </div>
 
@@ -125,13 +130,13 @@
 
                 <div class="bg-white border-l-4 border-[#00A63E] rounded-3xl p-5 shadow-sm border-y border-r border-[#E3EBE4]">
                     <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                        Quase certificado
+                        Certificados liberados
                     </p>
                     <h3 class="text-3xl font-extrabold mt-2 text-[#00A63E]">
-                        {{ $certificadosQuaseLiberados }}
+                        {{ $certificadosLiberados ?? 0 }}
                     </h3>
                     <p class="text-xs text-[#60756B] mt-2">
-                        Progresso e média favoráveis.
+                        Alunos com todos os requisitos concluídos.
                     </p>
                 </div>
 
@@ -185,7 +190,7 @@
 
                                         <div class="bg-white border border-[#DCE7DE] rounded-2xl px-3 py-2">
                                             <p class="text-[10px] uppercase tracking-widest text-[#60756B] font-extrabold">Média</p>
-                                            <p class="text-lg font-extrabold text-blue-600">{{ number_format($residente->media, 1, ',', '.') }}</p>
+                                            <p class="text-lg font-extrabold text-blue-600">{{ formatarNotaAcompanhamento($residente->media) }}</p>
                                         </div>
 
                                         <div class="bg-white border border-[#DCE7DE] rounded-2xl px-3 py-2">
@@ -284,6 +289,9 @@
                                 <th class="px-5 py-4 text-left font-extrabold">Aulas</th>
                                 <th class="px-5 py-4 text-left font-extrabold">Pós-testes</th>
                                 <th class="px-5 py-4 text-left font-extrabold">Média</th>
+                                <th class="px-5 py-4 text-left font-extrabold">Prova final</th>
+                                <th class="px-5 py-4 text-left font-extrabold">Última aula</th>
+                                <th class="px-5 py-4 text-left font-extrabold">Último pós-teste</th>
                                 <th class="px-5 py-4 text-left font-extrabold">Última atividade</th>
                                 <th class="px-5 py-4 text-left font-extrabold">Situação</th>
                             </tr>
@@ -298,6 +306,9 @@
                                         </div>
                                         <div class="text-xs text-[#60756B] break-all">
                                             {{ $residente->email }}
+                                        </div>
+                                        <div class="text-xs text-[#004D3A] font-bold mt-1">
+                                            Curso: {{ $residente->curso_nome ?? 'Curso não identificado' }}
                                         </div>
                                     </td>
 
@@ -336,8 +347,41 @@
 
                                     <td class="px-5 py-4">
                                         <strong class="text-blue-600">
-                                            {{ number_format($residente->media, 1, ',', '.') }}
+                                            {{ formatarNotaAcompanhamento($residente->media) }}
                                         </strong>
+                                    </td>
+
+                                    <td class="px-5 py-4">
+                                        <div class="font-extrabold {{ ($residente->nota_final ?? 0) >= 70 ? 'text-green-700' : 'text-red-600' }}">
+                                            {{ $residente->prova_final_feita ? 'Feita' : 'Pendente' }}
+                                        </div>
+                                        <div class="text-xs text-[#60756B]">
+                                            Nota: {{ formatarNotaAcompanhamento($residente->nota_final) }}
+                                        </div>
+                                        <div class="text-xs text-[#60756B]">
+                                            {{ formatarDataAcompanhamento($residente->ultima_prova_final->data ?? null) }}
+                                        </div>
+                                    </td>
+
+                                    <td class="px-5 py-4 text-[#60756B] min-w-[180px]">
+                                        <div class="font-bold text-[#003C2F]">
+                                            {{ $residente->ultima_aula->titulo ?? 'Sem registro' }}
+                                        </div>
+                                        <div class="text-xs">
+                                            {{ formatarDataAcompanhamento($residente->ultima_aula->data ?? null) }}
+                                        </div>
+                                    </td>
+
+                                    <td class="px-5 py-4 text-[#60756B] min-w-[180px]">
+                                        <div class="font-bold text-[#003C2F]">
+                                            {{ $residente->ultimo_teste->titulo ?? 'Sem registro' }}
+                                        </div>
+                                        <div class="text-xs">
+                                            Nota: {{ formatarNotaAcompanhamento($residente->ultimo_teste->nota ?? null) }}
+                                        </div>
+                                        <div class="text-xs">
+                                            {{ formatarDataAcompanhamento($residente->ultimo_teste->data ?? null) }}
+                                        </div>
                                     </td>
 
                                     <td class="px-5 py-4 text-[#60756B]">
@@ -345,9 +389,13 @@
                                     </td>
 
                                     <td class="px-5 py-4">
-                                        @if($residente->quase_certificado)
+                                        @if($residente->certificado_liberado ?? false)
                                             <span class="inline-flex px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-extrabold">
-                                                Quase certificado
+                                                Certificado liberado
+                                            </span>
+                                        @elseif($residente->quase_certificado)
+                                            <span class="inline-flex px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-extrabold">
+                                                Falta prova final/nota
                                             </span>
                                         @elseif($residente->em_risco)
                                             <span class="inline-flex px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-extrabold">
@@ -362,7 +410,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-5 py-10 text-center text-[#60756B]">
+                                    <td colspan="11" class="px-5 py-10 text-center text-[#60756B]">
                                         Nenhum residente encontrado.
                                     </td>
                                 </tr>

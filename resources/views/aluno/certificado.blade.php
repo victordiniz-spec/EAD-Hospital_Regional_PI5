@@ -14,75 +14,250 @@
     // Senha: 123
     $acessoTeste = request('teste') === '123';
 
-    // =========================
-    // AULAS
-    // =========================
-    $totalAulas = DB::table('aulas')->count();
+    /*
+    |--------------------------------------------------------------------------
+    | FUNÇÕES AUXILIARES
+    |--------------------------------------------------------------------------
+    | Corrigem:
+    | - nota 10 sendo exibida como 10%;
+    | - contagem geral de aulas/pós-testes fora do curso atual;
+    | - liberação incorreta do certificado.
+    */
+    $tabelaExiste = function (string $tabela): bool {
+        return DB::getSchemaBuilder()->hasTable($tabela);
+    };
 
-    $totalAulasAssistidas = DB::table('aulas_assistidas')
-        ->where('aluno_id', $alunoId)
-        ->where('assistido', true)
-        ->count();
+    $colunaExiste = function (string $tabela, string $coluna) use ($tabelaExiste): bool {
+        return $tabelaExiste($tabela) && DB::getSchemaBuilder()->hasColumn($tabela, $coluna);
+    };
+
+    $normalizarNotaPercentual = function ($nota): ?float {
+        if ($nota === null || $nota === '') {
+            return null;
+        }
+
+        $nota = (float) $nota;
+
+        /*
+        |--------------------------------------------------------------------------
+        | CORREÇÃO PRINCIPAL
+        |--------------------------------------------------------------------------
+        | Se a nota estiver em escala 0 a 10:
+        | 10 vira 100%
+        | 7 vira 70%
+        | 6.5 vira 65%
+        |
+        | Se já estiver em porcentagem:
+        | 70 continua 70%
+        | 100 continua 100%
+        */
+        if ($nota <= 10) {
+            return round($nota * 10, 2);
+        }
+
+        return round($nota, 2);
+    };
+
+    $formatarPercentual = function ($valor) {
+        if ($valor === null || $valor === '') {
+            return '0,00%';
+        }
+
+        return number_format((float) $valor, 2, ',', '.') . '%';
+    };
+
+    $primeiraColunaNota = function () use ($colunaExiste): ?string {
+        foreach (['porcentagem', 'nota', 'pontuacao', 'valor', 'media', 'resultado'] as $coluna) {
+            if ($colunaExiste('notas', $coluna)) {
+                return $coluna;
+            }
+        }
+
+        return null;
+    };
+
+    $notaRegistroPercentual = function ($registroNota) use ($normalizarNotaPercentual) {
+        if (!$registroNota) {
+            return null;
+        }
+
+        foreach (['porcentagem', 'nota', 'pontuacao', 'valor', 'media', 'resultado'] as $coluna) {
+            if (isset($registroNota->{$coluna}) && $registroNota->{$coluna} !== null) {
+                return $normalizarNotaPercentual($registroNota->{$coluna});
+            }
+        }
+
+        return null;
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | CURSO ATUAL DO ALUNO
+    |--------------------------------------------------------------------------
+    | Primeiro tenta matrícula. Se não houver matrícula, usa curso publicado/ativo
+    | ou o curso mais recente como fallback.
+    */
+    $cursoAtualId = null;
+
+    if ($tabelaExiste('matriculas')) {
+        $cursoAtualId = DB::table('matriculas')
+            ->where('aluno_id', $alunoId)
+            ->orderByDesc('id')
+            ->value('curso_id');
+    }
+
+    if (!$cursoAtualId && $tabelaExiste('cursos')) {
+        $queryCurso = DB::table('cursos');
+
+        if ($colunaExiste('cursos', 'publicado')) {
+            $queryCurso->where('publicado', true);
+        } elseif ($colunaExiste('cursos', 'ativo')) {
+            $queryCurso->where('ativo', true);
+        } elseif ($colunaExiste('cursos', 'status')) {
+            $queryCurso->whereIn('status', ['publicado', 'ativo', 'aprovado']);
+        }
+
+        $cursoAtualId = $queryCurso
+            ->orderByDesc('id')
+            ->value('id');
+    }
+
+    $cursoAtual = null;
+
+    if ($cursoAtualId && $tabelaExiste('cursos')) {
+        $cursoAtual = DB::table('cursos')
+            ->where('id', $cursoAtualId)
+            ->first();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | AULAS DO CURSO ATUAL
+    |--------------------------------------------------------------------------
+    */
+    $aulasCursoIds = collect();
+
+    if ($cursoAtualId && $tabelaExiste('aulas')) {
+        if ($tabelaExiste('modulos')) {
+            $modulosCursoIds = DB::table('modulos')
+                ->where('curso_id', $cursoAtualId)
+                ->pluck('id');
+
+            if ($modulosCursoIds->count() > 0) {
+                $aulasCursoIds = DB::table('aulas')
+                    ->whereIn('modulo_id', $modulosCursoIds)
+                    ->pluck('id');
+            }
+        }
+
+        if ($colunaExiste('aulas', 'curso_id')) {
+            $aulasDiretasIds = DB::table('aulas')
+                ->where('curso_id', $cursoAtualId)
+                ->pluck('id');
+
+            $aulasCursoIds = $aulasCursoIds
+                ->merge($aulasDiretasIds)
+                ->unique()
+                ->values();
+        }
+    }
+
+    $totalAulas = $aulasCursoIds->count();
+
+    $totalAulasAssistidas = 0;
+
+    if ($totalAulas > 0 && $tabelaExiste('aulas_assistidas')) {
+        $totalAulasAssistidas = DB::table('aulas_assistidas')
+            ->where('aluno_id', $alunoId)
+            ->whereIn('aula_id', $aulasCursoIds)
+            ->where('assistido', true)
+            ->distinct('aula_id')
+            ->count('aula_id');
+    }
 
     $aulasOk = $totalAulas > 0 && $totalAulasAssistidas >= $totalAulas;
 
-    // =========================
-    // PÓS-TESTES
-    // =========================
-    $posTestesIds = DB::table('avaliacoes')
-        ->whereNotNull('aula_id')
-        ->pluck('id');
+    /*
+    |--------------------------------------------------------------------------
+    | PÓS-TESTES DO CURSO ATUAL
+    |--------------------------------------------------------------------------
+    */
+    $posTestesIds = collect();
+
+    if ($aulasCursoIds->count() > 0 && $tabelaExiste('avaliacoes')) {
+        $queryPosTestes = DB::table('avaliacoes')
+            ->whereIn('aula_id', $aulasCursoIds);
+
+        if ($colunaExiste('avaliacoes', 'tipo')) {
+            $queryPosTestes->where(function ($query) {
+                $query->where('tipo', 'normal')
+                    ->orWhere('tipo', 'pos_teste')
+                    ->orWhere('tipo', 'pós-teste')
+                    ->orWhereNull('tipo');
+            });
+        }
+
+        $posTestesIds = $queryPosTestes->pluck('id');
+    }
 
     $totalPosTestes = $posTestesIds->count();
 
-    $totalPosTestesFeitos = $totalPosTestes > 0
-        ? DB::table('notas')
+    $totalPosTestesFeitos = 0;
+
+    if ($totalPosTestes > 0 && $tabelaExiste('notas')) {
+        $totalPosTestesFeitos = DB::table('notas')
             ->where('aluno_id', $alunoId)
             ->whereIn('avaliacao_id', $posTestesIds)
             ->distinct('avaliacao_id')
-            ->count('avaliacao_id')
-        : 0;
+            ->count('avaliacao_id');
+    }
 
     $postestesOk = $totalPosTestesFeitos >= $totalPosTestes;
 
-    // =========================
-    // PROVA FINAL
-    // =========================
-    $provaFinal = DB::table('avaliacoes')
-        ->where('tipo', 'final')
-        ->first();
+    /*
+    |--------------------------------------------------------------------------
+    | PROVA FINAL
+    |--------------------------------------------------------------------------
+    */
+    $provaFinal = null;
+
+    if ($tabelaExiste('avaliacoes')) {
+        $queryProvaFinal = DB::table('avaliacoes')
+            ->where('tipo', 'final');
+
+        if ($cursoAtualId && $colunaExiste('avaliacoes', 'curso_id')) {
+            $queryProvaFinal->where('curso_id', $cursoAtualId);
+        }
+
+        $provaFinal = $queryProvaFinal
+            ->orderByDesc('id')
+            ->first();
+    }
 
     $notaFinal = null;
     $provaFinalFeita = false;
     $aprovadoNaFinal = false;
 
-    if ($provaFinal) {
+    if ($provaFinal && $tabelaExiste('notas')) {
         $resultadoFinal = DB::table('notas')
             ->where('aluno_id', $alunoId)
             ->where('avaliacao_id', $provaFinal->id)
             ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->first();
 
         if ($resultadoFinal) {
             $provaFinalFeita = true;
-
-            if (isset($resultadoFinal->porcentagem)) {
-                $notaFinal = $resultadoFinal->porcentagem;
-            } elseif (isset($resultadoFinal->nota)) {
-                $notaFinal = $resultadoFinal->nota;
-            } elseif (isset($resultadoFinal->pontuacao)) {
-                $notaFinal = $resultadoFinal->pontuacao;
-            } else {
-                $notaFinal = 0;
-            }
-
-            $aprovadoNaFinal = $notaFinal >= 70;
+            $notaFinal = $notaRegistroPercentual($resultadoFinal);
+            $aprovadoNaFinal = $notaFinal !== null && $notaFinal >= 70;
         }
     }
 
-    // =========================
-    // LIBERAÇÃO DO CERTIFICADO
-    // =========================
+    /*
+    |--------------------------------------------------------------------------
+    | LIBERAÇÃO DO CERTIFICADO
+    |--------------------------------------------------------------------------
+    */
     $certificadoLiberado = ($aulasOk && $postestesOk && $provaFinalFeita && $aprovadoNaFinal) || $acessoTeste;
 
     $totalRequisitos = 4;
@@ -95,28 +270,37 @@
 
     $progresso = round(($requisitosConcluidos / $totalRequisitos) * 100);
 
-    // =========================
-    // MODELO DO CERTIFICADO
-    // =========================
-    $modeloCertificado = DB::table('certificados')
-        ->orderByDesc('created_at')
-        ->first();
+    /*
+    |--------------------------------------------------------------------------
+    | MODELO DO CERTIFICADO
+    |--------------------------------------------------------------------------
+    */
+    $modeloCertificado = $tabelaExiste('certificados')
+        ? DB::table('certificados')->orderByDesc('created_at')->first()
+        : null;
 
-    $nomeCurso = $modeloCertificado->curso ?? 'Integrar ReSaúde';
+    $nomeCurso = $modeloCertificado->curso
+        ?? $cursoAtual->nome
+        ?? $cursoAtual->titulo
+        ?? 'Integrar ReSaúde';
+
     $cargaHoraria = $modeloCertificado->carga_horaria ?? 40;
     $responsavel = $modeloCertificado->responsavel ?? 'Responsável pelo Curso';
     $cargo = $modeloCertificado->cargo ?? 'Coordenação do Curso';
+    $assinatura = $modeloCertificado->assinatura ?? null;
 
-    // =========================
-    // REGISTRO DE CERTIFICADO EMITIDO
-    // =========================
-    // Quando o certificado estiver liberado, registra uma única vez no histórico.
-    // Essa tabela alimenta a área "Certificados Emitidos" no painel do professor.
+    $notaFinalParaExibir = $formatarPercentual($notaFinal ?? ($acessoTeste ? 100 : 0));
+
+    /*
+    |--------------------------------------------------------------------------
+    | REGISTRO DE CERTIFICADO EMITIDO
+    |--------------------------------------------------------------------------
+    */
     $certificadoEmitido = null;
     $codigoValidacaoCertificado = null;
     $dataEmissaoCertificado = now();
 
-    if ($certificadoLiberado && $modeloCertificado && DB::getSchemaBuilder()->hasTable('certificados_emitidos')) {
+    if ($certificadoLiberado && $modeloCertificado && $tabelaExiste('certificados_emitidos')) {
         $certificadoEmitido = DB::table('certificados_emitidos')
             ->where('aluno_id', $alunoId)
             ->where('certificado_modelo_id', $modeloCertificado->id)
@@ -131,9 +315,9 @@
                 'aluno_nome' => $aluno->name,
                 'email' => $aluno->email,
                 'cpf' => $aluno->cpf,
-                'curso' => $modeloCertificado->curso ?? 'Integrar ReSaúde',
-                'carga_horaria' => $modeloCertificado->carga_horaria ?? 40,
-                'nota_final' => $notaFinal,
+                'curso' => $nomeCurso,
+                'carga_horaria' => $cargaHoraria,
+                'nota_final' => $notaFinal ?? ($acessoTeste ? 100 : 0),
                 'codigo_validacao' => $codigoValidacaoCertificado,
                 'data_emissao' => $dataEmissaoCertificado,
                 'created_at' => now(),
@@ -530,7 +714,7 @@
                                         </p>
 
                                         <p class="text-2xl font-extrabold mt-1 {{ $aprovadoNaFinal ? 'text-green-600' : 'text-red-600' }}">
-                                            {{ $notaFinal !== null ? $notaFinal . '%' : '0%' }}
+                                            {{ $notaFinalParaExibir }}
                                         </p>
 
                                         <p class="text-xs text-[#60756B] mt-1">
@@ -608,7 +792,7 @@
 
                                     <div>
                                         <p class="font-bold text-[#003C2F]">Atingir 70% na prova final</p>
-                                        <p class="text-sm text-[#60756B]">Nota atual: {{ $notaFinal !== null ? $notaFinal . '%' : '0%' }}.</p>
+                                        <p class="text-sm text-[#60756B]">Nota atual: {{ $notaFinalParaExibir }}.</p>
                                     </div>
                                 </div>
 
@@ -668,9 +852,15 @@
                                     <!-- ASSINATURA MANUAL -->
                                     <div>
                                         <div class="certificado-assinatura-espaco h-16 flex items-end justify-center">
-                                            <span class="text-xs italic text-[#A5B7AB]">
-                                                Espaço para assinatura manual
-                                            </span>
+                                            @if(!empty($assinatura))
+                                                <img src="{{ asset('storage/' . $assinatura) }}"
+                                                     alt="Assinatura"
+                                                     class="max-h-16 max-w-[190px] object-contain">
+                                            @else
+                                                <span class="text-xs italic text-[#A5B7AB]">
+                                                    Espaço para assinatura manual
+                                                </span>
+                                            @endif
                                         </div>
 
                                         <div class="border-t border-[#8A9B92] pt-2">
@@ -694,7 +884,7 @@
 
                                             <p class="text-xs text-[#60756B] mt-2">
                                                 Aproveitamento:
-                                                <strong class="text-[#374151]">{{ $notaFinal ?? 70 }}%</strong>
+                                                <strong class="text-[#374151]">{{ $notaFinalParaExibir }}</strong>
                                             </p>
 
                                             <div class="border-t border-[#8A9B92] mt-6 pt-2">

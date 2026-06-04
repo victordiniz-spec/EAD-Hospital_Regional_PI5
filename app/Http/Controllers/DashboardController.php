@@ -409,12 +409,37 @@ class DashboardController extends Controller
             $avaliacoesFeitas = 0;
             $media = 0;
 
+            $ultimaAulaAssistida = null;
+            $ultimoTesteFeito = null;
+            $provaFinalFeita = false;
+            $notaFinalPercentual = null;
+            $ultimaProvaFinal = null;
+            $certificadoLiberado = false;
+
             if (DB::getSchemaBuilder()->hasTable('aulas_assistidas')) {
                 $aulasAssistidas = DB::table('aulas_assistidas')
                     ->where('aluno_id', $residente->id)
                     ->where('assistido', true)
                     ->distinct('aula_id')
                     ->count('aula_id');
+
+                $ultimaAulaRegistro = DB::table('aulas_assistidas')
+                    ->where('aluno_id', $residente->id)
+                    ->where('assistido', true)
+                    ->orderByDesc('updated_at')
+                    ->orderByDesc('created_at')
+                    ->first();
+
+                if ($ultimaAulaRegistro && DB::getSchemaBuilder()->hasTable('aulas')) {
+                    $aula = DB::table('aulas')
+                        ->where('id', $ultimaAulaRegistro->aula_id)
+                        ->first();
+
+                    $ultimaAulaAssistida = (object) [
+                        'titulo' => $aula->titulo ?? $aula->nome ?? 'Aula removida',
+                        'data' => $ultimaAulaRegistro->updated_at ?? $ultimaAulaRegistro->created_at ?? null,
+                    ];
+                }
             }
 
             if (DB::getSchemaBuilder()->hasTable('notas')) {
@@ -425,7 +450,94 @@ class DashboardController extends Controller
 
                 $media = DB::table('notas')
                     ->where('aluno_id', $residente->id)
+                    ->whereIn('avaliacao_id', function ($query) {
+                        $query->select('id')
+                            ->from('avaliacoes')
+                            ->where(function ($q) {
+                                $q->where('tipo', 'normal')
+                                    ->orWhere('tipo', 'pos_teste')
+                                    ->orWhere('tipo', 'pós-teste')
+                                    ->orWhereNull('tipo');
+                            });
+                    })
                     ->avg('nota') ?? 0;
+
+                // Se a média estiver em escala 0 a 10, transforma em percentual.
+                $media = $media <= 10 ? $media * 10 : $media;
+
+                $ultimoTesteRegistro = DB::table('notas')
+                    ->where('aluno_id', $residente->id)
+                    ->whereIn('avaliacao_id', function ($query) {
+                        $query->select('id')
+                            ->from('avaliacoes')
+                            ->where(function ($q) {
+                                $q->where('tipo', 'normal')
+                                    ->orWhere('tipo', 'pos_teste')
+                                    ->orWhere('tipo', 'pós-teste')
+                                    ->orWhereNull('tipo');
+                            });
+                    })
+                    ->orderByDesc('created_at')
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($ultimoTesteRegistro && DB::getSchemaBuilder()->hasTable('avaliacoes')) {
+                    $avaliacaoTeste = DB::table('avaliacoes')
+                        ->where('id', $ultimoTesteRegistro->avaliacao_id)
+                        ->first();
+
+                    $notaUltimoTeste = $ultimoTesteRegistro->porcentagem
+                        ?? $ultimoTesteRegistro->nota
+                        ?? $ultimoTesteRegistro->pontuacao
+                        ?? $ultimoTesteRegistro->valor
+                        ?? null;
+
+                    if ($notaUltimoTeste !== null) {
+                        $notaUltimoTeste = (float) $notaUltimoTeste;
+                        $notaUltimoTeste = $notaUltimoTeste <= 10 ? $notaUltimoTeste * 10 : $notaUltimoTeste;
+                    }
+
+                    $ultimoTesteFeito = (object) [
+                        'titulo' => $avaliacaoTeste->titulo ?? $avaliacaoTeste->nome ?? 'Pós-teste removido',
+                        'nota' => $notaUltimoTeste,
+                        'data' => $ultimoTesteRegistro->created_at ?? $ultimoTesteRegistro->updated_at ?? null,
+                    ];
+                }
+
+                $avaliacaoFinal = DB::table('avaliacoes')
+                    ->where('tipo', 'final')
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($avaliacaoFinal) {
+                    $notaFinalRegistro = DB::table('notas')
+                        ->where('aluno_id', $residente->id)
+                        ->where('avaliacao_id', $avaliacaoFinal->id)
+                        ->orderByDesc('created_at')
+                        ->orderByDesc('id')
+                        ->first();
+
+                    if ($notaFinalRegistro) {
+                        $provaFinalFeita = true;
+
+                        $notaFinalPercentual = $notaFinalRegistro->porcentagem
+                            ?? $notaFinalRegistro->nota
+                            ?? $notaFinalRegistro->pontuacao
+                            ?? $notaFinalRegistro->valor
+                            ?? null;
+
+                        if ($notaFinalPercentual !== null) {
+                            $notaFinalPercentual = (float) $notaFinalPercentual;
+                            $notaFinalPercentual = $notaFinalPercentual <= 10 ? $notaFinalPercentual * 10 : $notaFinalPercentual;
+                        }
+
+                        $ultimaProvaFinal = (object) [
+                            'titulo' => $avaliacaoFinal->titulo ?? $avaliacaoFinal->nome ?? 'Prova final',
+                            'nota' => $notaFinalPercentual,
+                            'data' => $notaFinalRegistro->created_at ?? $notaFinalRegistro->updated_at ?? null,
+                        ];
+                    }
+                }
             }
 
             $progresso = $totalAulas > 0 ? round(($aulasAssistidas / $totalAulas) * 100) : 0;
@@ -439,10 +551,14 @@ class DashboardController extends Controller
                     ->max('updated_at');
             }
 
-            if (!$ultimaAtividade && DB::getSchemaBuilder()->hasTable('notas')) {
-                $ultimaAtividade = DB::table('notas')
+            if (DB::getSchemaBuilder()->hasTable('notas')) {
+                $ultimaNotaAtividade = DB::table('notas')
                     ->where('aluno_id', $residente->id)
                     ->max('created_at');
+
+                if (!$ultimaAtividade || ($ultimaNotaAtividade && $ultimaNotaAtividade > $ultimaAtividade)) {
+                    $ultimaAtividade = $ultimaNotaAtividade;
+                }
             }
 
             $diasSemAtividade = null;
@@ -475,9 +591,19 @@ class DashboardController extends Controller
                     || ($diasSemAtividade !== null && $diasSemAtividade >= 7)
                 );
 
+            $aulasOk = $totalAulas > 0 && $aulasAssistidas >= $totalAulas;
+            $postestesOk = $totalAvaliacoes === 0 || $avaliacoesFeitas >= $totalAvaliacoes;
+            $provaFinalOk = $provaFinalFeita && $notaFinalPercentual !== null && $notaFinalPercentual >= 70;
+
+            $certificadoLiberado = $residente->status === 'aprovado'
+                && $aulasOk
+                && $postestesOk
+                && $provaFinalOk;
+
             $quaseCertificado = $residente->status === 'aprovado'
-                && $progresso >= 70
-                && round($media, 1) >= 7;
+                && $aulasOk
+                && $postestesOk
+                && !$certificadoLiberado;
 
             $linhasResidentes->push((object) [
                 'id' => $residente->id,
@@ -493,6 +619,12 @@ class DashboardController extends Controller
                 'total_avaliacoes' => $totalAvaliacoes,
                 'postestes_pendentes' => $postestesPendentes,
                 'media' => round($media, 1),
+                'ultima_aula' => $ultimaAulaAssistida,
+                'ultimo_teste' => $ultimoTesteFeito,
+                'prova_final_feita' => $provaFinalFeita,
+                'nota_final' => $notaFinalPercentual,
+                'ultima_prova_final' => $ultimaProvaFinal,
+                'certificado_liberado' => $certificadoLiberado,
                 'ultima_atividade' => $ultimaAtividade,
                 'dias_sem_atividade' => $diasSemAtividade,
                 'em_risco' => $emRisco,
@@ -502,6 +634,8 @@ class DashboardController extends Controller
 
         $alunosEmRisco = $linhasResidentes->where('em_risco', true)->count();
         $certificadosQuaseLiberados = $linhasResidentes->where('quase_certificado', true)->count();
+        $certificadosLiberados = $linhasResidentes->where('certificado_liberado', true)->count();
+        $provasFinaisFeitas = $linhasResidentes->where('prova_final_feita', true)->count();
         $postestesPendentes = $linhasResidentes->sum('postestes_pendentes');
         $mediaGeralTurma = $linhasResidentes->count() > 0 ? round($linhasResidentes->avg('media'), 1) : 0;
 
@@ -525,6 +659,8 @@ class DashboardController extends Controller
             'linhasResidentes',
             'alunosEmRisco',
             'certificadosQuaseLiberados',
+            'certificadosLiberados',
+            'provasFinaisFeitas',
             'postestesPendentes',
             'mediaGeralTurma',
             'rankingEvolucao',
