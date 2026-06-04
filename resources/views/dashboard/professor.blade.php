@@ -238,20 +238,56 @@
 
     $colunaNota = $primeiraColunaNota();
 
-    $mediaGeral = 0;
+    /*
+    |--------------------------------------------------------------------------
+    | MÉDIA GERAL DA TURMA
+    |--------------------------------------------------------------------------
+    | Correção:
+    | antes a home pegava somente as notas existentes. Por isso, se apenas um
+    | aluno tinha nota 100%, a média geral aparecia 100%.
+    |
+    | Agora calcula a média igual ao acompanhamento:
+    | - pega todos os residentes/preceptores aprovados;
+    | - calcula a média individual de cada aluno;
+    | - alunos sem nota entram com média 0;
+    | - depois faz a média da turma.
+    */
+    $alunosParaMediaGeral = $tabelaExiste('users')
+        ? DB::table('users')
+            ->where('status', 'aprovado')
+            ->whereIn('tipo', ['residente', 'preceptor'])
+            ->get()
+        : collect();
 
-    if ($colunaNota && $posTestesTodosIds->count() > 0 && $tabelaExiste('notas')) {
-        $notasGeral = DB::table('notas')
-            ->whereIn('avaliacao_id', $posTestesTodosIds)
-            ->whereNotNull($colunaNota)
-            ->pluck($colunaNota)
-            ->map(fn ($nota) => $normalizarNotaPercentual($nota))
-            ->filter(fn ($nota) => $nota !== null);
+    $mediasIndividuaisTurma = collect();
 
-        $mediaGeral = $notasGeral->count() > 0
-            ? round($notasGeral->avg(), 1)
-            : 0;
+    foreach ($alunosParaMediaGeral as $alunoMedia) {
+        $cursoIdMedia = $cursoAtualIdAluno($alunoMedia->id);
+        $aulasIdsMedia = $aulasIdsCurso($cursoIdMedia);
+        $posIdsMedia = $posTestesIdsCurso($aulasIdsMedia);
+
+        $mediaAlunoTurma = 0;
+
+        if ($colunaNota && $posIdsMedia->count() > 0 && $tabelaExiste('notas')) {
+            $notasAlunoTurma = DB::table('notas')
+                ->where('aluno_id', $alunoMedia->id)
+                ->whereIn('avaliacao_id', $posIdsMedia)
+                ->whereNotNull($colunaNota)
+                ->pluck($colunaNota)
+                ->map(fn ($nota) => $normalizarNotaPercentual($nota))
+                ->filter(fn ($nota) => $nota !== null);
+
+            $mediaAlunoTurma = $notasAlunoTurma->count() > 0
+                ? round($notasAlunoTurma->avg(), 1)
+                : 0;
+        }
+
+        $mediasIndividuaisTurma->push($mediaAlunoTurma);
     }
+
+    $mediaGeral = $mediasIndividuaisTurma->count() > 0
+        ? round($mediasIndividuaisTurma->avg(), 1)
+        : 0;
 
     /*
     |--------------------------------------------------------------------------
@@ -751,7 +787,7 @@
                         </span>
                     </div>
 
-                    <p class="text-sm text-[#60756B]">Média Geral</p>
+                    <p class="text-sm text-[#60756B]">Média Geral da Turma</p>
                     <h3 class="text-3xl font-extrabold mt-1 text-[#003C2F]">
                         {{ $formatarPercentualProfessor($mediaGeral) }}
                     </h3>
