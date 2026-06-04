@@ -25,20 +25,263 @@
         12 => 'DEZ',
     ];
 
+    /*
+    |--------------------------------------------------------------------------
+    | FUNÇÕES AUXILIARES
+    |--------------------------------------------------------------------------
+    | Corrige dados irreais:
+    | - prova final não entra como pós-teste;
+    | - tentativas repetidas contam apenas uma vez;
+    | - notas 0 a 10 viram porcentagem.
+    */
+    $tabelaExiste = function (string $tabela): bool {
+        return DB::getSchemaBuilder()->hasTable($tabela);
+    };
+
+    $colunaExiste = function (string $tabela, string $coluna) use ($tabelaExiste): bool {
+        return $tabelaExiste($tabela) && DB::getSchemaBuilder()->hasColumn($tabela, $coluna);
+    };
+
+    $normalizarNotaPercentual = function ($nota): ?float {
+        if ($nota === null || $nota === '') {
+            return null;
+        }
+
+        $nota = (float) $nota;
+
+        // Se a nota estiver em escala 0 a 10, transforma em porcentagem.
+        // Exemplo: 10 = 100%, 7 = 70%.
+        if ($nota <= 10) {
+            return round($nota * 10, 2);
+        }
+
+        return round($nota, 2);
+    };
+
+    $formatarPercentualProfessor = function ($valor) {
+        return number_format((float) ($valor ?? 0), 1, ',', '.') . '%';
+    };
+
+    $primeiraColunaNota = function () use ($colunaExiste): ?string {
+        foreach (['porcentagem', 'nota', 'pontuacao', 'valor', 'media', 'resultado'] as $coluna) {
+            if ($colunaExiste('notas', $coluna)) {
+                return $coluna;
+            }
+        }
+
+        return null;
+    };
+
+    $notaRegistroPercentual = function ($registroNota) use ($normalizarNotaPercentual) {
+        if (!$registroNota) {
+            return null;
+        }
+
+        foreach (['porcentagem', 'nota', 'pontuacao', 'valor', 'media', 'resultado'] as $coluna) {
+            if (isset($registroNota->{$coluna}) && $registroNota->{$coluna} !== null) {
+                return $normalizarNotaPercentual($registroNota->{$coluna});
+            }
+        }
+
+        return null;
+    };
+
+    $cursoAtualIdAluno = function ($alunoId) use ($tabelaExiste, $colunaExiste) {
+        $cursoAtualId = null;
+
+        if ($tabelaExiste('matriculas')) {
+            $cursoAtualId = DB::table('matriculas')
+                ->where('aluno_id', $alunoId)
+                ->orderByDesc('id')
+                ->value('curso_id');
+        }
+
+        if (!$cursoAtualId && $tabelaExiste('cursos')) {
+            $queryCurso = DB::table('cursos');
+
+            if ($colunaExiste('cursos', 'publicado')) {
+                $queryCurso->where('publicado', true);
+            } elseif ($colunaExiste('cursos', 'ativo')) {
+                $queryCurso->where('ativo', true);
+            } elseif ($colunaExiste('cursos', 'status')) {
+                $queryCurso->whereIn('status', ['publicado', 'ativo', 'aprovado']);
+            }
+
+            $cursoAtualId = $queryCurso
+                ->orderByDesc('id')
+                ->value('id');
+        }
+
+        return $cursoAtualId ? (int) $cursoAtualId : null;
+    };
+
+    $aulasIdsCurso = function ($cursoId) use ($tabelaExiste, $colunaExiste) {
+        $aulasIds = collect();
+
+        if (!$cursoId || !$tabelaExiste('aulas')) {
+            return $aulasIds;
+        }
+
+        if ($tabelaExiste('modulos')) {
+            $modulosIds = DB::table('modulos')
+                ->where('curso_id', $cursoId)
+                ->pluck('id');
+
+            if ($modulosIds->count() > 0) {
+                $aulasIds = DB::table('aulas')
+                    ->whereIn('modulo_id', $modulosIds)
+                    ->pluck('id');
+            }
+        }
+
+        if ($colunaExiste('aulas', 'curso_id')) {
+            $aulasDiretas = DB::table('aulas')
+                ->where('curso_id', $cursoId)
+                ->pluck('id');
+
+            $aulasIds = $aulasIds
+                ->merge($aulasDiretas)
+                ->unique()
+                ->values();
+        }
+
+        return $aulasIds;
+    };
+
+    $posTestesIdsCurso = function ($aulasIds) use ($tabelaExiste, $colunaExiste) {
+        if (!$aulasIds || $aulasIds->count() === 0 || !$tabelaExiste('avaliacoes')) {
+            return collect();
+        }
+
+        $query = DB::table('avaliacoes')
+            ->whereIn('aula_id', $aulasIds);
+
+        if ($colunaExiste('avaliacoes', 'tipo')) {
+            $query->where(function ($subQuery) {
+                $subQuery->whereNull('tipo')
+                    ->orWhereIn('tipo', [
+                        'normal',
+                        'pos_teste',
+                        'pós-teste',
+                        'pos-teste',
+                        'posteste',
+                    ]);
+            });
+
+            // Segurança extra: prova final nunca entra como pós-teste.
+            $query->where(function ($subQuery) {
+                $subQuery->whereNull('tipo')
+                    ->orWhereNotIn('tipo', [
+                        'final',
+                        'prova_final',
+                        'prova-final',
+                        'finalizacao',
+                    ]);
+            });
+        }
+
+        return $query->pluck('id')->unique()->values();
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | MÉTRICAS REAIS DO PROFESSOR
+    |--------------------------------------------------------------------------
+    */
+    $totalAlunos = $tabelaExiste('users')
+        ? DB::table('users')
+            ->where('status', 'aprovado')
+            ->whereIn('tipo', ['residente', 'preceptor'])
+            ->count()
+        : 0;
+
+    $totalAulas = $tabelaExiste('aulas')
+        ? DB::table('aulas')->count()
+        : 0;
+
+    $posTestesTodosIds = collect();
+
+    if ($tabelaExiste('avaliacoes')) {
+        $queryPosTestesTodos = DB::table('avaliacoes')
+            ->whereNotNull('aula_id');
+
+        if ($colunaExiste('avaliacoes', 'tipo')) {
+            $queryPosTestesTodos->where(function ($query) {
+                $query->whereNull('tipo')
+                    ->orWhereIn('tipo', [
+                        'normal',
+                        'pos_teste',
+                        'pós-teste',
+                        'pos-teste',
+                        'posteste',
+                    ]);
+            });
+
+            $queryPosTestesTodos->where(function ($query) {
+                $query->whereNull('tipo')
+                    ->orWhereNotIn('tipo', [
+                        'final',
+                        'prova_final',
+                        'prova-final',
+                        'finalizacao',
+                    ]);
+            });
+        }
+
+        $posTestesTodosIds = $queryPosTestesTodos
+            ->pluck('id')
+            ->unique()
+            ->values();
+    }
+
+    $totalProvas = $posTestesTodosIds->count();
+
+    $colunaNota = $primeiraColunaNota();
+
+    $mediaGeral = 0;
+
+    if ($colunaNota && $posTestesTodosIds->count() > 0 && $tabelaExiste('notas')) {
+        $notasGeral = DB::table('notas')
+            ->whereIn('avaliacao_id', $posTestesTodosIds)
+            ->whereNotNull($colunaNota)
+            ->pluck($colunaNota)
+            ->map(fn ($nota) => $normalizarNotaPercentual($nota))
+            ->filter(fn ($nota) => $nota !== null);
+
+        $mediaGeral = $notasGeral->count() > 0
+            ? round($notasGeral->avg(), 1)
+            : 0;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | GRÁFICO REAL DOS ÚLTIMOS 6 MESES
+    |--------------------------------------------------------------------------
+    */
     $dadosGrafico = [];
 
     for ($i = 5; $i >= 0; $i--) {
         $inicio = now()->copy()->subMonths($i)->startOfMonth();
         $fim = now()->copy()->subMonths($i)->endOfMonth();
 
-        $aulasAssistidasMes = DB::table('aulas_assistidas')
-            ->where('assistido', true)
-            ->whereBetween('created_at', [$inicio, $fim])
-            ->count();
+        $aulasAssistidasMes = $tabelaExiste('aulas_assistidas')
+            ? DB::table('aulas_assistidas')
+                ->where('assistido', true)
+                ->whereBetween('created_at', [$inicio, $fim])
+                ->distinct('aula_id')
+                ->count('aula_id')
+            : 0;
 
-        $posTestesFeitosMes = DB::table('notas')
-            ->whereBetween('created_at', [$inicio, $fim])
-            ->count();
+        $posTestesFeitosMes = 0;
+
+        if ($posTestesTodosIds->count() > 0 && $tabelaExiste('notas')) {
+            $posTestesFeitosMes = DB::table('notas')
+                ->whereIn('avaliacao_id', $posTestesTodosIds)
+                ->whereBetween('created_at', [$inicio, $fim])
+                ->get(['aluno_id', 'avaliacao_id'])
+                ->unique(fn ($item) => $item->aluno_id . '-' . $item->avaliacao_id)
+                ->count();
+        }
 
         $totalMes = $aulasAssistidasMes + $posTestesFeitosMes;
 
@@ -57,14 +300,143 @@
     $totalAvisos = isset($avisosRecentes) ? $avisosRecentes->count() : 0;
     $totalPendentes = isset($usuariosPendentes) ? $usuariosPendentes->count() : 0;
 
-    $usuariosAprovadosRecentes = DB::table('users')
-        ->where('status', 'aprovado')
-        ->whereIn('tipo', ['residente', 'preceptor'])
-        ->orderByDesc('updated_at')
-        ->limit(6)
-        ->get();
+    $usuariosAprovadosRecentes = $tabelaExiste('users')
+        ? DB::table('users')
+            ->where('status', 'aprovado')
+            ->whereIn('tipo', ['residente', 'preceptor'])
+            ->orderByDesc('updated_at')
+            ->limit(6)
+            ->get()
+        : collect();
 
     $totalAprovadosHistorico = $usuariosAprovadosRecentes->count();
+
+    /*
+    |--------------------------------------------------------------------------
+    | PÓDIO DOS ALUNOS
+    |--------------------------------------------------------------------------
+    | Substitui "Videoaulas Recentes", porque professor não assiste aula.
+    | Ranking usa progresso, média de pós-testes e prova final.
+    */
+    $alunosRanking = $tabelaExiste('users')
+        ? DB::table('users')
+            ->where('status', 'aprovado')
+            ->whereIn('tipo', ['residente', 'preceptor'])
+            ->orderBy('name')
+            ->get()
+        : collect();
+
+    $rankingAlunos = collect();
+
+    foreach ($alunosRanking as $alunoRanking) {
+        $cursoId = $cursoAtualIdAluno($alunoRanking->id);
+        $aulasIds = $aulasIdsCurso($cursoId);
+        $posIds = $posTestesIdsCurso($aulasIds);
+
+        $totalAulasAluno = $aulasIds->count();
+
+        $aulasAssistidasAluno = 0;
+
+        if ($totalAulasAluno > 0 && $tabelaExiste('aulas_assistidas')) {
+            $aulasAssistidasAluno = DB::table('aulas_assistidas')
+                ->where('aluno_id', $alunoRanking->id)
+                ->whereIn('aula_id', $aulasIds)
+                ->where('assistido', true)
+                ->distinct('aula_id')
+                ->count('aula_id');
+
+            $aulasAssistidasAluno = min($aulasAssistidasAluno, $totalAulasAluno);
+        }
+
+        $totalPosAluno = $posIds->count();
+        $posFeitosAluno = 0;
+        $mediaAluno = 0;
+
+        if ($totalPosAluno > 0 && $tabelaExiste('notas')) {
+            $posFeitosAluno = DB::table('notas')
+                ->where('aluno_id', $alunoRanking->id)
+                ->whereIn('avaliacao_id', $posIds)
+                ->pluck('avaliacao_id')
+                ->unique()
+                ->count();
+
+            $posFeitosAluno = min($posFeitosAluno, $totalPosAluno);
+
+            if ($colunaNota) {
+                $notasAluno = DB::table('notas')
+                    ->where('aluno_id', $alunoRanking->id)
+                    ->whereIn('avaliacao_id', $posIds)
+                    ->whereNotNull($colunaNota)
+                    ->pluck($colunaNota)
+                    ->map(fn ($nota) => $normalizarNotaPercentual($nota))
+                    ->filter(fn ($nota) => $nota !== null);
+
+                $mediaAluno = $notasAluno->count() > 0
+                    ? round($notasAluno->avg(), 1)
+                    : 0;
+            }
+        }
+
+        $progressoAluno = ($totalAulasAluno + $totalPosAluno) > 0
+            ? round((($aulasAssistidasAluno + $posFeitosAluno) / ($totalAulasAluno + $totalPosAluno)) * 100)
+            : 0;
+
+        $notaFinalAluno = null;
+
+        if ($tabelaExiste('avaliacoes') && $tabelaExiste('notas')) {
+            $queryFinal = DB::table('avaliacoes')
+                ->where('tipo', 'final');
+
+            if ($cursoId && $colunaExiste('avaliacoes', 'curso_id')) {
+                $queryFinal->where('curso_id', $cursoId);
+            }
+
+            $provaFinalAluno = $queryFinal
+                ->orderByDesc('id')
+                ->first();
+
+            if ($provaFinalAluno) {
+                $registroFinalAluno = DB::table('notas')
+                    ->where('aluno_id', $alunoRanking->id)
+                    ->where('avaliacao_id', $provaFinalAluno->id)
+                    ->orderByDesc('created_at')
+                    ->orderByDesc('id')
+                    ->first();
+
+                $notaFinalAluno = $notaRegistroPercentual($registroFinalAluno);
+            }
+        }
+
+        $notaFinalParaRanking = $notaFinalAluno ?? 0;
+
+        $pontuacaoRanking = round(
+            ($progressoAluno * 0.45)
+            + ($mediaAluno * 0.35)
+            + ($notaFinalParaRanking * 0.20),
+            1
+        );
+
+        $rankingAlunos->push((object) [
+            'id' => $alunoRanking->id,
+            'name' => $alunoRanking->name,
+            'email' => $alunoRanking->email,
+            'inicial' => strtoupper(mb_substr($alunoRanking->name, 0, 1)),
+            'progresso' => $progressoAluno,
+            'media' => $mediaAluno,
+            'nota_final' => $notaFinalAluno,
+            'aulas' => $aulasAssistidasAluno . '/' . $totalAulasAluno,
+            'postestes' => $posFeitosAluno . '/' . $totalPosAluno,
+            'pontuacao' => $pontuacaoRanking,
+        ]);
+    }
+
+    $rankingAlunos = $rankingAlunos
+        ->sortByDesc('pontuacao')
+        ->values();
+
+    $podioAlunos = $rankingAlunos
+        ->take(3)
+        ->values();
 @endphp
 
 <style>
@@ -155,6 +527,24 @@
             font-size: 9px !important;
         }
     }
+
+    .card-podio {
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .card-podio:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 18px 35px rgba(0, 77, 58, 0.13);
+    }
+
+    .base-podio {
+        background: linear-gradient(180deg, #EAF5EF 0%, #DCE7DE 100%);
+    }
+
+    .trofeu-podio {
+        filter: drop-shadow(0 8px 14px rgba(0, 77, 58, 0.16));
+    }
+
 </style>
 
 <div class="flex min-h-screen w-full bg-[#F3F7F3] text-[#003C2F] overflow-x-hidden">
@@ -363,11 +753,11 @@
 
                     <p class="text-sm text-[#60756B]">Média Geral</p>
                     <h3 class="text-3xl font-extrabold mt-1 text-[#003C2F]">
-                        {{ number_format($mediaGeral, 1) }}
+                        {{ $formatarPercentualProfessor($mediaGeral) }}
                     </h3>
 
                     <div class="mt-4 h-1.5 bg-[#E8EFE9] rounded-full overflow-hidden">
-                        <div class="h-full bg-[#004D3A] rounded-full" style="width: {{ min(100, max(0, $mediaGeral * 10)) }}%;"></div>
+                        <div class="h-full bg-[#004D3A] rounded-full" style="width: {{ min(100, max(0, $mediaGeral)) }}%;"></div>
                     </div>
                 </div>
 
@@ -581,95 +971,153 @@
             <!-- AULAS RECENTES + SOLICITAÇÕES -->
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-7">
 
-                <!-- VIDEOAULAS RECENTES -->
-                <div class="xl:col-span-2 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-[#E3EBE4]">
+                <!-- PÓDIO DOS ALUNOS -->
+                <div class="xl:col-span-2 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-[#E3EBE4] overflow-hidden">
 
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                         <div>
                             <h2 class="font-extrabold text-[#003C2F] text-lg">
-                                Videoaulas Recentes
+                                Pódio dos Alunos
                             </h2>
                             <p class="text-xs text-[#60756B]">
-                                Últimos conteúdos adicionados à plataforma.
+                                Ranking divertido baseado em progresso, média dos pós-testes e nota da prova final.
                             </p>
                         </div>
 
-                        <a href="{{ route('videoaulas') }}"
+                        <a href="{{ route('acompanhamento.residentes') }}"
                            class="inline-flex items-center justify-center gap-2 bg-[#004D3A] text-white px-4 py-2.5 rounded-2xl text-sm font-bold hover:bg-[#003C2F] transition">
-                            Gerenciar Todas
+                            Ver acompanhamento
                         </a>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full min-w-[650px] text-sm">
+                    @if($podioAlunos->count() > 0)
 
-                            <thead>
-                                <tr class="text-left text-[11px] uppercase tracking-widest text-[#60756B] border-b border-[#E3EBE4]">
-                                    <th class="py-3 px-3">Aula</th>
-                                    <th class="py-3 px-3">Status</th>
-                                    <th class="py-3 px-3">Tipo</th>
-                                    <th class="py-3 px-3 text-right">Ações</th>
-                                </tr>
-                            </thead>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
 
-                            <tbody>
-                                @forelse($aulasRecentes as $aula)
-                                    <tr class="border-b border-[#EEF3EF] hover:bg-[#F8FBF8] transition">
-                                        <td class="py-4 px-3">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-10 h-10 rounded-xl bg-[#004D3A] text-white flex items-center justify-center font-bold">
-                                                    {{ strtoupper(substr($aula->titulo, 0, 1)) }}
-                                                </div>
+                            @php
+                                $ordemPodio = [
+                                    1 => ['posicao' => 2, 'altura' => 'h-24', 'emoji' => '🥈', 'titulo' => '2º lugar', 'cor' => 'text-slate-600', 'bg' => 'bg-slate-100'],
+                                    0 => ['posicao' => 1, 'altura' => 'h-32', 'emoji' => '🏆', 'titulo' => '1º lugar', 'cor' => 'text-yellow-700', 'bg' => 'bg-yellow-100'],
+                                    2 => ['posicao' => 3, 'altura' => 'h-20', 'emoji' => '🥉', 'titulo' => '3º lugar', 'cor' => 'text-orange-700', 'bg' => 'bg-orange-100'],
+                                ];
+                            @endphp
 
-                                                <div class="min-w-0">
-                                                    <p class="font-bold text-[#003C2F] break-words">
-                                                        {{ $aula->titulo }}
-                                                    </p>
-                                                    <p class="text-xs text-[#60756B]">
-                                                        Videoaula cadastrada
-                                                    </p>
-                                                </div>
+                            @foreach($ordemPodio as $indiceAluno => $configPodio)
+                                @php
+                                    $alunoPodio = $podioAlunos->get($indiceAluno);
+                                @endphp
+
+                                @if($alunoPodio)
+                                    <div class="card-podio rounded-3xl border border-[#E3EBE4] bg-[#F8FBF8] p-4 text-center {{ $configPodio['posicao'] === 1 ? 'lg:-mt-5' : '' }}">
+
+                                        <div class="mx-auto w-16 h-16 rounded-3xl {{ $configPodio['bg'] }} flex items-center justify-center text-3xl trofeu-podio mb-3">
+                                            {{ $configPodio['emoji'] }}
+                                        </div>
+
+                                        <span class="inline-flex px-3 py-1 rounded-full {{ $configPodio['bg'] }} {{ $configPodio['cor'] }} text-xs font-extrabold mb-3">
+                                            {{ $configPodio['titulo'] }}
+                                        </span>
+
+                                        <div class="w-14 h-14 rounded-2xl bg-[#004D3A] text-white flex items-center justify-center font-extrabold text-xl mx-auto mb-3">
+                                            {{ $alunoPodio->inicial }}
+                                        </div>
+
+                                        <h3 class="font-extrabold text-[#003C2F] text-base leading-tight min-h-[42px]">
+                                            {{ $alunoPodio->name }}
+                                        </h3>
+
+                                        <p class="text-xs text-[#60756B] mt-1 break-all">
+                                            {{ $alunoPodio->email }}
+                                        </p>
+
+                                        <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+                                            <div class="bg-white border border-[#DCE7DE] rounded-2xl p-2">
+                                                <p class="text-[9px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                                    Progresso
+                                                </p>
+                                                <p class="text-sm font-extrabold text-[#003C2F]">
+                                                    {{ $alunoPodio->progresso }}%
+                                                </p>
                                             </div>
-                                        </td>
 
-                                        <td class="py-4 px-3">
-                                            <span class="inline-flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
-                                                <span class="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
-                                                Publicada
+                                            <div class="bg-white border border-[#DCE7DE] rounded-2xl p-2">
+                                                <p class="text-[9px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                                    Média
+                                                </p>
+                                                <p class="text-sm font-extrabold text-blue-600">
+                                                    {{ $formatarPercentualProfessor($alunoPodio->media) }}
+                                                </p>
+                                            </div>
+
+                                            <div class="bg-white border border-[#DCE7DE] rounded-2xl p-2">
+                                                <p class="text-[9px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                                    Final
+                                                </p>
+                                                <p class="text-sm font-extrabold {{ ($alunoPodio->nota_final ?? 0) >= 70 ? 'text-green-700' : 'text-red-600' }}">
+                                                    {{ $alunoPodio->nota_final === null ? '-' : $formatarPercentualProfessor($alunoPodio->nota_final) }}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-4">
+                                            <div class="h-2 bg-[#DCE7DE] rounded-full overflow-hidden">
+                                                <div class="h-full bg-[#00A63E] rounded-full" style="width: {{ min(100, $alunoPodio->pontuacao) }}%;"></div>
+                                            </div>
+
+                                            <p class="text-xs text-[#60756B] mt-2">
+                                                Pontuação do ranking:
+                                                <strong class="text-[#004D3A]">{{ $formatarPercentualProfessor($alunoPodio->pontuacao) }}</strong>
+                                            </p>
+                                        </div>
+
+                                        <div class="base-podio {{ $configPodio['altura'] }} rounded-2xl mt-4 flex items-center justify-center">
+                                            <span class="text-4xl font-black text-[#004D3A]">
+                                                {{ $configPodio['posicao'] }}
                                             </span>
-                                        </td>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="hidden lg:block"></div>
+                                @endif
+                            @endforeach
 
-                                        <td class="py-4 px-3 text-[#60756B]">
-                                            Aula
-                                        </td>
+                        </div>
 
-                                        <td class="py-4 px-3 text-right">
-                                            <a href="{{ route('videoaulas') }}"
-                                               class="inline-flex items-center justify-center w-9 h-9 rounded-xl hover:bg-[#EAF5EF] text-[#004D3A] transition">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                     class="w-5 h-5"
-                                                     fill="none"
-                                                     viewBox="0 0 24 24"
-                                                     stroke="currentColor">
-                                                    <path stroke-linecap="round"
-                                                          stroke-linejoin="round"
-                                                          stroke-width="1.8"
-                                                          d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931z"/>
-                                                </svg>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="4" class="py-8 text-center text-[#60756B]">
-                                            Nenhuma aula recente encontrada.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
+                        <div class="mt-6 bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div>
+                                    <h3 class="font-extrabold text-[#003C2F]">
+                                        Como o ranking é calculado?
+                                    </h3>
+                                    <p class="text-xs text-[#60756B] mt-1">
+                                        45% progresso + 35% média dos pós-testes + 20% prova final.
+                                    </p>
+                                </div>
 
-                        </table>
-                    </div>
+                                <div class="text-xs text-[#60756B]">
+                                    Pós-testes repetidos contam apenas uma vez.
+                                </div>
+                            </div>
+                        </div>
+
+                    @else
+
+                        <div class="bg-[#F8FBF8] border border-dashed border-[#DCE7DE] rounded-3xl p-8 text-center">
+                            <div class="w-16 h-16 rounded-full bg-[#EAF5EF] flex items-center justify-center mx-auto mb-4 text-3xl">
+                                🏆
+                            </div>
+
+                            <h3 class="font-extrabold text-[#003C2F]">
+                                Ainda não há alunos no ranking
+                            </h3>
+
+                            <p class="text-sm text-[#60756B] mt-2">
+                                Quando os alunos começarem a assistir aulas e fazer pós-testes, o pódio será preenchido automaticamente.
+                            </p>
+                        </div>
+
+                    @endif
+
                 </div>
 
                 <!-- SOLICITAÇÕES PENDENTES -->
