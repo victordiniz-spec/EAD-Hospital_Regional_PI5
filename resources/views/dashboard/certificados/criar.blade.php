@@ -710,6 +710,23 @@
 
                             @forelse(($certificados ?? []) as $certificado)
 
+                                @php
+                                    $dadosCertificadoAcao = [
+                                        'id' => $certificado->id ?? null,
+                                        'aluno_nome' => $certificado->aluno_nome ?? 'Aluno',
+                                        'email' => $certificado->email ?? '',
+                                        'cpf' => $certificado->cpf ?? '---',
+                                        'curso' => $certificado->curso ?? 'Curso',
+                                        'data' => isset($certificado->created_at)
+                                            ? \Carbon\Carbon::parse($certificado->created_at)->format('d/m/Y')
+                                            : '---',
+                                        'carga_horaria' => $certificado->carga_horaria ?? $cargaHorariaAtualCertificado,
+                                        'responsavel' => $certificado->responsavel ?? $responsavelAtualCertificado,
+                                        'cargo' => $certificado->cargo ?? $cargoAtualCertificado,
+                                        'codigo' => $certificado->codigo ?? ('CERT-' . ($certificado->id ?? '000')),
+                                    ];
+                                @endphp
+
                                 <tr class="hover:bg-[#F8FBF8] transition">
 
                                     <td class="py-5 px-6">
@@ -748,18 +765,7 @@
                                         <div class="flex justify-end gap-2">
 
                                             <button type="button"
-                                                    onclick='abrirCertificadoEmitido(@json([
-                                                        "id" => $certificado->id ?? null,
-                                                        "aluno_nome" => $certificado->aluno_nome ?? "Aluno",
-                                                        "email" => $certificado->email ?? "",
-                                                        "cpf" => $certificado->cpf ?? "---",
-                                                        "curso" => $certificado->curso ?? "Curso",
-                                                        "data" => isset($certificado->created_at) ? \Carbon\Carbon::parse($certificado->created_at)->format("d/m/Y") : "---",
-                                                        "carga_horaria" => $certificado->carga_horaria ?? $cargaHorariaAtualCertificado,
-                                                        "responsavel" => $certificado->responsavel ?? $responsavelAtualCertificado,
-                                                        "cargo" => $certificado->cargo ?? $cargoAtualCertificado,
-                                                        "codigo" => $certificado->codigo ?? ("CERT-" . ($certificado->id ?? "000")),
-                                                    ]))'
+                                                    onclick='abrirCertificadoEmitido(@js($dadosCertificadoAcao))'
                                                     class="w-9 h-9 rounded-xl hover:bg-[#EAF5EF] text-[#004D3A] transition flex items-center justify-center"
                                                     title="Visualizar certificado">
                                                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -779,18 +785,7 @@
                                             </button>
 
                                             <button type="button"
-                                                    onclick='reemitirCertificadoEmitido(@json([
-                                                        "id" => $certificado->id ?? null,
-                                                        "aluno_nome" => $certificado->aluno_nome ?? "Aluno",
-                                                        "email" => $certificado->email ?? "",
-                                                        "cpf" => $certificado->cpf ?? "---",
-                                                        "curso" => $certificado->curso ?? "Curso",
-                                                        "data" => isset($certificado->created_at) ? \Carbon\Carbon::parse($certificado->created_at)->format("d/m/Y") : "---",
-                                                        "carga_horaria" => $certificado->carga_horaria ?? $cargaHorariaAtualCertificado,
-                                                        "responsavel" => $certificado->responsavel ?? $responsavelAtualCertificado,
-                                                        "cargo" => $certificado->cargo ?? $cargoAtualCertificado,
-                                                        "codigo" => $certificado->codigo ?? ("CERT-" . ($certificado->id ?? "000")),
-                                                    ]))'
+                                                    onclick='reemitirCertificadoEmitido(@js($dadosCertificadoAcao))'
                                                     class="w-9 h-9 rounded-xl hover:bg-[#EAF5EF] text-[#004D3A] transition flex items-center justify-center"
                                                     title="Reemitir certificado">
                                                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -831,6 +826,23 @@
 
                     @forelse(($certificados ?? []) as $certificado)
 
+                        @php
+                            $dadosCertificadoAcao = [
+                                'id' => $certificado->id ?? null,
+                                'aluno_nome' => $certificado->aluno_nome ?? 'Aluno',
+                                'email' => $certificado->email ?? '',
+                                'cpf' => $certificado->cpf ?? '---',
+                                'curso' => $certificado->curso ?? 'Curso',
+                                'data' => isset($certificado->created_at)
+                                    ? \Carbon\Carbon::parse($certificado->created_at)->format('d/m/Y')
+                                    : '---',
+                                'carga_horaria' => $certificado->carga_horaria ?? $cargaHorariaAtualCertificado,
+                                'responsavel' => $certificado->responsavel ?? $responsavelAtualCertificado,
+                                'cargo' => $certificado->cargo ?? $cargoAtualCertificado,
+                                'codigo' => $certificado->codigo ?? ('CERT-' . ($certificado->id ?? '000')),
+                            ];
+                        @endphp
+
                         <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5">
 
                             <div class="flex items-start gap-3 mb-4">
@@ -857,35 +869,13 @@
 
                             <div class="grid grid-cols-2 gap-3 mt-5">
                                 <button type="button"
-                                        onclick='abrirCertificadoEmitido(@json([
-                                            "id" => $certificado->id ?? null,
-                                            "aluno_nome" => $certificado->aluno_nome ?? "Aluno",
-                                            "email" => $certificado->email ?? "",
-                                            "cpf" => $certificado->cpf ?? "---",
-                                            "curso" => $certificado->curso ?? "Curso",
-                                            "data" => isset($certificado->created_at) ? \Carbon\Carbon::parse($certificado->created_at)->format("d/m/Y") : "---",
-                                            "carga_horaria" => $certificado->carga_horaria ?? $cargaHorariaAtualCertificado,
-                                            "responsavel" => $certificado->responsavel ?? $responsavelAtualCertificado,
-                                            "cargo" => $certificado->cargo ?? $cargoAtualCertificado,
-                                            "codigo" => $certificado->codigo ?? ("CERT-" . ($certificado->id ?? "000")),
-                                        ]))'
+                                        onclick='abrirCertificadoEmitido(@js($dadosCertificadoAcao))'
                                         class="bg-white border border-[#DCE7DE] text-[#004D3A] px-4 py-3 rounded-2xl font-extrabold">
                                     Visualizar
                                 </button>
 
                                 <button type="button"
-                                        onclick='reemitirCertificadoEmitido(@json([
-                                            "id" => $certificado->id ?? null,
-                                            "aluno_nome" => $certificado->aluno_nome ?? "Aluno",
-                                            "email" => $certificado->email ?? "",
-                                            "cpf" => $certificado->cpf ?? "---",
-                                            "curso" => $certificado->curso ?? "Curso",
-                                            "data" => isset($certificado->created_at) ? \Carbon\Carbon::parse($certificado->created_at)->format("d/m/Y") : "---",
-                                            "carga_horaria" => $certificado->carga_horaria ?? $cargaHorariaAtualCertificado,
-                                            "responsavel" => $certificado->responsavel ?? $responsavelAtualCertificado,
-                                            "cargo" => $certificado->cargo ?? $cargoAtualCertificado,
-                                            "codigo" => $certificado->codigo ?? ("CERT-" . ($certificado->id ?? "000")),
-                                        ]))'
+                                        onclick='reemitirCertificadoEmitido(@js($dadosCertificadoAcao))'
                                         class="bg-[#004D3A] text-white px-4 py-3 rounded-2xl font-extrabold">
                                     Reemitir
                                 </button>
