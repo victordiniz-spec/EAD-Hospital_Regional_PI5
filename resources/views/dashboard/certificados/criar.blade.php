@@ -657,6 +657,8 @@
 
                     <div class="flex flex-col sm:flex-row gap-3">
                         <button type="button"
+                                id="btnAbrirFiltroCertificados"
+                                onclick="alternarFiltroCertificados()"
                                 class="bg-[#F1F6F2] border border-[#DCE7DE] text-[#004D3A] px-5 py-3 rounded-2xl hover:bg-[#E6EFE8] transition text-sm font-bold flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg"
                                  class="w-4 h-4"
@@ -672,7 +674,7 @@
                             Filtrar
                         </button>
 
-                        <button type="button"
+                        <button type="button" id="btnExportarCertificados" onclick="exportarCertificadosCSV()"
                                 class="bg-[#F1F6F2] border border-[#DCE7DE] text-[#004D3A] px-5 py-3 rounded-2xl hover:bg-[#E6EFE8] transition text-sm font-bold flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg"
                                  class="w-4 h-4"
@@ -689,6 +691,60 @@
                         </button>
                     </div>
 
+                </div>
+
+
+                <!-- FILTRO DOS CERTIFICADOS -->
+                <div id="painelFiltroCertificados"
+                     class="hidden border-t border-[#E3EBE4] bg-[#F8FBF8] p-5 sm:p-6">
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
+                                Pesquisar aluno, CPF, e-mail ou curso
+                            </label>
+
+                            <input type="text"
+                                   id="filtroTextoCertificados"
+                                   oninput="aplicarFiltroCertificados()"
+                                   placeholder="Digite para pesquisar..."
+                                   class="w-full px-4 py-3 rounded-2xl bg-white border border-[#DCE7DE] text-[#003C2F] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#00A63E]">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
+                                Data inicial
+                            </label>
+
+                            <input type="date"
+                                   id="filtroDataInicialCertificados"
+                                   onchange="aplicarFiltroCertificados()"
+                                   class="w-full px-4 py-3 rounded-2xl bg-white border border-[#DCE7DE] text-[#003C2F] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#00A63E]">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] uppercase tracking-widest font-extrabold text-[#60756B] mb-2">
+                                Data final
+                            </label>
+
+                            <input type="date"
+                                   id="filtroDataFinalCertificados"
+                                   onchange="aplicarFiltroCertificados()"
+                                   class="w-full px-4 py-3 rounded-2xl bg-white border border-[#DCE7DE] text-[#003C2F] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#00A63E]">
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <p id="resumoFiltroCertificados" class="text-sm text-[#60756B]">
+                            Exibindo todos os certificados.
+                        </p>
+
+                        <button type="button"
+                                onclick="limparFiltroCertificados()"
+                                class="px-5 py-3 rounded-2xl bg-white border border-[#DCE7DE] text-[#004D3A] font-extrabold hover:bg-[#EAF5EF] transition">
+                            Limpar filtros
+                        </button>
+                    </div>
                 </div>
 
                 <!-- DESKTOP TABLE -->
@@ -727,7 +783,9 @@
                                     ];
                                 @endphp
 
-                                <tr class="hover:bg-[#F8FBF8] transition">
+                                <tr class="linha-certificado hover:bg-[#F8FBF8] transition"
+                                    data-certificado-busca="{{ mb_strtolower(($certificado->aluno_nome ?? '') . ' ' . ($certificado->email ?? '') . ' ' . ($certificado->cpf ?? '') . ' ' . ($certificado->curso ?? ''), 'UTF-8') }}"
+                                    data-certificado-data="{{ isset($certificado->created_at) ? \Carbon\Carbon::parse($certificado->created_at)->format('Y-m-d') : '' }}">
 
                                     <td class="py-5 px-6">
                                         <div class="flex items-center gap-3">
@@ -765,7 +823,8 @@
                                         <div class="flex justify-end gap-2">
 
                                             <button type="button"
-                                                    onclick='abrirCertificadoEmitido(@js($dadosCertificadoAcao))'
+                                                    data-certificado="{{ base64_encode(json_encode($dadosCertificadoAcao, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) }}"
+                                                    onclick="abrirCertificadoEmitidoPorBotao(this)"
                                                     class="w-9 h-9 rounded-xl hover:bg-[#EAF5EF] text-[#004D3A] transition flex items-center justify-center"
                                                     title="Visualizar certificado">
                                                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -785,7 +844,8 @@
                                             </button>
 
                                             <button type="button"
-                                                    onclick='reemitirCertificadoEmitido(@js($dadosCertificadoAcao))'
+                                                    data-certificado="{{ base64_encode(json_encode($dadosCertificadoAcao, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) }}"
+                                                    onclick="reemitirCertificadoEmitidoPorBotao(this)"
                                                     class="w-9 h-9 rounded-xl hover:bg-[#EAF5EF] text-[#004D3A] transition flex items-center justify-center"
                                                     title="Reemitir certificado">
                                                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -843,7 +903,9 @@
                             ];
                         @endphp
 
-                        <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5">
+                        <div class="card-certificado-mobile bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5"
+                             data-certificado-busca="{{ mb_strtolower(($certificado->aluno_nome ?? '') . ' ' . ($certificado->email ?? '') . ' ' . ($certificado->cpf ?? '') . ' ' . ($certificado->curso ?? ''), 'UTF-8') }}"
+                             data-certificado-data="{{ isset($certificado->created_at) ? \Carbon\Carbon::parse($certificado->created_at)->format('Y-m-d') : '' }}">
 
                             <div class="flex items-start gap-3 mb-4">
                                 <div class="w-11 h-11 rounded-full bg-[#EAF5EF] text-[#004D3A] flex items-center justify-center font-extrabold">
@@ -869,13 +931,15 @@
 
                             <div class="grid grid-cols-2 gap-3 mt-5">
                                 <button type="button"
-                                        onclick='abrirCertificadoEmitido(@js($dadosCertificadoAcao))'
+                                        data-certificado="{{ base64_encode(json_encode($dadosCertificadoAcao, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) }}"
+                                                    onclick="abrirCertificadoEmitidoPorBotao(this)"
                                         class="bg-white border border-[#DCE7DE] text-[#004D3A] px-4 py-3 rounded-2xl font-extrabold">
                                     Visualizar
                                 </button>
 
                                 <button type="button"
-                                        onclick='reemitirCertificadoEmitido(@js($dadosCertificadoAcao))'
+                                        data-certificado="{{ base64_encode(json_encode($dadosCertificadoAcao, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) }}"
+                                                    onclick="reemitirCertificadoEmitidoPorBotao(this)"
                                         class="bg-[#004D3A] text-white px-4 py-3 rounded-2xl font-extrabold">
                                     Reemitir
                                 </button>
@@ -895,31 +959,11 @@
 
                 <div class="bg-[#F8FBF8] border-t border-[#E3EBE4] px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-xs text-[#60756B]">
 
-                    <p>
-                        Mostrando
-                        <strong>1-{{ ($certificados ?? collect())->count() }}</strong>
-                        de
-                        <strong>{{ ($certificados ?? collect())->count() }}</strong>
-                        certificados emitidos
+                    <p id="textoPaginacaoCertificados">
+                        Mostrando certificados emitidos
                     </p>
 
-                    <div class="flex items-center gap-2">
-                        <button class="w-9 h-9 rounded-xl bg-white border border-[#E3EBE4] text-[#60756B] flex items-center justify-center">
-                            ‹
-                        </button>
-
-                        <button class="w-9 h-9 rounded-xl bg-[#004D3A] text-white flex items-center justify-center">
-                            1
-                        </button>
-
-                        <button class="w-9 h-9 rounded-xl bg-white border border-[#E3EBE4] text-[#60756B] flex items-center justify-center">
-                            2
-                        </button>
-
-                        <button class="w-9 h-9 rounded-xl bg-white border border-[#E3EBE4] text-[#60756B] flex items-center justify-center">
-                            ›
-                        </button>
-                    </div>
+                    <div id="paginacaoCertificados" class="flex items-center gap-2"></div>
 
                 </div>
 
@@ -1089,6 +1133,231 @@
     }
 
 
+
+    const certificadosPorPagina = 5;
+    let paginaAtualCertificados = 1;
+
+    function decodificarCertificadoBotao(botao) {
+        try {
+            const base64 = botao?.dataset?.certificado || '';
+            const json = decodeURIComponent(
+                Array.prototype.map.call(
+                    atob(base64),
+                    caractere => '%' + ('00' + caractere.charCodeAt(0).toString(16)).slice(-2)
+                ).join('')
+            );
+
+            return JSON.parse(json);
+        } catch (erro) {
+            console.error('Não foi possível ler os dados do certificado:', erro);
+            return null;
+        }
+    }
+
+    function abrirCertificadoEmitidoPorBotao(botao) {
+        const certificado = decodificarCertificadoBotao(botao);
+
+        if (!certificado) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Não foi possível abrir',
+                text: 'Os dados deste certificado não puderam ser carregados.',
+                confirmButtonColor: '#004D3A'
+            });
+            return;
+        }
+
+        abrirCertificadoEmitido(certificado);
+    }
+
+    function reemitirCertificadoEmitidoPorBotao(botao) {
+        const certificado = decodificarCertificadoBotao(botao);
+
+        if (!certificado) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Não foi possível reemitir',
+                text: 'Os dados deste certificado não puderam ser carregados.',
+                confirmButtonColor: '#004D3A'
+            });
+            return;
+        }
+
+        reemitirCertificadoEmitido(certificado);
+    }
+
+    function alternarFiltroCertificados() {
+        const painel = document.getElementById('painelFiltroCertificados');
+        painel?.classList.toggle('hidden');
+
+        if (painel && !painel.classList.contains('hidden')) {
+            document.getElementById('filtroTextoCertificados')?.focus();
+        }
+    }
+
+    function obterLinhasCertificados() {
+        return Array.from(document.querySelectorAll('.linha-certificado'));
+    }
+
+    function obterCardsCertificados() {
+        return Array.from(document.querySelectorAll('.card-certificado-mobile'));
+    }
+
+    function elementoPassaFiltroCertificados(elemento) {
+        const texto = (document.getElementById('filtroTextoCertificados')?.value || '').trim().toLowerCase();
+        const dataInicial = document.getElementById('filtroDataInicialCertificados')?.value || '';
+        const dataFinal = document.getElementById('filtroDataFinalCertificados')?.value || '';
+
+        const busca = (elemento.dataset.certificadoBusca || '').toLowerCase();
+        const data = elemento.dataset.certificadoData || '';
+
+        const textoOk = !texto || busca.includes(texto);
+        const inicialOk = !dataInicial || (data && data >= dataInicial);
+        const finalOk = !dataFinal || (data && data <= dataFinal);
+
+        return textoOk && inicialOk && finalOk;
+    }
+
+    function aplicarFiltroCertificados(resetPagina = true) {
+        if (resetPagina) {
+            paginaAtualCertificados = 1;
+        }
+
+        const linhas = obterLinhasCertificados();
+        const cards = obterCardsCertificados();
+        const linhasFiltradas = linhas.filter(elementoPassaFiltroCertificados);
+        const cardsFiltrados = cards.filter(elementoPassaFiltroCertificados);
+
+        linhas.forEach(linha => linha.classList.add('hidden'));
+        cards.forEach(card => card.classList.add('hidden'));
+
+        const inicio = (paginaAtualCertificados - 1) * certificadosPorPagina;
+        const fim = inicio + certificadosPorPagina;
+
+        linhasFiltradas.slice(inicio, fim).forEach(linha => linha.classList.remove('hidden'));
+        cardsFiltrados.slice(inicio, fim).forEach(card => card.classList.remove('hidden'));
+
+        atualizarPaginacaoCertificados(linhasFiltradas.length);
+
+        const resumo = document.getElementById('resumoFiltroCertificados');
+        if (resumo) {
+            resumo.innerText = linhasFiltradas.length === linhas.length
+                ? 'Exibindo todos os certificados.'
+                : linhasFiltradas.length + ' certificado(s) encontrado(s).';
+        }
+    }
+
+    function atualizarPaginacaoCertificados(totalFiltrados) {
+        const totalPaginas = Math.max(1, Math.ceil(totalFiltrados / certificadosPorPagina));
+
+        if (paginaAtualCertificados > totalPaginas) {
+            paginaAtualCertificados = totalPaginas;
+        }
+
+        const paginacao = document.getElementById('paginacaoCertificados');
+        const texto = document.getElementById('textoPaginacaoCertificados');
+
+        if (texto) {
+            if (totalFiltrados === 0) {
+                texto.innerHTML = 'Nenhum certificado encontrado';
+            } else {
+                const inicio = ((paginaAtualCertificados - 1) * certificadosPorPagina) + 1;
+                const fim = Math.min(paginaAtualCertificados * certificadosPorPagina, totalFiltrados);
+                texto.innerHTML = `Mostrando <strong>${inicio}-${fim}</strong> de <strong>${totalFiltrados}</strong> certificados emitidos`;
+            }
+        }
+
+        if (!paginacao) return;
+        paginacao.innerHTML = '';
+
+        const criarBotao = (textoBotao, pagina, ativo = false, desabilitado = false) => {
+            const botao = document.createElement('button');
+            botao.type = 'button';
+            botao.innerText = textoBotao;
+            botao.disabled = desabilitado;
+            botao.className = ativo
+                ? 'w-9 h-9 rounded-xl bg-[#004D3A] text-white flex items-center justify-center font-extrabold'
+                : 'w-9 h-9 rounded-xl bg-white border border-[#E3EBE4] text-[#60756B] flex items-center justify-center font-bold disabled:opacity-40';
+
+            botao.addEventListener('click', () => {
+                paginaAtualCertificados = pagina;
+                aplicarFiltroCertificados(false);
+            });
+
+            return botao;
+        };
+
+        paginacao.appendChild(
+            criarBotao('‹', Math.max(1, paginaAtualCertificados - 1), false, paginaAtualCertificados === 1)
+        );
+
+        for (let pagina = 1; pagina <= totalPaginas; pagina++) {
+            paginacao.appendChild(
+                criarBotao(String(pagina), pagina, pagina === paginaAtualCertificados)
+            );
+        }
+
+        paginacao.appendChild(
+            criarBotao('›', Math.min(totalPaginas, paginaAtualCertificados + 1), false, paginaAtualCertificados === totalPaginas)
+        );
+    }
+
+    function limparFiltroCertificados() {
+        const texto = document.getElementById('filtroTextoCertificados');
+        const inicial = document.getElementById('filtroDataInicialCertificados');
+        const final = document.getElementById('filtroDataFinalCertificados');
+
+        if (texto) texto.value = '';
+        if (inicial) inicial.value = '';
+        if (final) final.value = '';
+
+        aplicarFiltroCertificados();
+    }
+
+    function exportarCertificadosCSV() {
+        const linhasVisiveis = obterLinhasCertificados().filter(elementoPassaFiltroCertificados);
+
+        if (linhasVisiveis.length === 0) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Nada para exportar',
+                text: 'Nenhum certificado corresponde aos filtros atuais.',
+                confirmButtonColor: '#004D3A'
+            });
+            return;
+        }
+
+        const cabecalho = ['Nome do aluno', 'E-mail', 'CPF', 'Data de emissão', 'Curso'];
+        const registros = linhasVisiveis.map(linha => {
+            const celulas = linha.querySelectorAll('td');
+            const nome = celulas[0]?.querySelector('p.font-extrabold')?.innerText.trim() || '';
+            const email = celulas[0]?.querySelector('p.text-xs')?.innerText.trim() || '';
+            const cpf = celulas[1]?.innerText.trim() || '';
+            const data = celulas[2]?.innerText.trim() || '';
+            const curso = celulas[3]?.innerText.trim() || '';
+
+            return [nome, email, cpf, data, curso];
+        });
+
+        const escaparCSV = valor => '"' + String(valor ?? '').replace(/"/g, '""') + '"';
+        const conteudo = [cabecalho, ...registros]
+            .map(linha => linha.map(escaparCSV).join(';'))
+            .join('\r\n');
+
+        const blob = new Blob(['\uFEFF' + conteudo], {
+            type: 'text/csv;charset=utf-8;'
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'certificados-emitidos-' + new Date().toISOString().slice(0, 10) + '.csv';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    }
+
     function preencherCertificadoEmitido(certificado) {
         document.getElementById('emitidoAluno').innerText = certificado.aluno_nome || 'Aluno';
         document.getElementById('emitidoCurso').innerText = certificado.curso || 'Curso';
@@ -1158,7 +1427,10 @@
         }
     });
 
-    document.addEventListener('DOMContentLoaded', atualizarPreviewCertificado);
+    document.addEventListener('DOMContentLoaded', function () {
+        atualizarPreviewCertificado();
+        aplicarFiltroCertificados();
+    });
 </script>
 
 @endsection
