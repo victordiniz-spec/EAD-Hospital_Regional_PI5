@@ -122,6 +122,80 @@
             letter-spacing: -0.025em;
         }
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | CORREÇÃO DO RODAPÉ DAS SIDEBARS NO MODO ESCURO
+        |--------------------------------------------------------------------------
+        | Evita a faixa branca atrás do perfil e do botão "Sair" nas sidebars
+        | do aluno e do professor.
+        */
+        html.dark #sidebarAluno,
+        html.dark #sidebarProfessor,
+        html.dark .sidebar-aluno,
+        html.dark .sidebar-professor {
+            background: #0B1220 !important;
+            color: #E5E7EB !important;
+            border-color: #243044 !important;
+        }
+
+        html.dark #sidebarAluno .sidebar-conteudo,
+        html.dark #sidebarProfessor .sidebar-conteudo,
+        html.dark #sidebarAluno .sidebar-rodape,
+        html.dark #sidebarProfessor .sidebar-rodape {
+            background: #0B1220 !important;
+        }
+
+        html.dark #sidebarAluno .sidebar-rodape,
+        html.dark #sidebarProfessor .sidebar-rodape {
+            position: relative;
+            z-index: 2;
+            padding-top: 0.75rem;
+            padding-bottom: 0.25rem;
+            border-top: 1px solid #243044 !important;
+        }
+
+        html.dark #sidebarAluno .sidebar-profile,
+        html.dark #sidebarProfessor .sidebar-profile {
+            background: #101827 !important;
+            border-color: #243044 !important;
+            color: #F8FAFC !important;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28) !important;
+        }
+
+        html.dark #sidebarAluno .sidebar-profile p,
+        html.dark #sidebarProfessor .sidebar-profile p {
+            color: #F8FAFC !important;
+        }
+
+        html.dark #sidebarAluno .sidebar-profile p:last-child,
+        html.dark #sidebarProfessor .sidebar-profile p:last-child {
+            color: #AAB7C4 !important;
+        }
+
+        html.dark #sidebarAluno .sidebar-rodape button,
+        html.dark #sidebarProfessor .sidebar-rodape button {
+            background: rgba(153, 27, 27, 0.22) !important;
+            color: #FCA5A5 !important;
+            border-color: rgba(248, 113, 113, 0.28) !important;
+        }
+
+        html.dark #sidebarAluno .sidebar-rodape button:hover,
+        html.dark #sidebarProfessor .sidebar-rodape button:hover {
+            background: rgba(185, 28, 28, 0.34) !important;
+            color: #FECACA !important;
+        }
+
+        html.dark #sidebarAluno .sidebar-rodape::before,
+        html.dark #sidebarProfessor .sidebar-rodape::before {
+            content: "";
+            position: absolute;
+            inset: -0.75rem -1.25rem -1.25rem;
+            background: #0B1220;
+            z-index: -1;
+            pointer-events: none;
+        }
+
         html.dark aside a {
             color: #CBD5E1 !important;
         }
