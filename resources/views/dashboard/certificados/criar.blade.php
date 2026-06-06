@@ -4,6 +4,57 @@
 
 @section('content')
 
+@php
+    use Illuminate\Support\Facades\DB;
+    use Illuminate\Support\Facades\Schema;
+
+    /*
+    |--------------------------------------------------------------------------
+    | MODELO ATUAL DO CERTIFICADO
+    |--------------------------------------------------------------------------
+    | Carrega o último modelo salvo para preencher o formulário e o preview.
+    | O nome do aluno continua como marcador, porque será preenchido somente
+    | quando o certificado for emitido para um aluno específico.
+    */
+    $certificadoModeloAtual = $certificadoModelo
+        ?? $modeloCertificado
+        ?? $certificadoAtual
+        ?? null;
+
+    if (!$certificadoModeloAtual && Schema::hasTable('certificados')) {
+        $certificadoModeloAtual = DB::table('certificados')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    $modeloJaCriado = !empty($certificadoModeloAtual);
+
+    $cursoAtualCertificado = old(
+        'curso',
+        $certificadoModeloAtual->curso ?? ''
+    );
+
+    $cargaHorariaAtualCertificado = old(
+        'carga_horaria',
+        $certificadoModeloAtual->carga_horaria ?? 40
+    );
+
+    $responsavelAtualCertificado = old(
+        'responsavel',
+        $certificadoModeloAtual->responsavel ?? ''
+    );
+
+    $cargoAtualCertificado = old(
+        'cargo',
+        $certificadoModeloAtual->cargo ?? ''
+    );
+
+    $dataAtualizacaoCertificado = $certificadoModeloAtual->updated_at
+        ?? $certificadoModeloAtual->created_at
+        ?? null;
+@endphp
+
 <style>
     html, body {
         background: #F3F7F3 !important;
@@ -144,7 +195,7 @@
                 <!-- CONFIGURAÇÕES -->
                 <div class="xl:col-span-4">
 
-                    <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6 min-h-[420px]">
+                    <div id="configuracoesCertificado" class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6 min-h-[420px]">
 
                         <div class="flex items-center gap-3 mb-8">
 
@@ -173,6 +224,71 @@
 
                         </div>
 
+
+                        @if($modeloJaCriado)
+                            <div class="mb-6 rounded-2xl border border-green-200 bg-green-50 p-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="w-5 h-5"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round"
+                                                  stroke-linejoin="round"
+                                                  stroke-width="1.8"
+                                                  d="m4.5 12.75 6 6 9-13.5"/>
+                                        </svg>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-sm font-extrabold text-green-800">
+                                            Modelo de certificado criado
+                                        </p>
+
+                                        <p class="text-xs text-green-700 mt-1 leading-relaxed">
+                                            As informações salvas já estão carregadas abaixo e aparecem no certificado ao lado.
+                                            Você pode editar os campos e atualizar o modelo quando precisar.
+                                        </p>
+
+                                        @if($dataAtualizacaoCertificado)
+                                            <p class="text-[11px] text-green-700/80 mt-2">
+                                                Última atualização:
+                                                {{ \Carbon\Carbon::parse($dataAtualizacaoCertificado)->timezone('America/Sao_Paulo')->format('d/m/Y H:i') }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <div class="mb-6 rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-yellow-100 text-yellow-700 flex items-center justify-center shrink-0">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="w-5 h-5"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round"
+                                                  stroke-linejoin="round"
+                                                  stroke-width="1.8"
+                                                  d="M12 9v3.75m9-3.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 16.5h.008v.008H12V16.5Z"/>
+                                        </svg>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-sm font-extrabold text-yellow-800">
+                                            Nenhum modelo criado ainda
+                                        </p>
+
+                                        <p class="text-xs text-yellow-700 mt-1 leading-relaxed">
+                                            Preencha os dados abaixo para criar o primeiro modelo de certificado.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
                         <form action="{{ route('certificados.store') }}" method="POST">
                             @csrf
 
@@ -185,7 +301,7 @@
                                 <input type="text"
                                        name="curso"
                                        id="cursoInput"
-                                       value="{{ old('curso') }}"
+                                       value="{{ $cursoAtualCertificado }}"
                                        oninput="atualizarPreviewCertificado()"
                                        placeholder="Ex: Integrar ReSaúde"
                                        class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
@@ -201,7 +317,7 @@
                                     <input type="number"
                                            name="carga_horaria"
                                            id="cargaInput"
-                                           value="{{ old('carga_horaria', 40) }}"
+                                           value="{{ $cargaHorariaAtualCertificado }}"
                                            oninput="atualizarPreviewCertificado()"
                                            placeholder="Ex: 40"
                                            class="w-full px-4 py-3 pr-12 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
@@ -221,7 +337,7 @@
                                 <input type="text"
                                        name="responsavel"
                                        id="responsavelInput"
-                                       value="{{ old('responsavel') }}"
+                                       value="{{ $responsavelAtualCertificado }}"
                                        oninput="atualizarPreviewCertificado()"
                                        placeholder="Ex: Diretora Acadêmica"
                                        class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
@@ -236,7 +352,7 @@
                                 <input type="text"
                                        name="cargo"
                                        id="cargoInput"
-                                       value="{{ old('cargo') }}"
+                                       value="{{ $cargoAtualCertificado }}"
                                        oninput="atualizarPreviewCertificado()"
                                        placeholder="Ex: Coordenação do Curso"
                                        class="w-full px-4 py-3 rounded-2xl bg-[#F8FBF8] border border-[#DCE7DE] text-[#003C2F] text-sm font-bold placeholder-[#8A9B92] focus:outline-none focus:ring-2 focus:ring-[#00A63E] focus:border-transparent transition">
@@ -284,7 +400,7 @@
                                           d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
                                 </svg>
 
-                                Atualizar Certificado
+                                {{ $modeloJaCriado ? 'Atualizar Certificado' : 'Criar Certificado' }}
                             </button>
 
                         </form>
@@ -329,6 +445,7 @@
 
                             <div class="flex items-center gap-2">
                                 <button type="button"
+                                        onclick="editarModeloCertificado()"
                                         class="w-10 h-10 rounded-xl hover:bg-[#F1F6F2] text-[#004D3A] transition flex items-center justify-center"
                                         title="Editar modelo">
                                     <svg xmlns="http://www.w3.org/2000/svg"
@@ -401,9 +518,9 @@
                                     <!-- TEXTO -->
                                     <p class="mt-8 text-sm text-[#4B5563] leading-relaxed max-w-2xl mx-auto">
                                         concluiu com aproveitamento o curso
-                                        <strong id="previewCurso">[NOME DO CURSO]</strong>,
+                                        <strong id="previewCurso">{{ $cursoAtualCertificado ?: '[NOME DO CURSO]' }}</strong>,
                                         com carga horária total de
-                                        <strong id="previewCarga">40 horas</strong>.
+                                        <strong id="previewCarga">{{ $cargaHorariaAtualCertificado }} horas</strong>.
                                     </p>
 
                                     <p class="mt-3 text-sm text-[#4B5563] leading-relaxed max-w-2xl mx-auto">
@@ -423,11 +540,11 @@
 
                                             <div class="border-t border-[#8A9B92] pt-2">
                                                 <p id="previewResponsavel" class="text-xs font-bold text-[#374151] uppercase">
-                                                    RESPONSÁVEL PELO CURSO
+                                                    {{ $responsavelAtualCertificado ?: 'RESPONSÁVEL PELO CURSO' }}
                                                 </p>
 
                                                 <p id="previewCargo" class="text-[10px] text-[#60756B] mt-1 uppercase">
-                                                    CARGO / FUNÇÃO
+                                                    {{ $cargoAtualCertificado ?: 'CARGO / FUNÇÃO' }}
                                                 </p>
                                             </div>
                                         </div>
@@ -437,7 +554,7 @@
                                             <div class="text-left inline-block">
                                                 <p class="text-xs text-[#60756B]">
                                                     ID:
-                                                    <strong class="text-[#374151]">000-AD-2026</strong>
+                                                    <strong class="text-[#374151]">{{ $modeloJaCriado ? str_pad($certificadoModeloAtual->id, 3, '0', STR_PAD_LEFT) . '-MOD-' . now()->format('Y') : '000-AD-' . now()->format('Y') }}</strong>
                                                 </p>
 
                                                 <div class="border-t border-[#8A9B92] mt-6 pt-2">
@@ -724,10 +841,15 @@
 
 <script>
     function atualizarPreviewCertificado() {
-        const curso = document.getElementById('cursoInput')?.value || '[NOME DO CURSO]';
-        const carga = document.getElementById('cargaInput')?.value || '40';
-        const responsavel = document.getElementById('responsavelInput')?.value || 'RESPONSÁVEL PELO CURSO';
-        const cargo = document.getElementById('cargoInput')?.value || 'CARGO / FUNÇÃO';
+        const cursoSalvo = @json($cursoAtualCertificado);
+        const cargaSalva = @json((string) $cargaHorariaAtualCertificado);
+        const responsavelSalvo = @json($responsavelAtualCertificado);
+        const cargoSalvo = @json($cargoAtualCertificado);
+
+        const curso = document.getElementById('cursoInput')?.value || cursoSalvo || '[NOME DO CURSO]';
+        const carga = document.getElementById('cargaInput')?.value || cargaSalva || '40';
+        const responsavel = document.getElementById('responsavelInput')?.value || responsavelSalvo || 'RESPONSÁVEL PELO CURSO';
+        const cargo = document.getElementById('cargoInput')?.value || cargoSalvo || 'CARGO / FUNÇÃO';
 
         const previewCurso = document.getElementById('previewCurso');
         const previewCarga = document.getElementById('previewCarga');
@@ -738,6 +860,20 @@
         if (previewCarga) previewCarga.innerText = carga + ' horas';
         if (previewResponsavel) previewResponsavel.innerText = responsavel;
         if (previewCargo) previewCargo.innerText = cargo;
+    }
+
+    function editarModeloCertificado() {
+        const configuracoes = document.getElementById('configuracoesCertificado');
+        const cursoInput = document.getElementById('cursoInput');
+
+        configuracoes?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+
+        setTimeout(() => {
+            cursoInput?.focus();
+        }, 450);
     }
 
     document.addEventListener('DOMContentLoaded', atualizarPreviewCertificado);
