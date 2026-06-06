@@ -10,10 +10,6 @@
     $aluno = auth()->user();
     $alunoId = auth()->id();
 
-    // ACESSO TEMPORÁRIO DE TESTE
-    // Senha: 123
-    $acessoTeste = request('teste') === '123';
-
     /*
     |--------------------------------------------------------------------------
     | FUNÇÕES AUXILIARES
@@ -258,7 +254,7 @@
     | LIBERAÇÃO DO CERTIFICADO
     |--------------------------------------------------------------------------
     */
-    $certificadoLiberado = ($aulasOk && $postestesOk && $provaFinalFeita && $aprovadoNaFinal) || $acessoTeste;
+    $certificadoLiberado = $aulasOk && $postestesOk && $provaFinalFeita && $aprovadoNaFinal;
 
     $totalRequisitos = 4;
     $requisitosConcluidos = 0;
@@ -289,7 +285,7 @@
     $cargo = $modeloCertificado->cargo ?? 'Coordenação do Curso';
     $assinatura = $modeloCertificado->assinatura ?? null;
 
-    $notaFinalParaExibir = $formatarPercentual($notaFinal ?? ($acessoTeste ? 100 : 0));
+    $notaFinalParaExibir = $formatarPercentual($notaFinal ?? 0);
 
     /*
     |--------------------------------------------------------------------------
@@ -317,7 +313,7 @@
                 'cpf' => $aluno->cpf,
                 'curso' => $nomeCurso,
                 'carga_horaria' => $cargaHoraria,
-                'nota_final' => $notaFinal ?? ($acessoTeste ? 100 : 0),
+                'nota_final' => $notaFinal ?? 0,
                 'codigo_validacao' => $codigoValidacaoCertificado,
                 'data_emissao' => $dataEmissaoCertificado,
                 'created_at' => now(),
@@ -449,8 +445,7 @@
         header,
         footer,
         #toastContainer,
-        #btnVoltarTopo,
-        #modalAcessoTesteCertificado {
+        #btnVoltarTopo {
             display: none !important;
             visibility: hidden !important;
         }
@@ -610,12 +605,6 @@
                     <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
                         O certificado será liberado após concluir todas as aulas, pós-testes e obter pelo menos 70% na prova final.
                     </p>
-
-                    @if($acessoTeste)
-                        <div class="mt-4 inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 border border-yellow-200 px-4 py-2 rounded-2xl text-sm font-bold">
-                            ⚠️ Acesso de teste ativado
-                        </div>
-                    @endif
                 </div>
 
                 @if($certificadoLiberado)
@@ -731,12 +720,6 @@
                                    class="inline-flex items-center justify-center bg-[#004D3A] text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#003C2F] transition">
                                     Continuar minhas aulas
                                 </a>
-
-                                <button type="button"
-                                        onclick="abrirAcessoTesteCertificado()"
-                                        class="inline-flex items-center justify-center bg-yellow-100 text-yellow-800 border border-yellow-200 px-6 py-3 rounded-2xl font-bold hover:bg-yellow-200 transition">
-                                    Acesso de teste
-                                </button>
                             </div>
 
                         </div>
@@ -923,127 +906,5 @@
     </main>
 
 </div>
-
-<!-- MODAL ACESSO TESTE -->
-<div id="modalAcessoTesteCertificado"
-     class="fixed inset-0 hidden items-center justify-center z-[90] bg-black/50 backdrop-blur-sm px-4">
-
-    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-[#E3EBE4] p-6 text-center">
-
-        <div class="w-16 h-16 mx-auto rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center mb-4">
-            <span class="text-2xl">🔐</span>
-        </div>
-
-        <h2 class="text-xl font-extrabold text-[#003C2F] mb-2">
-            Acesso de teste
-        </h2>
-
-        <p class="text-sm text-[#60756B] mb-5">
-            Digite a senha de teste para liberar temporariamente a visualização do certificado.
-        </p>
-
-        <input
-            type="password"
-            id="senhaTesteCertificado"
-            placeholder="Digite a senha"
-            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-center font-bold focus:outline-none focus:ring-2 focus:ring-[#00A63E] mb-4"
-        >
-
-        <p id="erroSenhaTesteCertificado" class="hidden text-sm text-red-600 font-bold mb-4">
-            Senha incorreta. Tente novamente.
-        </p>
-
-        <div class="flex gap-3">
-            <button type="button"
-                    onclick="fecharAcessoTesteCertificado()"
-                    class="w-1/2 px-4 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition">
-                Cancelar
-            </button>
-
-            <button type="button"
-                    onclick="validarAcessoTesteCertificado()"
-                    class="w-1/2 px-4 py-3 rounded-2xl bg-[#004D3A] text-white font-bold hover:bg-[#003C2F] transition">
-                Entrar
-            </button>
-        </div>
-
-    </div>
-</div>
-
-<script>
-    function abrirAcessoTesteCertificado() {
-        const modal = document.getElementById('modalAcessoTesteCertificado');
-        const input = document.getElementById('senhaTesteCertificado');
-        const erro = document.getElementById('erroSenhaTesteCertificado');
-
-        if (!modal) return;
-
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-
-        if (input) {
-            input.value = '';
-            setTimeout(() => input.focus(), 150);
-        }
-
-        if (erro) {
-            erro.classList.add('hidden');
-        }
-    }
-
-    function fecharAcessoTesteCertificado() {
-        const modal = document.getElementById('modalAcessoTesteCertificado');
-
-        if (!modal) return;
-
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-
-    function validarAcessoTesteCertificado() {
-        const input = document.getElementById('senhaTesteCertificado');
-        const erro = document.getElementById('erroSenhaTesteCertificado');
-
-        const senha = input ? input.value.trim() : '';
-
-        if (senha === '123') {
-            window.location.href = "{{ route('certificado.aluno') }}?teste=123";
-            return;
-        }
-
-        if (erro) {
-            erro.classList.remove('hidden');
-        }
-
-        if (input) {
-            input.value = '';
-            input.focus();
-        }
-    }
-
-    const modalAcessoTesteCertificado = document.getElementById('modalAcessoTesteCertificado');
-
-    if (modalAcessoTesteCertificado) {
-        modalAcessoTesteCertificado.addEventListener('click', function(e) {
-            if (e.target === this) {
-                fecharAcessoTesteCertificado();
-            }
-        });
-    }
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            fecharAcessoTesteCertificado();
-        }
-
-        if (e.key === 'Enter') {
-            const modal = document.getElementById('modalAcessoTesteCertificado');
-
-            if (modal && !modal.classList.contains('hidden')) {
-                validarAcessoTesteCertificado();
-            }
-        }
-    });
-</script>
 
 @endsection

@@ -10,10 +10,6 @@
 
     $alunoId = auth()->id();
 
-    // ACESSO DE TESTE
-    // Senha temporária: 123
-    $acessoTeste = request('teste') === '123';
-
     /*
     |--------------------------------------------------------------------------
     | CURSO ATUAL DO ALUNO
@@ -202,7 +198,7 @@
 
     $cursoCompletoOk = $cursoTemConteudo && $aulasOk && $posTestesOk;
 
-    $provaLiberada = ($cursoCompletoOk && $mediaOk) || $acessoTeste;
+    $provaLiberada = $cursoCompletoOk && $mediaOk;
 
     $faltamPorcentagem = max(0, 100 - $porcentagemConclusao);
     $faltamMedia = max(0, 70 - $mediaPontosCurso);
@@ -219,7 +215,7 @@
         ? (int) ($avaliacao->tempo_limite ?? 60)
         : 60;
 
-    $modoProvaFinal = isset($avaliacao) && $provaLiberada && (request('iniciar') === '1' || $acessoTeste);
+    $modoProvaFinal = isset($avaliacao) && $provaLiberada && request('iniciar') === '1';
 
     $requisitosProva = [
         [
@@ -332,7 +328,7 @@
                     </h1>
 
                     <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
-                        A avaliação final será liberada quando você concluir pelo menos 70% do curso atual.
+                        A avaliação final será liberada quando você concluir 100% do curso atual e atingir média mínima de 70% nos pós-testes.
                     </p>
 
                     @if($cursoAtual)
@@ -343,13 +339,6 @@
                         <p class="text-sm text-red-600 mt-2 font-extrabold">
                             Nenhum curso atual foi encontrado para este aluno.
                         </p>
-                    @endif
-
-                    @if($acessoTeste)
-                        <div class="mt-4 inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 border border-yellow-200 px-4 py-2 rounded-2xl text-sm font-bold">
-                            <span>⚠️</span>
-                            Acesso de teste ativado
-                        </div>
                     @endif
                 </div>
 
@@ -540,12 +529,6 @@
                                    class="inline-flex items-center justify-center bg-[#004D3A] text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#003C2F] transition">
                                     Continuar minhas aulas
                                 </a>
-
-                                <button type="button"
-                                        onclick="abrirAcessoTesteProva()"
-                                        class="inline-flex items-center justify-center bg-yellow-100 text-yellow-800 border border-yellow-200 px-6 py-3 rounded-2xl font-bold hover:bg-yellow-200 transition">
-                                    Acesso de teste
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -644,10 +627,6 @@
                                 <a href="{{ route('prova.final') }}?iniciar=1" class="inline-flex items-center justify-center bg-[#004D3A] text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#003C2F] transition">
                                     Fazer prova final
                                 </a>
-
-                                <button type="button" onclick="abrirAcessoTesteProva()" class="inline-flex items-center justify-center bg-yellow-100 text-yellow-800 border border-yellow-200 px-6 py-3 rounded-2xl font-bold hover:bg-yellow-200 transition">
-                                    Acesso de teste
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -921,52 +900,6 @@
 
 </div>
 
-<!-- MODAL ACESSO TESTE -->
-<div id="modalAcessoTesteProva"
-     class="fixed inset-0 hidden items-center justify-center z-[90] bg-black/50 backdrop-blur-sm px-4">
-
-    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-[#E3EBE4] p-6 text-center">
-
-        <div class="w-16 h-16 mx-auto rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center mb-4">
-            <span class="text-2xl">🔐</span>
-        </div>
-
-        <h2 class="text-xl font-extrabold text-[#003C2F] mb-2">
-            Acesso de teste
-        </h2>
-
-        <p class="text-sm text-[#60756B] mb-5">
-            Digite a senha de teste para liberar a prova final temporariamente.
-        </p>
-
-        <input
-            type="password"
-            id="senhaTesteProva"
-            placeholder="Digite a senha"
-            class="w-full px-4 py-3 rounded-2xl border border-[#DCE7DE] bg-[#F8FBF8] text-[#003C2F] text-center font-bold focus:outline-none focus:ring-2 focus:ring-[#00A63E] mb-4"
-        >
-
-        <p id="erroSenhaTesteProva" class="hidden text-sm text-red-600 font-bold mb-4">
-            Senha incorreta. Tente novamente.
-        </p>
-
-        <div class="flex gap-3">
-            <button type="button"
-                    onclick="fecharAcessoTesteProva()"
-                    class="w-1/2 px-4 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition">
-                Cancelar
-            </button>
-
-            <button type="button"
-                    onclick="validarAcessoTesteProva()"
-                    class="w-1/2 px-4 py-3 rounded-2xl bg-[#004D3A] text-white font-bold hover:bg-[#003C2F] transition">
-                Entrar
-            </button>
-        </div>
-
-    </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 @if(isset($avaliacao) && $provaLiberada)
@@ -1113,11 +1046,11 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         Swal.fire({
-            icon: '{{ $acessoTeste ? 'warning' : 'question' }}',
-            title: '{{ $acessoTeste ? 'Acesso de teste ativado' : 'Deseja iniciar a prova final?' }}',
+            icon: 'question',
+            title: 'Deseja iniciar a prova final?',
             html: `
                 <p style="color:#60756B; font-size:14px; line-height:1.6;">
-                    {{ $acessoTeste ? 'Você está acessando a prova usando a senha de teste.' : 'A prova final está liberada porque você atingiu pelo menos 70% do curso atual.' }}
+                    A prova final está liberada porque você concluiu 100% do curso e atingiu média mínima de 70% nos pós-testes.
                     <br><br>
                     Ao clicar em <strong>Sim, iniciar</strong>, o cronômetro começará imediatamente.
                     <br><br>
@@ -1203,81 +1136,5 @@
     });
 </script>
 @endif
-
-<script>
-    function abrirAcessoTesteProva() {
-        const modal = document.getElementById('modalAcessoTesteProva');
-        const input = document.getElementById('senhaTesteProva');
-        const erro = document.getElementById('erroSenhaTesteProva');
-
-        if (!modal) return;
-
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-
-        if (input) {
-            input.value = '';
-            setTimeout(() => input.focus(), 150);
-        }
-
-        if (erro) {
-            erro.classList.add('hidden');
-        }
-    }
-
-    function fecharAcessoTesteProva() {
-        const modal = document.getElementById('modalAcessoTesteProva');
-
-        if (!modal) return;
-
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-
-    function validarAcessoTesteProva() {
-        const input = document.getElementById('senhaTesteProva');
-        const erro = document.getElementById('erroSenhaTesteProva');
-
-        const senha = input ? input.value.trim() : '';
-
-        if (senha === '123') {
-            window.location.href = "{{ route('prova.final') }}?teste=123&iniciar=1";
-            return;
-        }
-
-        if (erro) {
-            erro.classList.remove('hidden');
-        }
-
-        if (input) {
-            input.value = '';
-            input.focus();
-        }
-    }
-
-    const modalAcessoTesteProva = document.getElementById('modalAcessoTesteProva');
-
-    if (modalAcessoTesteProva) {
-        modalAcessoTesteProva.addEventListener('click', function(e) {
-            if (e.target === this) {
-                fecharAcessoTesteProva();
-            }
-        });
-    }
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            fecharAcessoTesteProva();
-        }
-
-        if (e.key === 'Enter') {
-            const modal = document.getElementById('modalAcessoTesteProva');
-
-            if (modal && !modal.classList.contains('hidden')) {
-                validarAcessoTesteProva();
-            }
-        }
-    });
-</script>
 
 @endsection
