@@ -679,7 +679,8 @@
 
 <!-- MODAL DE CONFIRMAÇÃO PERSONALIZADO -->
 <div id="modalConfirmacaoUsuario"
-     class="fixed inset-0 hidden items-center justify-center bg-[#001E17]/60 backdrop-blur-sm z-[110] px-4">
+     class="hidden items-center justify-center bg-[#001E17]/60 backdrop-blur-sm px-4"
+     style="position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 999999;">
 
     <div class="modal-confirmacao-entrada bg-white w-full max-w-md rounded-[30px] border border-[#DCE7DE] shadow-2xl overflow-hidden">
 
@@ -1140,6 +1141,15 @@
         }
     }
 
+
+    function garantirModalConfirmacaoNoBody() {
+        const modal = document.getElementById('modalConfirmacaoUsuario');
+
+        if (modal && modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+        }
+    }
+
     function abrirModalConfirmacaoUsuario({
         tipo = 'aprovar',
         titulo,
@@ -1149,6 +1159,8 @@
         email,
         executar
     }) {
+        garantirModalConfirmacaoNoBody();
+
         const modal = document.getElementById('modalConfirmacaoUsuario');
 
         if (!modal) return;
@@ -1626,6 +1638,11 @@
 
     window.addEventListener('scroll', fecharMenuContexto);
     window.addEventListener('resize', fecharMenuContexto);
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        garantirModalConfirmacaoNoBody();
+    });
 
     const modalConfirmacaoUsuario = document.getElementById('modalConfirmacaoUsuario');
     const modalEditar = document.getElementById('modalEditar');
