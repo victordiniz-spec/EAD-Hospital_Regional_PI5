@@ -215,7 +215,55 @@
         ? (int) ($avaliacao->tempo_limite ?? 60)
         : 60;
 
-    $modoProvaFinal = isset($avaliacao) && $provaLiberada && request('iniciar') === '1';
+    /*
+    |--------------------------------------------------------------------------
+    | RESULTADO DA PROVA FINAL DO ALUNO
+    |--------------------------------------------------------------------------
+    */
+    $resultadoFinalAluno = null;
+    $provaFinalJaFeita = false;
+    $notaFinalAluno = null;
+    $notaFinalAlunoTexto = '-';
+    $dataProvaFinalAluno = null;
+    $aprovadoProvaFinal = false;
+
+    if (isset($avaliacao) && Schema::hasTable('notas')) {
+        $resultadoFinalAluno = DB::table('notas')
+            ->where('aluno_id', $alunoId)
+            ->where('avaliacao_id', $avaliacao->id)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($resultadoFinalAluno) {
+            $provaFinalJaFeita = true;
+
+            foreach (['porcentagem', 'nota', 'pontuacao', 'valor', 'media', 'resultado'] as $colunaNotaFinal) {
+                if (isset($resultadoFinalAluno->{$colunaNotaFinal}) && $resultadoFinalAluno->{$colunaNotaFinal} !== null) {
+                    $notaFinalAluno = (float) $resultadoFinalAluno->{$colunaNotaFinal};
+
+                    if ($notaFinalAluno <= 10) {
+                        $notaFinalAluno *= 10;
+                    }
+
+                    $notaFinalAluno = round($notaFinalAluno, 2);
+                    break;
+                }
+            }
+
+            $notaFinalAlunoTexto = $notaFinalAluno !== null
+                ? number_format($notaFinalAluno, 1, ',', '.') . '%'
+                : '-';
+
+            $dataProvaFinalAluno = $resultadoFinalAluno->created_at ?? null;
+            $aprovadoProvaFinal = $notaFinalAluno !== null && $notaFinalAluno >= 70;
+        }
+    }
+
+    $modoProvaFinal = isset($avaliacao)
+        && $provaLiberada
+        && !$provaFinalJaFeita
+        && request('iniciar') === '1';
 
     $requisitosProva = [
         [
@@ -562,6 +610,130 @@
                     </aside>
                 </div>
 
+            @elseif($provaFinalJaFeita)
+
+                <!-- RESULTADO DA PROVA FINAL -->
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-7">
+                    <div class="xl:col-span-8">
+                        <div class="bg-white border border-[#E3EBE4] rounded-3xl p-6 sm:p-8 shadow-sm">
+
+                            <div class="w-20 h-20 rounded-full {{ $aprovadoProvaFinal ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }} flex items-center justify-center mb-5">
+                                @if($aprovadoProvaFinal)
+                                    <span class="text-4xl font-black">✓</span>
+                                @else
+                                    <span class="text-4xl font-black">!</span>
+                                @endif
+                            </div>
+
+                            <p class="text-[11px] uppercase tracking-widest font-extrabold {{ $aprovadoProvaFinal ? 'text-green-700' : 'text-red-700' }}">
+                                Resultado registrado
+                            </p>
+
+                            <h2 class="text-2xl sm:text-3xl font-extrabold text-[#003C2F] mt-2">
+                                {{ $aprovadoProvaFinal ? 'Você foi aprovado na prova final!' : 'Prova final realizada' }}
+                            </h2>
+
+                            <p class="text-[#60756B] text-sm leading-relaxed max-w-2xl mt-3">
+                                Sua prova final já foi concluída e o resultado está salvo no sistema.
+                            </p>
+
+                            @if($cursoAtual)
+                                <p class="text-sm text-[#004D3A] font-extrabold mt-3">
+                                    Curso atual: {{ $cursoAtual->nome }}
+                                </p>
+                            @endif
+
+                            <div class="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="rounded-3xl border {{ $aprovadoProvaFinal ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50' }} p-6">
+                                    <p class="text-[11px] uppercase tracking-widest font-extrabold {{ $aprovadoProvaFinal ? 'text-green-700' : 'text-red-700' }}">
+                                        Nota da prova final
+                                    </p>
+
+                                    <p class="text-4xl font-extrabold mt-2 {{ $aprovadoProvaFinal ? 'text-green-700' : 'text-red-700' }}">
+                                        {{ $notaFinalAlunoTexto }}
+                                    </p>
+
+                                    <p class="text-xs mt-2 {{ $aprovadoProvaFinal ? 'text-green-700/80' : 'text-red-700/80' }}">
+                                        Mínimo necessário: 70%.
+                                    </p>
+                                </div>
+
+                                <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-6">
+                                    <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                        Situação
+                                    </p>
+
+                                    <p class="text-2xl font-extrabold mt-2 {{ $aprovadoProvaFinal ? 'text-green-700' : 'text-red-600' }}">
+                                        {{ $aprovadoProvaFinal ? 'Aprovado' : 'Não aprovado' }}
+                                    </p>
+
+                                    <p class="text-xs text-[#60756B] mt-2">
+                                        @if($dataProvaFinalAluno)
+                                            Realizada em
+                                            {{ \Carbon\Carbon::parse($dataProvaFinalAluno)->timezone('America/Sao_Paulo')->format('d/m/Y H:i') }}.
+                                        @else
+                                            Data não disponível.
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                    <div>
+                                        <p class="font-extrabold text-[#003C2F]">
+                                            {{ $aprovadoProvaFinal ? 'Etapa final concluída' : 'Resultado abaixo da média' }}
+                                        </p>
+
+                                        <p class="text-sm text-[#60756B] mt-1">
+                                            @if($aprovadoProvaFinal)
+                                                Consulte seu certificado para verificar a liberação.
+                                            @else
+                                                Consulte o professor sobre uma nova tentativa.
+                                            @endif
+                                        </p>
+                                    </div>
+
+                                    <a href="{{ route('certificado.aluno') }}"
+                                       class="inline-flex items-center justify-center bg-[#004D3A] text-white px-5 py-3 rounded-2xl font-extrabold hover:bg-[#003C2F] transition">
+                                        Ver certificado
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <aside class="xl:col-span-4">
+                        <div class="bg-white border border-[#E3EBE4] rounded-3xl p-6 shadow-sm">
+                            <h3 class="text-xl font-extrabold text-[#003C2F] mb-4">
+                                Resumo da avaliação
+                            </h3>
+
+                            <div class="space-y-3">
+                                <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 flex items-center justify-between gap-3">
+                                    <span class="text-sm font-bold text-[#60756B]">Nota final</span>
+                                    <strong class="{{ $aprovadoProvaFinal ? 'text-green-700' : 'text-red-600' }}">
+                                        {{ $notaFinalAlunoTexto }}
+                                    </strong>
+                                </div>
+
+                                <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 flex items-center justify-between gap-3">
+                                    <span class="text-sm font-bold text-[#60756B]">Mínimo</span>
+                                    <strong class="text-[#004D3A]">70%</strong>
+                                </div>
+
+                                <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 flex items-center justify-between gap-3">
+                                    <span class="text-sm font-bold text-[#60756B]">Status</span>
+                                    <strong class="{{ $aprovadoProvaFinal ? 'text-green-700' : 'text-red-600' }}">
+                                        {{ $aprovadoProvaFinal ? 'Aprovado' : 'Não aprovado' }}
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
             @elseif(!$modoProvaFinal)
 
                 <!-- PROVA LIBERADA - TELA DE ENTRADA -->
@@ -902,7 +1074,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-@if(isset($avaliacao) && $provaLiberada)
+@if(isset($avaliacao) && $provaLiberada && $modoProvaFinal)
 <script>
     let intervaloCronometroProva = null;
     let tempoTotalProvaSegundos = {{ $tempoLimiteProva }} * 60;
@@ -1070,7 +1242,7 @@
             allowEscapeKey: false
         }).then((result) => {
             if (!result.isConfirmed) {
-                window.location.href = "{{ route('dashboard.aluno') }}";
+                window.location.href = "{{ route('prova.final') }}";
                 return;
             }
 
