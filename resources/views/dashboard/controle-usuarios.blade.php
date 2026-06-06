@@ -55,6 +55,27 @@
         z-index: 9999;
         display: none;
     }
+
+    .modal-confirmacao-icone {
+        box-shadow: 0 14px 30px rgba(0, 77, 58, 0.14);
+    }
+
+    .modal-confirmacao-entrada {
+        animation: modalConfirmacaoEntrada 0.22s ease-out;
+    }
+
+    @keyframes modalConfirmacaoEntrada {
+        from {
+            opacity: 0;
+            transform: translateY(14px) scale(0.97);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
 </style>
 
 <div class="flex min-h-screen w-full bg-[#F3F7F3] text-[#003C2F] overflow-x-hidden">
@@ -492,8 +513,14 @@
                                 <form action="{{ route('usuario.aprovar', $user->id) }}" method="POST" class="flex-1 min-w-[130px]" onclick="event.stopPropagation();">
                                     @csrf
 
-                                    <button type="submit"
-                                            onclick="return confirm('Deseja aprovar este usuário? Ele passará a ter acesso ao sistema.')"
+                                    <button type="button"
+                                            onclick="event.stopPropagation(); confirmarFormularioUsuario(
+                                                this,
+                                                'aprovar',
+                                                'Aprovar acesso?',
+                                                'Este usuário passará a ter acesso ao sistema.',
+                                                'Aprovar usuário'
+                                            )"
                                             class="w-full bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2">
                                         Aprovar
                                     </button>
@@ -502,8 +529,14 @@
                                 <form action="{{ route('usuario.rejeitar', $user->id) }}" method="POST" class="flex-1 min-w-[130px]" onclick="event.stopPropagation();">
                                     @csrf
 
-                                    <button type="submit"
-                                            onclick="return confirm('Deseja rejeitar este usuário? Esta ação negará a solicitação de acesso.')"
+                                    <button type="button"
+                                            onclick="event.stopPropagation(); confirmarFormularioUsuario(
+                                                this,
+                                                'rejeitar',
+                                                'Rejeitar solicitação?',
+                                                'O acesso será negado e o usuário não conseguirá entrar no sistema.',
+                                                'Rejeitar usuário'
+                                            )"
                                             class="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2">
                                         Rejeitar
                                     </button>
@@ -513,8 +546,14 @@
                                     @csrf
                                     @method('PATCH')
 
-                                    <button type="submit"
-                                            onclick="return confirm('Deseja reativar este usuário? Ele voltará a ter acesso ao sistema.')"
+                                    <button type="button"
+                                            onclick="event.stopPropagation(); confirmarFormularioUsuario(
+                                                this,
+                                                'reativar',
+                                                'Reativar usuário?',
+                                                'O usuário voltará a ter acesso normalmente ao sistema.',
+                                                'Reativar usuário'
+                                            )"
                                             class="w-full bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2">
                                         Reativar
                                     </button>
@@ -524,8 +563,14 @@
                                     @csrf
                                     @method('PATCH')
 
-                                    <button type="submit"
-                                            onclick="return confirm('Tem certeza que deseja inutilizar este usuário? Ele não conseguirá mais acessar o sistema.')"
+                                    <button type="button"
+                                            onclick="event.stopPropagation(); confirmarFormularioUsuario(
+                                                this,
+                                                'inutilizar',
+                                                'Inutilizar usuário?',
+                                                'O acesso será bloqueado até que o usuário seja reativado.',
+                                                'Inutilizar usuário'
+                                            )"
                                             class="w-full bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200 px-4 py-3 rounded-2xl transition text-sm font-extrabold flex items-center justify-center gap-2">
                                         Inutilizar
                                     </button>
@@ -630,6 +675,131 @@
 <form id="formAprovacaoRapidaUsuario" method="POST" class="hidden">
     @csrf
 </form>
+
+
+<!-- MODAL DE CONFIRMAÇÃO PERSONALIZADO -->
+<div id="modalConfirmacaoUsuario"
+     class="fixed inset-0 hidden items-center justify-center bg-[#001E17]/60 backdrop-blur-sm z-[110] px-4">
+
+    <div class="modal-confirmacao-entrada bg-white w-full max-w-md rounded-[30px] border border-[#DCE7DE] shadow-2xl overflow-hidden">
+
+        <div id="cabecalhoModalConfirmacao"
+             class="px-6 pt-7 pb-5 bg-gradient-to-br from-[#F4FBF6] to-white">
+
+            <div class="flex items-start justify-between gap-4">
+
+                <div id="iconeModalConfirmacao"
+                     class="modal-confirmacao-icone w-16 h-16 rounded-2xl bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+
+                    <svg id="svgAprovarConfirmacao"
+                         xmlns="http://www.w3.org/2000/svg"
+                         class="w-8 h-8"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.9"
+                              d="m4.5 12.75 6 6 9-13.5"/>
+                    </svg>
+
+                    <svg id="svgAlertaConfirmacao"
+                         xmlns="http://www.w3.org/2000/svg"
+                         class="hidden w-8 h-8"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.9"
+                              d="M12 9v3.75m9-1.5a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12V16.5Z"/>
+                    </svg>
+                </div>
+
+                <button type="button"
+                        onclick="fecharModalConfirmacaoUsuario()"
+                        class="w-10 h-10 rounded-xl bg-white border border-[#E3EBE4] text-[#60756B] hover:bg-[#F3F7F3] hover:text-[#003C2F] transition flex items-center justify-center">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="w-5 h-5"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="1.8"
+                              d="M6 18 18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+
+            </div>
+
+            <div class="mt-5">
+                <p id="etiquetaModalConfirmacao"
+                   class="text-[11px] uppercase tracking-[0.18em] text-green-700 font-extrabold">
+                    Confirmação de acesso
+                </p>
+
+                <h2 id="tituloModalConfirmacao"
+                    class="text-2xl font-extrabold text-[#003C2F] mt-2">
+                    Aprovar acesso?
+                </h2>
+
+                <p id="mensagemModalConfirmacao"
+                   class="text-sm text-[#60756B] mt-2 leading-relaxed">
+                    Este usuário passará a ter acesso ao sistema.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="px-6 pb-7">
+
+            <div class="bg-[#F8FBF8] border border-[#E3EBE4] rounded-2xl p-4 mb-6">
+                <div class="flex items-center gap-3">
+
+                    <div id="avatarModalConfirmacao"
+                         class="w-12 h-12 rounded-2xl bg-[#004D3A] text-white flex items-center justify-center font-extrabold shrink-0">
+                        U
+                    </div>
+
+                    <div class="min-w-0">
+                        <p id="nomeModalConfirmacao"
+                           class="font-extrabold text-[#003C2F] break-words">
+                            Usuário
+                        </p>
+
+                        <p id="emailModalConfirmacao"
+                           class="text-xs text-[#60756B] mt-1 break-all">
+                            usuario@email.com
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                <button type="button"
+                        onclick="fecharModalConfirmacaoUsuario()"
+                        class="px-5 py-3.5 rounded-2xl bg-[#F1F6F2] text-[#60756B] font-extrabold hover:bg-[#E6EFE8] transition">
+                    Cancelar
+                </button>
+
+                <button type="button"
+                        id="botaoConfirmarAcaoUsuario"
+                        onclick="executarAcaoConfirmadaUsuario()"
+                        class="px-5 py-3.5 rounded-2xl bg-[#00A63E] text-white font-extrabold hover:bg-[#008F35] transition shadow-lg shadow-green-900/10">
+                    Aprovar usuário
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 
 <!-- MODAL EDITAR -->
 <div id="modalEditar" class="fixed inset-0 hidden items-center justify-center bg-black/50 backdrop-blur-sm z-[80] px-4">
@@ -897,6 +1067,176 @@
     let usuarioSelecionado = null;
     let longPressTimer = null;
 
+    let acaoConfirmadaUsuario = null;
+
+    function obterIniciaisUsuario(nome) {
+        const partes = String(nome || 'Usuário')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean);
+
+        if (partes.length === 0) return 'U';
+
+        const primeira = partes[0].charAt(0);
+        const ultima = partes.length > 1
+            ? partes[partes.length - 1].charAt(0)
+            : '';
+
+        return (primeira + ultima).toUpperCase();
+    }
+
+    function configurarVisualModalConfirmacao(tipo) {
+        const icone = document.getElementById('iconeModalConfirmacao');
+        const etiqueta = document.getElementById('etiquetaModalConfirmacao');
+        const botao = document.getElementById('botaoConfirmarAcaoUsuario');
+        const svgAprovar = document.getElementById('svgAprovarConfirmacao');
+        const svgAlerta = document.getElementById('svgAlertaConfirmacao');
+
+        const configuracoes = {
+            aprovar: {
+                etiqueta: 'Confirmação de acesso',
+                iconeClasses: 'bg-green-100 text-green-700',
+                botaoClasses: 'bg-[#00A63E] hover:bg-[#008F35]',
+                alerta: false
+            },
+            reativar: {
+                etiqueta: 'Restauração de acesso',
+                iconeClasses: 'bg-green-100 text-green-700',
+                botaoClasses: 'bg-[#00A63E] hover:bg-[#008F35]',
+                alerta: false
+            },
+            rejeitar: {
+                etiqueta: 'Negar solicitação',
+                iconeClasses: 'bg-red-100 text-red-600',
+                botaoClasses: 'bg-red-600 hover:bg-red-700',
+                alerta: true
+            },
+            inutilizar: {
+                etiqueta: 'Bloqueio de acesso',
+                iconeClasses: 'bg-yellow-100 text-yellow-700',
+                botaoClasses: 'bg-yellow-600 hover:bg-yellow-700',
+                alerta: true
+            }
+        };
+
+        const config = configuracoes[tipo] || configuracoes.aprovar;
+
+        etiqueta.innerText = config.etiqueta;
+
+        icone.className =
+            'modal-confirmacao-icone w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 '
+            + config.iconeClasses;
+
+        botao.className =
+            'px-5 py-3.5 rounded-2xl text-white font-extrabold transition shadow-lg shadow-black/10 '
+            + config.botaoClasses;
+
+        if (config.alerta) {
+            svgAprovar.classList.add('hidden');
+            svgAlerta.classList.remove('hidden');
+        } else {
+            svgAprovar.classList.remove('hidden');
+            svgAlerta.classList.add('hidden');
+        }
+    }
+
+    function abrirModalConfirmacaoUsuario({
+        tipo = 'aprovar',
+        titulo,
+        mensagem,
+        textoBotao,
+        nome,
+        email,
+        executar
+    }) {
+        const modal = document.getElementById('modalConfirmacaoUsuario');
+
+        if (!modal) return;
+
+        acaoConfirmadaUsuario = typeof executar === 'function'
+            ? executar
+            : null;
+
+        document.getElementById('tituloModalConfirmacao').innerText =
+            titulo || 'Confirmar ação?';
+
+        document.getElementById('mensagemModalConfirmacao').innerText =
+            mensagem || 'Confirme para continuar.';
+
+        document.getElementById('botaoConfirmarAcaoUsuario').innerText =
+            textoBotao || 'Confirmar';
+
+        document.getElementById('nomeModalConfirmacao').innerText =
+            nome || 'Usuário';
+
+        document.getElementById('emailModalConfirmacao').innerText =
+            email || '';
+
+        document.getElementById('avatarModalConfirmacao').innerText =
+            obterIniciaisUsuario(nome);
+
+        configurarVisualModalConfirmacao(tipo);
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        document.body.style.overflow = 'hidden';
+
+        setTimeout(() => {
+            document.getElementById('botaoConfirmarAcaoUsuario')?.focus();
+        }, 80);
+    }
+
+    function fecharModalConfirmacaoUsuario() {
+        const modal = document.getElementById('modalConfirmacaoUsuario');
+
+        if (!modal) return;
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+
+        document.body.style.overflow = '';
+
+        acaoConfirmadaUsuario = null;
+    }
+
+    function executarAcaoConfirmadaUsuario() {
+        const executar = acaoConfirmadaUsuario;
+
+        if (typeof executar !== 'function') {
+            fecharModalConfirmacaoUsuario();
+            return;
+        }
+
+        const botao = document.getElementById('botaoConfirmarAcaoUsuario');
+
+        if (botao) {
+            botao.disabled = true;
+            botao.innerText = 'Processando...';
+            botao.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+
+        executar();
+    }
+
+    function confirmarFormularioUsuario(botao, tipo, titulo, mensagem, textoBotao) {
+        const form = botao?.closest('form');
+        const card = botao?.closest('.usuario-item');
+
+        if (!form) return;
+
+        abrirModalConfirmacaoUsuario({
+            tipo,
+            titulo,
+            mensagem,
+            textoBotao,
+            nome: card?.dataset.nome || 'Usuário',
+            email: card?.dataset.email || '',
+            executar: () => form.submit()
+        });
+    }
+
+
     function selecionarUsuario(card) {
         document.querySelectorAll('.usuario-item').forEach((item) => {
             item.classList.remove('usuario-selecionado');
@@ -980,33 +1320,49 @@
     function aprovarUsuarioSelecionado() {
         if (!usuarioSelecionado) return;
 
-        if (!confirm('Deseja aprovar este usuário? Ele passará a ter acesso ao sistema.')) {
-            return;
-        }
-
+        const card = usuarioSelecionado;
         const form = document.getElementById('formAprovacaoRapidaUsuario');
 
         if (!form) return;
 
-        form.action = usuarioSelecionado.dataset.aprovarUrl;
         fecharMenuContexto();
-        form.submit();
+
+        abrirModalConfirmacaoUsuario({
+            tipo: 'aprovar',
+            titulo: 'Aprovar acesso?',
+            mensagem: 'Este usuário passará a ter acesso ao sistema.',
+            textoBotao: 'Aprovar usuário',
+            nome: card.dataset.nome,
+            email: card.dataset.email,
+            executar: () => {
+                form.action = card.dataset.aprovarUrl;
+                form.submit();
+            }
+        });
     }
 
     function rejeitarUsuarioSelecionado() {
         if (!usuarioSelecionado) return;
 
-        if (!confirm('Deseja rejeitar este usuário? Esta ação negará a solicitação de acesso.')) {
-            return;
-        }
-
+        const card = usuarioSelecionado;
         const form = document.getElementById('formAprovacaoRapidaUsuario');
 
         if (!form) return;
 
-        form.action = usuarioSelecionado.dataset.rejeitarUrl;
         fecharMenuContexto();
-        form.submit();
+
+        abrirModalConfirmacaoUsuario({
+            tipo: 'rejeitar',
+            titulo: 'Rejeitar solicitação?',
+            mensagem: 'O acesso será negado e o usuário não conseguirá entrar no sistema.',
+            textoBotao: 'Rejeitar usuário',
+            nome: card.dataset.nome,
+            email: card.dataset.email,
+            executar: () => {
+                form.action = card.dataset.rejeitarUrl;
+                form.submit();
+            }
+        });
     }
 
     function editarUsuarioSelecionado() {
@@ -1025,28 +1381,36 @@
     function alternarStatusUsuarioSelecionado() {
         if (!usuarioSelecionado) return;
 
-        const statusReal = usuarioSelecionado.dataset.statusReal || 'pendente';
-        const url = statusReal === 'inutilizado'
-            ? usuarioSelecionado.dataset.reativarUrl
-            : usuarioSelecionado.dataset.inutilizarUrl;
+        const card = usuarioSelecionado;
+        const statusReal = card.dataset.statusReal || 'pendente';
+        const reativar = statusReal === 'inutilizado';
 
-        const mensagem = statusReal === 'inutilizado'
-            ? 'Deseja reativar este usuário? Ele voltará a ter acesso ao sistema.'
-            : 'Tem certeza que deseja inutilizar este usuário? Ele não conseguirá mais acessar o sistema.';
-
-        if (!confirm(mensagem)) {
-            return;
-        }
+        const url = reativar
+            ? card.dataset.reativarUrl
+            : card.dataset.inutilizarUrl;
 
         const form = document.getElementById('formAcaoRapidaUsuario');
         const metodo = document.getElementById('metodoAcaoRapidaUsuario');
 
-        form.action = url;
-        metodo.value = 'PATCH';
+        if (!form || !metodo) return;
 
         fecharMenuContexto();
 
-        form.submit();
+        abrirModalConfirmacaoUsuario({
+            tipo: reativar ? 'reativar' : 'inutilizar',
+            titulo: reativar ? 'Reativar usuário?' : 'Inutilizar usuário?',
+            mensagem: reativar
+                ? 'O usuário voltará a ter acesso normalmente ao sistema.'
+                : 'O acesso será bloqueado até que o usuário seja reativado.',
+            textoBotao: reativar ? 'Reativar usuário' : 'Inutilizar usuário',
+            nome: card.dataset.nome,
+            email: card.dataset.email,
+            executar: () => {
+                form.action = url;
+                metodo.value = 'PATCH';
+                form.submit();
+            }
+        });
     }
 
     function excluirUsuarioSelecionado() {
@@ -1263,9 +1627,18 @@
     window.addEventListener('scroll', fecharMenuContexto);
     window.addEventListener('resize', fecharMenuContexto);
 
+    const modalConfirmacaoUsuario = document.getElementById('modalConfirmacaoUsuario');
     const modalEditar = document.getElementById('modalEditar');
     const modalExcluir = document.getElementById('modalExcluir');
     const modalFiltros = document.getElementById('modalFiltros');
+
+    if (modalConfirmacaoUsuario) {
+        modalConfirmacaoUsuario.addEventListener('click', function(e) {
+            if (e.target === this) {
+                fecharModalConfirmacaoUsuario();
+            }
+        });
+    }
 
     if (modalEditar) {
         modalEditar.addEventListener('click', function(e) {
@@ -1293,6 +1666,7 @@
 
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
+            fecharModalConfirmacaoUsuario();
             fecharModal();
             fecharModalExcluir();
             fecharModalFiltros();
