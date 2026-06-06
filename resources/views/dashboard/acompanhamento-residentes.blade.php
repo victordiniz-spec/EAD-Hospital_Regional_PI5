@@ -59,6 +59,65 @@
 
         return max($total - $feitos, 0);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PROGRESSO COMPLETO DO CURSO
+    |--------------------------------------------------------------------------
+    | Cada requisito vale uma etapa:
+    | - cada videoaula assistida;
+    | - cada pós-teste concluído;
+    | - prova final aprovada com nota mínima de 70%.
+    |
+    | Assim, com 1 aula, 1 pós-teste e 1 prova final:
+    | somente aula = 33%;
+    | aula + pós-teste = 67%;
+    | aula + pós-teste + prova final aprovada = 100%.
+    */
+    function progressoCompletoAcompanhamento($residente) {
+        $totalAulas = max((int) ($residente->total_aulas ?? 0), 0);
+        $aulasAssistidas = min(
+            max((int) ($residente->aulas_assistidas ?? 0), 0),
+            $totalAulas
+        );
+
+        $totalPosTestes = max((int) ($residente->total_avaliacoes ?? 0), 0);
+        $posTestesFeitos = limitarContagemAcompanhamento(
+            $residente->avaliacoes_feitas ?? 0,
+            $totalPosTestes
+        );
+
+        // A prova final sempre representa uma etapa do curso.
+        $totalEtapas = $totalAulas + $totalPosTestes + 1;
+
+        $notaFinal = (float) ($residente->nota_final ?? 0);
+        $provaFinalAprovada = !empty($residente->prova_final_feita) && $notaFinal >= 70;
+
+        $etapasConcluidas = $aulasAssistidas
+            + $posTestesFeitos
+            + ($provaFinalAprovada ? 1 : 0);
+
+        if ($totalEtapas <= 0) {
+            return 0;
+        }
+
+        return (int) round(($etapasConcluidas / $totalEtapas) * 100);
+    }
+
+    $linhasResidentes = collect($linhasResidentes ?? [])->map(function ($residente) {
+        $residente->progresso_completo = progressoCompletoAcompanhamento($residente);
+        return $residente;
+    });
+
+    $rankingEvolucao = $linhasResidentes
+        ->sortByDesc('progresso_completo')
+        ->take(5)
+        ->values();
+
+    $residentesEmRiscoLista = collect($residentesEmRiscoLista ?? [])->map(function ($residente) {
+        $residente->progresso_completo = progressoCompletoAcompanhamento($residente);
+        return $residente;
+    });
 @endphp
 
 <div class="flex min-h-screen w-full bg-[#F3F7F3] text-[#003C2F] overflow-x-hidden">
@@ -205,7 +264,7 @@
                                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                                         <div class="bg-white border border-[#DCE7DE] rounded-2xl px-3 py-2">
                                             <p class="text-[10px] uppercase tracking-widest text-[#60756B] font-extrabold">Progresso</p>
-                                            <p class="text-lg font-extrabold text-[#003C2F]">{{ $residente->progresso }}%</p>
+                                            <p class="text-lg font-extrabold text-[#003C2F]">{{ $residente->progresso_completo ?? progressoCompletoAcompanhamento($residente) }}%</p>
                                         </div>
 
                                         <div class="bg-white border border-[#DCE7DE] rounded-2xl px-3 py-2">
@@ -264,13 +323,13 @@
                                     </h3>
 
                                     <div class="mt-2 h-2 bg-[#DCE7DE] rounded-full overflow-hidden">
-                                        <div class="h-full bg-[#00A63E] rounded-full" style="width: {{ min($residente->progresso, 100) }}%;"></div>
+                                        <div class="h-full bg-[#00A63E] rounded-full" style="width: {{ min($residente->progresso_completo ?? progressoCompletoAcompanhamento($residente), 100) }}%;"></div>
                                     </div>
                                 </div>
 
                                 <div class="text-right shrink-0">
                                     <p class="text-xl font-extrabold text-[#003C2F]">
-                                        {{ $residente->progresso }}%
+                                        {{ $residente->progresso_completo ?? progressoCompletoAcompanhamento($residente) }}%
                                     </p>
                                     <p class="text-[10px] uppercase tracking-widest text-[#60756B] font-extrabold">
                                         concluído
@@ -352,10 +411,10 @@
                                     <td class="px-5 py-4 min-w-[150px]">
                                         <div class="flex items-center gap-3">
                                             <div class="flex-1 h-2 bg-[#DCE7DE] rounded-full overflow-hidden">
-                                                <div class="h-full rounded-full {{ $residente->progresso >= 70 ? 'bg-[#00A63E]' : ($residente->progresso >= 40 ? 'bg-yellow-400' : 'bg-red-500') }}"
-                                                     style="width: {{ min($residente->progresso, 100) }}%;"></div>
+                                                <div class="h-full rounded-full {{ ($residente->progresso_completo ?? progressoCompletoAcompanhamento($residente)) >= 70 ? 'bg-[#00A63E]' : (($residente->progresso_completo ?? progressoCompletoAcompanhamento($residente)) >= 40 ? 'bg-yellow-400' : 'bg-red-500') }}"
+                                                     style="width: {{ min($residente->progresso_completo ?? progressoCompletoAcompanhamento($residente), 100) }}%;"></div>
                                             </div>
-                                            <strong>{{ $residente->progresso }}%</strong>
+                                            <strong>{{ $residente->progresso_completo ?? progressoCompletoAcompanhamento($residente) }}%</strong>
                                         </div>
                                     </td>
 

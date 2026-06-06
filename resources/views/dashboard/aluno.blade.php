@@ -187,6 +187,69 @@
         }
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | PROVA FINAL COMO ETAPA DO PROGRESSO
+    |--------------------------------------------------------------------------
+    | A prova final também faz parte do progresso total do curso.
+    | Ela só conta como concluída quando o aluno realiza e alcança pelo menos 70%.
+    */
+    $provaFinalCurso = null;
+    $provaFinalFeita = false;
+    $notaFinalPercentual = null;
+    $provaFinalAprovada = false;
+
+    if (Schema::hasTable('avaliacoes')) {
+        $queryProvaFinal = DB::table('avaliacoes');
+
+        if (Schema::hasColumn('avaliacoes', 'tipo')) {
+            $queryProvaFinal->where('tipo', 'final');
+        }
+
+        if ($cursoAtualId && Schema::hasColumn('avaliacoes', 'curso_id')) {
+            $queryProvaFinal->where('curso_id', $cursoAtualId);
+        }
+
+        $provaFinalCurso = $queryProvaFinal
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    if ($provaFinalCurso && Schema::hasTable('notas')) {
+        $resultadoProvaFinal = DB::table('notas')
+            ->where('aluno_id', $alunoId)
+            ->where('avaliacao_id', $provaFinalCurso->id)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($resultadoProvaFinal) {
+            $provaFinalFeita = true;
+
+            foreach (['porcentagem', 'nota', 'pontuacao', 'valor', 'media', 'resultado'] as $colunaNotaFinal) {
+                if (isset($resultadoProvaFinal->{$colunaNotaFinal}) && $resultadoProvaFinal->{$colunaNotaFinal} !== null) {
+                    $notaFinalPercentual = (float) $resultadoProvaFinal->{$colunaNotaFinal};
+
+                    if ($notaFinalPercentual <= 10) {
+                        $notaFinalPercentual *= 10;
+                    }
+
+                    $notaFinalPercentual = round($notaFinalPercentual, 2);
+                    break;
+                }
+            }
+
+            $provaFinalAprovada = $notaFinalPercentual !== null && $notaFinalPercentual >= 70;
+        }
+    }
+
+    // A prova final sempre acrescenta uma etapa ao curso.
+    $totalEtapasCurso++;
+
+    if ($provaFinalAprovada) {
+        $etapasConcluidasCurso++;
+    }
+
     $totalModulos = $modulos->count();
     $totalAvisos = isset($avisosRecentes) ? $avisosRecentes->count() : 0;
     $totalAulasGeral = $aulasCurso->count();
@@ -195,8 +258,19 @@
         ? round(($etapasConcluidasCurso / $totalEtapasCurso) * 100)
         : 0;
 
-    $mediaGeral = $notasAluno->count() > 0
-        ? round($notasAluno->avg(), 1)
+    /*
+    |--------------------------------------------------------------------------
+    | MÉDIA DOS PÓS-TESTES
+    |--------------------------------------------------------------------------
+    | Corrige notas salvas em escala de 0 a 10 para porcentagem.
+    */
+    $notasAlunoPercentuais = $notasAluno->map(function ($nota) {
+        $nota = (float) $nota;
+        return $nota <= 10 ? $nota * 10 : $nota;
+    });
+
+    $mediaGeral = $notasAlunoPercentuais->count() > 0
+        ? round($notasAlunoPercentuais->avg(), 1)
         : (isset($media) ? $media : 0);
 
     /*
@@ -665,6 +739,10 @@
                         {{ number_format($progressoGeral, 0) }}%
                     </h3>
 
+                    <p class="text-xs text-[#60756B] mt-2">
+                        Considera videoaulas, pós-testes e aprovação na prova final.
+                    </p>
+
                     <div class="mt-4 h-2 bg-[#E8EFE9] rounded-full overflow-hidden">
                         <div class="h-full bg-[#004D3A] rounded-full"
                              style="width: {{ min(100, max(0, $progressoGeral)) }}%;">
@@ -731,6 +809,10 @@
 
                     <p class="text-xs text-[#60756B] mt-2">
                         Pós-testes disponíveis após concluir aulas.
+                    </p>
+
+                    <p class="text-[11px] font-bold mt-2 {{ $provaFinalAprovada ? 'text-green-700' : 'text-[#60756B]' }}">
+                        Prova final: {{ $provaFinalAprovada ? 'aprovada' : ($provaFinalFeita ? 'realizada, aguardando aprovação' : 'pendente') }}
                     </p>
                 </div>
 
