@@ -132,6 +132,46 @@
         }
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | MODAL E IMPRESSÃO DE CERTIFICADO EMITIDO
+    |--------------------------------------------------------------------------
+    */
+    .modal-certificado-emitido {
+        backdrop-filter: blur(8px);
+    }
+
+    @media print {
+        body.imprimindo-certificado-emitido * {
+            visibility: hidden !important;
+        }
+
+        body.imprimindo-certificado-emitido #certificadoEmitidoImpressao,
+        body.imprimindo-certificado-emitido #certificadoEmitidoImpressao * {
+            visibility: visible !important;
+        }
+
+        body.imprimindo-certificado-emitido #certificadoEmitidoImpressao {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 297mm !important;
+            height: 210mm !important;
+            margin: 0 !important;
+            padding: 5mm !important;
+            background: #ffffff !important;
+            z-index: 999999 !important;
+            overflow: hidden !important;
+        }
+
+        body.imprimindo-certificado-emitido #certificadoEmitidoImpressao > div {
+            width: 287mm !important;
+            height: 200mm !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+        }
+    }
+
 </style>
 
 <div class="flex min-h-screen w-full bg-[#F3F7F3] text-[#003C2F] overflow-x-hidden">
@@ -707,8 +747,21 @@
                                     <td class="py-5 px-6">
                                         <div class="flex justify-end gap-2">
 
-                                            <button class="w-9 h-9 rounded-xl hover:bg-[#EAF5EF] text-[#004D3A] transition flex items-center justify-center"
-                                                    title="Visualizar">
+                                            <button type="button"
+                                                    onclick='abrirCertificadoEmitido(@json([
+                                                        "id" => $certificado->id ?? null,
+                                                        "aluno_nome" => $certificado->aluno_nome ?? "Aluno",
+                                                        "email" => $certificado->email ?? "",
+                                                        "cpf" => $certificado->cpf ?? "---",
+                                                        "curso" => $certificado->curso ?? "Curso",
+                                                        "data" => isset($certificado->created_at) ? \Carbon\Carbon::parse($certificado->created_at)->format("d/m/Y") : "---",
+                                                        "carga_horaria" => $certificado->carga_horaria ?? $cargaHorariaAtualCertificado,
+                                                        "responsavel" => $certificado->responsavel ?? $responsavelAtualCertificado,
+                                                        "cargo" => $certificado->cargo ?? $cargoAtualCertificado,
+                                                        "codigo" => $certificado->codigo ?? ("CERT-" . ($certificado->id ?? "000")),
+                                                    ]))'
+                                                    class="w-9 h-9 rounded-xl hover:bg-[#EAF5EF] text-[#004D3A] transition flex items-center justify-center"
+                                                    title="Visualizar certificado">
                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                      class="w-5 h-5"
                                                      fill="none"
@@ -725,8 +778,21 @@
                                                 </svg>
                                             </button>
 
-                                            <button class="w-9 h-9 rounded-xl hover:bg-[#EAF5EF] text-[#004D3A] transition flex items-center justify-center"
-                                                    title="Reemitir">
+                                            <button type="button"
+                                                    onclick='reemitirCertificadoEmitido(@json([
+                                                        "id" => $certificado->id ?? null,
+                                                        "aluno_nome" => $certificado->aluno_nome ?? "Aluno",
+                                                        "email" => $certificado->email ?? "",
+                                                        "cpf" => $certificado->cpf ?? "---",
+                                                        "curso" => $certificado->curso ?? "Curso",
+                                                        "data" => isset($certificado->created_at) ? \Carbon\Carbon::parse($certificado->created_at)->format("d/m/Y") : "---",
+                                                        "carga_horaria" => $certificado->carga_horaria ?? $cargaHorariaAtualCertificado,
+                                                        "responsavel" => $certificado->responsavel ?? $responsavelAtualCertificado,
+                                                        "cargo" => $certificado->cargo ?? $cargoAtualCertificado,
+                                                        "codigo" => $certificado->codigo ?? ("CERT-" . ($certificado->id ?? "000")),
+                                                    ]))'
+                                                    class="w-9 h-9 rounded-xl hover:bg-[#EAF5EF] text-[#004D3A] transition flex items-center justify-center"
+                                                    title="Reemitir certificado">
                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                      class="w-5 h-5"
                                                      fill="none"
@@ -789,6 +855,42 @@
                                 <p><strong>Curso:</strong> {{ $certificado->curso ?? 'Curso' }}</p>
                             </div>
 
+                            <div class="grid grid-cols-2 gap-3 mt-5">
+                                <button type="button"
+                                        onclick='abrirCertificadoEmitido(@json([
+                                            "id" => $certificado->id ?? null,
+                                            "aluno_nome" => $certificado->aluno_nome ?? "Aluno",
+                                            "email" => $certificado->email ?? "",
+                                            "cpf" => $certificado->cpf ?? "---",
+                                            "curso" => $certificado->curso ?? "Curso",
+                                            "data" => isset($certificado->created_at) ? \Carbon\Carbon::parse($certificado->created_at)->format("d/m/Y") : "---",
+                                            "carga_horaria" => $certificado->carga_horaria ?? $cargaHorariaAtualCertificado,
+                                            "responsavel" => $certificado->responsavel ?? $responsavelAtualCertificado,
+                                            "cargo" => $certificado->cargo ?? $cargoAtualCertificado,
+                                            "codigo" => $certificado->codigo ?? ("CERT-" . ($certificado->id ?? "000")),
+                                        ]))'
+                                        class="bg-white border border-[#DCE7DE] text-[#004D3A] px-4 py-3 rounded-2xl font-extrabold">
+                                    Visualizar
+                                </button>
+
+                                <button type="button"
+                                        onclick='reemitirCertificadoEmitido(@json([
+                                            "id" => $certificado->id ?? null,
+                                            "aluno_nome" => $certificado->aluno_nome ?? "Aluno",
+                                            "email" => $certificado->email ?? "",
+                                            "cpf" => $certificado->cpf ?? "---",
+                                            "curso" => $certificado->curso ?? "Curso",
+                                            "data" => isset($certificado->created_at) ? \Carbon\Carbon::parse($certificado->created_at)->format("d/m/Y") : "---",
+                                            "carga_horaria" => $certificado->carga_horaria ?? $cargaHorariaAtualCertificado,
+                                            "responsavel" => $certificado->responsavel ?? $responsavelAtualCertificado,
+                                            "cargo" => $certificado->cargo ?? $cargoAtualCertificado,
+                                            "codigo" => $certificado->codigo ?? ("CERT-" . ($certificado->id ?? "000")),
+                                        ]))'
+                                        class="bg-[#004D3A] text-white px-4 py-3 rounded-2xl font-extrabold">
+                                    Reemitir
+                                </button>
+                            </div>
+
                         </div>
 
                     @empty
@@ -839,6 +941,126 @@
 
 </div>
 
+
+<!-- MODAL CERTIFICADO EMITIDO -->
+<div id="modalCertificadoEmitido"
+     class="modal-certificado-emitido fixed inset-0 hidden items-center justify-center bg-black/65 z-[9999] p-4">
+
+    <div class="bg-white w-full max-w-6xl max-h-[95vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+
+        <div class="px-5 sm:px-6 py-4 border-b border-[#E3EBE4] flex items-center justify-between gap-4">
+            <div>
+                <p class="text-[11px] uppercase tracking-widest text-[#00A63E] font-extrabold">
+                    Certificado emitido
+                </p>
+                <h2 id="modalCertificadoTitulo" class="text-xl font-extrabold text-[#003C2F] mt-1">
+                    Visualizar certificado
+                </h2>
+            </div>
+
+            <button type="button"
+                    onclick="fecharCertificadoEmitido()"
+                    class="w-10 h-10 rounded-xl bg-[#F1F6F2] hover:bg-[#E6EFE8] text-[#003C2F] flex items-center justify-center text-2xl">
+                ×
+            </button>
+        </div>
+
+        <div class="overflow-auto p-4 sm:p-6 bg-[#F3F7F3]">
+
+            <div id="certificadoEmitidoImpressao" class="bg-white p-4 sm:p-6">
+                <div class="min-w-[720px] bg-white mx-auto rounded-2xl border-[6px] border-[#EAF5EF] shadow-sm relative overflow-hidden"
+                     style="width: 780px; min-height: 520px;">
+
+                    <div class="absolute -top-16 -right-16 w-48 h-48 rounded-full border-[28px] border-[#EAF5EF] opacity-80"></div>
+                    <div class="absolute -bottom-20 -left-20 w-56 h-56 rounded-full border-[34px] border-[#EAF5EF] opacity-80"></div>
+
+                    <div class="relative z-10 px-16 py-12 text-center">
+                        <p class="text-sm font-extrabold text-[#60756B] tracking-[0.25em] uppercase">
+                            Integrar ReSaúde
+                        </p>
+
+                        <h1 class="text-4xl font-extrabold tracking-[0.22em] text-[#004D3A] leading-tight mt-6">
+                            CERTIFICADO DE<br>CONCLUSÃO
+                        </h1>
+
+                        <p class="mt-8 text-sm text-[#374151]">Certificamos que</p>
+
+                        <div class="mt-5 mx-auto max-w-lg border-b-2 border-[#BFD8C5] pb-2">
+                            <p id="emitidoAluno" class="text-2xl font-extrabold text-[#1F2937] tracking-wide">
+                                NOME DO ALUNO
+                            </p>
+                        </div>
+
+                        <p class="mt-8 text-sm text-[#4B5563] leading-relaxed max-w-2xl mx-auto">
+                            concluiu com aproveitamento o curso
+                            <strong id="emitidoCurso">CURSO</strong>,
+                            com carga horária total de
+                            <strong><span id="emitidoCarga">40</span> horas</strong>.
+                        </p>
+
+                        <p class="mt-3 text-sm text-[#4B5563]">
+                            Certificação emitida oficialmente pelo programa Integrar ReSaúde.
+                        </p>
+
+                        <div class="grid grid-cols-2 gap-14 mt-16 items-end">
+                            <div>
+                                <div class="h-16 flex items-end justify-center">
+                                    <span class="text-xs italic text-[#A5B7AB]">Espaço para assinatura manual</span>
+                                </div>
+
+                                <div class="border-t border-[#8A9B92] pt-2">
+                                    <p id="emitidoResponsavel" class="text-xs font-bold text-[#374151] uppercase">
+                                        RESPONSÁVEL
+                                    </p>
+                                    <p id="emitidoCargo" class="text-[10px] text-[#60756B] mt-1 uppercase">
+                                        CARGO
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="text-left inline-block">
+                                    <p class="text-xs text-[#60756B]">
+                                        CPF: <strong id="emitidoCpf" class="text-[#374151]">---</strong>
+                                    </p>
+
+                                    <p class="text-xs text-[#60756B] mt-2">
+                                        Código: <strong id="emitidoCodigo" class="text-[#374151]">CERT-000</strong>
+                                    </p>
+
+                                    <div class="border-t border-[#8A9B92] mt-6 pt-2">
+                                        <p class="text-[10px] text-[#60756B] uppercase">Data de emissão</p>
+                                        <p id="emitidoData" class="text-xs font-bold text-[#374151] mt-1">--/--/----</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="px-5 sm:px-6 py-4 border-t border-[#E3EBE4] flex flex-col sm:flex-row sm:justify-end gap-3">
+            <button type="button"
+                    onclick="fecharCertificadoEmitido()"
+                    class="px-5 py-3 rounded-2xl bg-[#F1F6F2] text-[#60756B] font-bold">
+                Fechar
+            </button>
+
+            <button type="button"
+                    onclick="imprimirCertificadoEmitido()"
+                    class="px-5 py-3 rounded-2xl bg-[#004D3A] text-white font-extrabold">
+                Imprimir / Salvar PDF
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
     function atualizarPreviewCertificado() {
         const cursoSalvo = @json($cursoAtualCertificado);
@@ -875,6 +1097,76 @@
             cursoInput?.focus();
         }, 450);
     }
+
+
+    function preencherCertificadoEmitido(certificado) {
+        document.getElementById('emitidoAluno').innerText = certificado.aluno_nome || 'Aluno';
+        document.getElementById('emitidoCurso').innerText = certificado.curso || 'Curso';
+        document.getElementById('emitidoCarga').innerText = certificado.carga_horaria || '40';
+        document.getElementById('emitidoResponsavel').innerText = certificado.responsavel || 'RESPONSÁVEL PELO CURSO';
+        document.getElementById('emitidoCargo').innerText = certificado.cargo || 'CARGO / FUNÇÃO';
+        document.getElementById('emitidoCpf').innerText = certificado.cpf || '---';
+        document.getElementById('emitidoCodigo').innerText = certificado.codigo || ('CERT-' + (certificado.id || '000'));
+        document.getElementById('emitidoData').innerText = certificado.data || '--/--/----';
+        document.getElementById('modalCertificadoTitulo').innerText = 'Certificado de ' + (certificado.aluno_nome || 'Aluno');
+    }
+
+    function abrirCertificadoEmitido(certificado) {
+        preencherCertificadoEmitido(certificado);
+
+        const modal = document.getElementById('modalCertificadoEmitido');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function fecharCertificadoEmitido() {
+        const modal = document.getElementById('modalCertificadoEmitido');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = '';
+    }
+
+    function reemitirCertificadoEmitido(certificado) {
+        preencherCertificadoEmitido(certificado);
+
+        if (window.Swal) {
+            Swal.fire({
+                icon: 'question',
+                title: 'Reemitir certificado?',
+                text: 'O certificado de ' + (certificado.aluno_nome || 'Aluno') + ' será aberto para impressão ou salvamento em PDF.',
+                showCancelButton: true,
+                confirmButtonText: 'Sim, reemitir',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#004D3A',
+                cancelButtonColor: '#64748B'
+            }).then((resultado) => {
+                if (resultado.isConfirmed) {
+                    abrirCertificadoEmitido(certificado);
+                    setTimeout(imprimirCertificadoEmitido, 350);
+                }
+            });
+        } else {
+            abrirCertificadoEmitido(certificado);
+            setTimeout(imprimirCertificadoEmitido, 350);
+        }
+    }
+
+    function imprimirCertificadoEmitido() {
+        document.body.classList.add('imprimindo-certificado-emitido');
+
+        window.print();
+
+        setTimeout(() => {
+            document.body.classList.remove('imprimindo-certificado-emitido');
+        }, 500);
+    }
+
+    document.addEventListener('keydown', function(evento) {
+        if (evento.key === 'Escape') {
+            fecharCertificadoEmitido();
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', atualizarPreviewCertificado);
 </script>
