@@ -415,15 +415,48 @@
                                     </p>
 
                                     <div class="flex flex-wrap gap-2 mt-3">
-                                        <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Aulas</span>
-                                        <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Avaliações</span>
-                                        <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Certificados</span>
-                                        <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Acesso</span>
-                        <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Avisos</span>
-                        <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Progresso</span>
-                        <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Avisos</span>
-                        <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Progresso</span>
-                                    </div>
+                        <button type="button"
+                                onclick="mostrarDuvidasCategoria('aulas')"
+                                class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
+                            Aulas
+                        </button>
+
+                        <button type="button"
+                                onclick="mostrarDuvidasCategoria('pos-testes')"
+                                class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
+                            Pós-testes
+                        </button>
+
+                        <button type="button"
+                                onclick="mostrarDuvidasCategoria('prova final')"
+                                class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
+                            Prova final
+                        </button>
+
+                        <button type="button"
+                                onclick="mostrarDuvidasCategoria('certificado')"
+                                class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
+                            Certificados
+                        </button>
+
+                        <button type="button"
+                                onclick="mostrarDuvidasCategoria('avisos')"
+                                class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
+                            Avisos
+                        </button>
+
+                        <button type="button"
+                                onclick="mostrarDuvidasCategoria('progresso')"
+                                class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
+                            Progresso
+                        </button>
+
+                        <button type="button"
+                                onclick="mostrarDuvidasCategoria('acesso')"
+                                class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
+                            Acesso
+                        </button>
+                    </div>
                                 </div>
                             </div>
 
@@ -477,6 +510,70 @@
     const duvidas = @json($duvidasChat);
     const nomeUsuario = @json($nomeUsuario);
     const inicialUsuario = @json($inicialUsuario);
+
+
+    function mostrarDuvidasCategoria(categoriaEscolhida) {
+        const categoriaNormalizada = normalizarTexto(categoriaEscolhida);
+
+        const relacionadas = duvidas
+            .filter((duvida) => {
+                const categoria = normalizarTexto(duvida.categoria || '');
+                const texto = normalizarTexto([
+                    duvida.pergunta,
+                    duvida.resposta,
+                    duvida.categoria
+                ].join(' '));
+
+                if (categoria === categoriaNormalizada) {
+                    return true;
+                }
+
+                const palavras = palavrasChaveCategoria(categoriaNormalizada);
+                return palavras.some((palavra) => texto.includes(palavra));
+            })
+            .slice(0, 6);
+
+        if (relacionadas.length === 0) {
+            adicionarMensagemAssistente(`
+                <p class="faq-title font-extrabold">
+                    Ainda não há dúvidas cadastradas sobre ${escapeHtml(categoriaEscolhida)}.
+                </p>
+
+                <p class="faq-muted text-sm mt-2">
+                    A administração pode cadastrar novas perguntas sobre esse assunto na Central de Suporte.
+                </p>
+            `);
+            return;
+        }
+
+        const botoes = relacionadas.map((duvida) => `
+            <button type="button"
+                    onclick="selecionarDuvida(${duvida.id})"
+                    class="faq-question w-full text-left p-4 rounded-2xl transition">
+                <span class="faq-tag inline-flex mb-2 px-2 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide">
+                    ${escapeHtml(duvida.categoria || categoriaEscolhida)}
+                </span>
+
+                <p class="font-extrabold leading-snug">
+                    ${escapeHtml(duvida.pergunta)}
+                </p>
+            </button>
+        `).join('');
+
+        adicionarMensagemAssistente(`
+            <p class="faq-title font-extrabold">
+                Encontrei estas dúvidas sobre ${escapeHtml(categoriaEscolhida)}:
+            </p>
+
+            <p class="faq-muted text-sm mt-2 mb-4">
+                Clique em uma pergunta abaixo para receber a resposta automática.
+            </p>
+
+            <div class="grid grid-cols-1 gap-3">
+                ${botoes}
+            </div>
+        `);
+    }
 
     function selecionarDuvida(id) {
         const duvida = duvidas.find(item => item.id === id);
@@ -616,7 +713,7 @@
             'avisos': ['aviso', 'avisos', 'notificacao', 'notificacoes', 'comunicado', 'comunicados', 'alerta', 'alertas', 'sino', 'mensagem'],
             'certificado': ['certificado', 'certificados', 'certificacao', 'emitir', 'emissao', 'liberar certificado', 'meu certificado'],
             'prova final': ['prova', 'prova final', 'final', 'nota final', 'avaliacao final', 'fazer prova'],
-            'pos-testes': ['pos teste', 'posteste', 'pos-testes', 'teste', 'testes', 'questionario', 'atividade'],
+            'pos-testes': ['pos teste', 'posteste', 'pos-testes', 'pos testes', 'teste', 'testes', 'questionario', 'atividade'],
             'aulas': ['aula', 'aulas', 'videoaula', 'videoaulas', 'video', 'assistir', 'curso', 'modulo'],
             'progresso': ['progresso', 'pendencia', 'pendente', 'faltando', 'concluir', 'conclusao', 'porcentagem'],
             'acesso': ['login', 'senha', 'entrar', 'acessar', 'cadastro', 'conta', 'usuario', 'aprovacao']
@@ -810,7 +907,7 @@
 
                 <div class="faq-bubble max-w-3xl rounded-3xl rounded-tl-md px-5 py-4 shadow-sm">
                     <p class="faq-title font-bold">
-                        Posso ajudar com:
+                        Escolha um assunto para ver dúvidas possíveis:
                     </p>
 
                     <div class="flex flex-wrap gap-2 mt-3">
