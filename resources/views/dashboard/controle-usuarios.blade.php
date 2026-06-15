@@ -222,7 +222,7 @@
                     </h2>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">
 
                     <div class="bg-white rounded-3xl p-5 shadow-sm border border-[#E3EBE4] border-l-4 border-l-[#004D3A] hover:shadow-lg transition">
                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
@@ -290,7 +290,21 @@
                         </h3>
 
                         <p class="text-xs text-[#60756B] mt-2">
-                            Alunos liberados no sistema.
+                            Residentes liberados no sistema.
+                        </p>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-[#E3EBE4] border-l-4 border-l-blue-500 hover:shadow-lg transition">
+                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                            Preceptores ativos
+                        </p>
+
+                        <h3 class="text-3xl font-extrabold mt-2 text-blue-700">
+                            {{ $preceptoresAtivos }}
+                        </h3>
+
+                        <p class="text-xs text-[#60756B] mt-2">
+                            Preceptores liberados no sistema.
                         </p>
                     </div>
 
