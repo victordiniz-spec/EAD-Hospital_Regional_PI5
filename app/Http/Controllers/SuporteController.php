@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DuvidaFrequente;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 class SuporteController extends Controller
 {
@@ -32,21 +33,11 @@ class SuporteController extends Controller
     {
         $this->verificarPermissaoAdministrativa();
 
-        $dados = $request->validate([
-            'pergunta' => ['required', 'string', 'max:255'],
-            'resposta' => ['required', 'string'],
-            'categoria' => ['nullable', 'string', 'max:100'],
-            'texto_botao' => ['nullable', 'string', 'max:100'],
-            'rota_botao' => ['nullable', 'string', 'max:100'],
-            'ordem' => ['nullable', 'integer'],
-        ]);
-
-        $dados['ativo'] = $request->has('ativo');
-        $dados['ordem'] = $dados['ordem'] ?? 0;
+        $dados = $this->validarDadosDuvida($request);
 
         DuvidaFrequente::create($dados);
 
-        return back()->with('success', 'Dúvida cadastrada com sucesso!');
+        return back()->with('success', 'Dúvida cadastrada com sucesso! Ela já pode ser usada pelo assistente virtual.');
     }
 
     public function update(Request $request, $id)
@@ -55,17 +46,7 @@ class SuporteController extends Controller
 
         $duvida = DuvidaFrequente::findOrFail($id);
 
-        $dados = $request->validate([
-            'pergunta' => ['required', 'string', 'max:255'],
-            'resposta' => ['required', 'string'],
-            'categoria' => ['nullable', 'string', 'max:100'],
-            'texto_botao' => ['nullable', 'string', 'max:100'],
-            'rota_botao' => ['nullable', 'string', 'max:100'],
-            'ordem' => ['nullable', 'integer'],
-        ]);
-
-        $dados['ativo'] = $request->has('ativo');
-        $dados['ordem'] = $dados['ordem'] ?? 0;
+        $dados = $this->validarDadosDuvida($request);
 
         $duvida->update($dados);
 
@@ -80,6 +61,39 @@ class SuporteController extends Controller
         $duvida->delete();
 
         return back()->with('success', 'Dúvida removida com sucesso!');
+    }
+
+    private function validarDadosDuvida(Request $request): array
+    {
+        $dados = $request->validate([
+            'pergunta' => ['required', 'string', 'max:255'],
+            'resposta' => ['required', 'string'],
+            'categoria' => ['nullable', 'string', 'max:100'],
+            'texto_botao' => ['nullable', 'string', 'max:100'],
+            'rota_botao' => ['nullable', 'string', 'max:100'],
+            'ordem' => ['nullable', 'integer'],
+        ]);
+
+        $dados['ativo'] = $request->has('ativo');
+        $dados['ordem'] = $dados['ordem'] ?? 0;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Segurança da rota do botão
+        |--------------------------------------------------------------------------
+        | Se a pessoa preencher uma rota que não existe, limpamos o campo para
+        | evitar erro na tela do suporte.
+        */
+        if (!empty($dados['rota_botao']) && !Route::has($dados['rota_botao'])) {
+            $dados['rota_botao'] = null;
+        }
+
+        if (empty($dados['texto_botao'])) {
+            $dados['texto_botao'] = null;
+            $dados['rota_botao'] = null;
+        }
+
+        return $dados;
     }
 
     private function verificarPermissaoAdministrativa(): void

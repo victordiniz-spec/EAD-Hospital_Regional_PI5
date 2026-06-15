@@ -154,6 +154,33 @@
     html.dark .faq-admin-scroll::-webkit-scrollbar-thumb {
         background: rgba(65, 182, 73, 0.35);
     }
+
+    .faq-admin-template-btn {
+        background: #F8FBF8;
+        border: 1px solid #DCE7DE;
+        color: #004D3A;
+        transition: 0.2s ease;
+    }
+
+    .faq-admin-template-btn:hover {
+        background: #EAF5EF;
+        transform: translateY(-1px);
+    }
+
+    html.dark .faq-admin-template-btn {
+        background: #0B1220 !important;
+        border-color: #243044 !important;
+        color: #41B649 !important;
+    }
+
+    html.dark .faq-admin-template-btn:hover {
+        background: #111C2E !important;
+    }
+
+    .faq-admin-hidden {
+        display: none !important;
+    }
+
 </style>
 
 <div class="faq-admin-page flex min-h-screen w-full overflow-x-hidden">
@@ -179,7 +206,7 @@
                         </h1>
 
                         <p class="faq-admin-muted text-sm mt-2 max-w-2xl">
-                            Cadastre, edite e organize as dúvidas frequentes exibidas no assistente virtual.
+                            Cadastre respostas prontas para o assistente virtual. Quanto melhor o cadastro, mais inteligente o suporte automático fica.
                         </p>
                     </div>
 
@@ -215,6 +242,43 @@
                             Preencha a pergunta, resposta e, se quiser, um botão de direcionamento.
                         </p>
 
+                        
+                        <div class="faq-admin-soft rounded-3xl p-4 mb-5">
+                            <p class="faq-admin-title text-sm font-extrabold mb-2">
+                                Modelos rápidos
+                            </p>
+
+                            <p class="faq-admin-muted text-xs mb-3">
+                                Clique em um modelo para preencher automaticamente e depois ajuste como quiser.
+                            </p>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <button type="button"
+                                        onclick="preencherModeloSuporte('aulas')"
+                                        class="faq-admin-template-btn px-3 py-2 rounded-2xl text-xs font-extrabold">
+                                    Acesso às aulas
+                                </button>
+
+                                <button type="button"
+                                        onclick="preencherModeloSuporte('prova')"
+                                        class="faq-admin-template-btn px-3 py-2 rounded-2xl text-xs font-extrabold">
+                                    Prova final
+                                </button>
+
+                                <button type="button"
+                                        onclick="preencherModeloSuporte('certificado')"
+                                        class="faq-admin-template-btn px-3 py-2 rounded-2xl text-xs font-extrabold">
+                                    Certificado
+                                </button>
+
+                                <button type="button"
+                                        onclick="preencherModeloSuporte('senha')"
+                                        class="faq-admin-template-btn px-3 py-2 rounded-2xl text-xs font-extrabold">
+                                    Login e senha
+                                </button>
+                            </div>
+                        </div>
+
                         <form action="{{ route('suporte.store') }}" method="POST" class="space-y-5">
                             @csrf
 
@@ -226,6 +290,7 @@
                                 <input
                                     type="text"
                                     name="pergunta"
+                                    id="novaPerguntaSuporte"
                                     value="{{ old('pergunta') }}"
                                     class="faq-admin-input w-full rounded-2xl px-4 py-3"
                                     placeholder="Ex: Como acessar minhas aulas?"
@@ -240,6 +305,7 @@
 
                                 <textarea
                                     name="resposta"
+                                    id="novaRespostaSuporte"
                                     rows="5"
                                     class="faq-admin-input w-full rounded-2xl px-4 py-3 resize-y"
                                     placeholder="Digite a resposta que será exibida ao usuário..."
@@ -256,6 +322,7 @@
                                     <input
                                         type="text"
                                         name="categoria"
+                                        id="novaCategoriaSuporte"
                                         value="{{ old('categoria') }}"
                                         class="faq-admin-input w-full rounded-2xl px-4 py-3"
                                         placeholder="Aulas"
@@ -270,6 +337,7 @@
                                     <input
                                         type="number"
                                         name="ordem"
+                                        id="novaOrdemSuporte"
                                         value="{{ old('ordem', 0) }}"
                                         class="faq-admin-input w-full rounded-2xl px-4 py-3"
                                     >
@@ -284,6 +352,7 @@
                                 <input
                                     type="text"
                                     name="texto_botao"
+                                    id="novoTextoBotaoSuporte"
                                     value="{{ old('texto_botao') }}"
                                     class="faq-admin-input w-full rounded-2xl px-4 py-3"
                                     placeholder="Ex: Ir para minhas aulas"
@@ -298,6 +367,7 @@
                                 <input
                                     type="text"
                                     name="rota_botao"
+                                    id="novaRotaBotaoSuporte"
                                     value="{{ old('rota_botao') }}"
                                     class="faq-admin-input w-full rounded-2xl px-4 py-3"
                                     placeholder="Ex: aluno.aulas"
@@ -335,11 +405,33 @@
                             <p class="faq-admin-muted text-sm mt-1">
                                 Edite, desative ou remova perguntas existentes.
                             </p>
+
+                            <div class="mt-4 grid grid-cols-1 md:grid-cols-[1fr_180px] gap-3">
+                                <input type="text"
+                                       id="buscarDuvidaAdmin"
+                                       oninput="filtrarDuvidasAdmin()"
+                                       class="faq-admin-input w-full rounded-2xl px-4 py-3"
+                                       placeholder="Pesquisar pergunta, resposta ou categoria...">
+
+                                <select id="filtroStatusDuvidaAdmin"
+                                        onchange="filtrarDuvidasAdmin()"
+                                        class="faq-admin-input w-full rounded-2xl px-4 py-3">
+                                    <option value="">Todas</option>
+                                    <option value="ativo">Ativas</option>
+                                    <option value="inativo">Inativas</option>
+                                </select>
+                            </div>
+
+                            <p id="contadorDuvidasAdmin" class="faq-admin-muted text-xs mt-3">
+                                Mostrando {{ $duvidas->count() }} dúvida(s).
+                            </p>
                         </div>
 
                         <div class="space-y-4 max-h-[calc(100vh-260px)] overflow-y-auto pr-1 faq-admin-scroll">
                             @forelse($duvidas as $duvida)
-                                <div class="faq-admin-soft rounded-3xl p-5">
+                                <div class="faq-admin-soft duvida-admin-item rounded-3xl p-5"
+                                     data-status="{{ $duvida->ativo ? 'ativo' : 'inativo' }}"
+                                     data-search="{{ mb_strtolower(($duvida->pergunta ?? '') . ' ' . ($duvida->resposta ?? '') . ' ' . ($duvida->categoria ?? ''), 'UTF-8') }}">
                                     <form action="{{ route('suporte.update', $duvida->id) }}" method="POST" class="space-y-4">
                                         @csrf
                                         @method('PUT')
@@ -471,5 +563,86 @@
         </section>
     </main>
 </div>
+
+
+<script>
+    const modelosSuporte = {
+        aulas: {
+            pergunta: 'Como acessar minhas videoaulas?',
+            resposta: 'Para acessar suas videoaulas, entre no menu Videoaulas. Nessa tela aparecem os cursos publicados para você. Clique na aula desejada, assista ao vídeo e, quando disponível, realize o pós-teste relacionado.',
+            categoria: 'Aulas',
+            texto_botao: 'Ir para videoaulas',
+            rota_botao: 'aluno.aulas',
+            ordem: 1
+        },
+        prova: {
+            pergunta: 'Quando posso fazer a prova final?',
+            resposta: 'A prova final é liberada quando você conclui todas as videoaulas, realiza todos os pós-testes e atinge a média mínima configurada para o curso. Depois disso, acesse o menu Prova Final e clique em Fazer prova final.',
+            categoria: 'Prova final',
+            texto_botao: 'Ver prova final',
+            rota_botao: 'prova.final',
+            ordem: 2
+        },
+        certificado: {
+            pergunta: 'Quando meu certificado será liberado?',
+            resposta: 'O certificado será liberado após concluir todas as aulas, realizar todos os pós-testes, fazer a prova final e alcançar a nota mínima exigida. Se algum requisito estiver pendente, a tela Meu Certificado mostra exatamente o que ainda falta.',
+            categoria: 'Certificado',
+            texto_botao: 'Ver certificado',
+            rota_botao: 'certificado.aluno',
+            ordem: 3
+        },
+        senha: {
+            pergunta: 'Não consigo acessar minha conta. O que devo fazer?',
+            resposta: 'Confira se o e-mail e a senha foram digitados corretamente. Se ainda não conseguir acessar, procure a administração ou o suporte responsável pela plataforma para verificar seu cadastro e seu status de aprovação.',
+            categoria: 'Acesso',
+            texto_botao: '',
+            rota_botao: '',
+            ordem: 4
+        }
+    };
+
+    function preencherModeloSuporte(tipo) {
+        const modelo = modelosSuporte[tipo];
+
+        if (!modelo) return;
+
+        document.getElementById('novaPerguntaSuporte').value = modelo.pergunta;
+        document.getElementById('novaRespostaSuporte').value = modelo.resposta;
+        document.getElementById('novaCategoriaSuporte').value = modelo.categoria;
+        document.getElementById('novoTextoBotaoSuporte').value = modelo.texto_botao;
+        document.getElementById('novaRotaBotaoSuporte').value = modelo.rota_botao;
+        document.getElementById('novaOrdemSuporte').value = modelo.ordem;
+
+        document.getElementById('novaPerguntaSuporte').focus();
+    }
+
+    function filtrarDuvidasAdmin() {
+        const termo = (document.getElementById('buscarDuvidaAdmin')?.value || '').toLowerCase().trim();
+        const status = document.getElementById('filtroStatusDuvidaAdmin')?.value || '';
+        const itens = document.querySelectorAll('.duvida-admin-item');
+        const contador = document.getElementById('contadorDuvidasAdmin');
+
+        let visiveis = 0;
+
+        itens.forEach((item) => {
+            const busca = item.dataset.search || '';
+            const statusItem = item.dataset.status || '';
+
+            const bateTexto = !termo || busca.includes(termo);
+            const bateStatus = !status || statusItem === status;
+
+            if (bateTexto && bateStatus) {
+                item.classList.remove('faq-admin-hidden');
+                visiveis++;
+            } else {
+                item.classList.add('faq-admin-hidden');
+            }
+        });
+
+        if (contador) {
+            contador.innerText = 'Mostrando ' + visiveis + ' dúvida(s).';
+        }
+    }
+</script>
 
 @endsection

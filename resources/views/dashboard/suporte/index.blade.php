@@ -205,6 +205,58 @@
             max-height: 420px;
         }
     }
+
+    .faq-suggestion-btn {
+        background: #EAF5EF;
+        color: #004D3A;
+        border: 1px solid #DCE7DE;
+        transition: 0.2s ease;
+    }
+
+    .faq-suggestion-btn:hover {
+        background: #DFF1E5;
+        transform: translateY(-1px);
+    }
+
+    .faq-typing-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: #60756B;
+        display: inline-block;
+        animation: faqTyping 1s infinite ease-in-out;
+    }
+
+    .faq-typing-dot:nth-child(2) {
+        animation-delay: 0.15s;
+    }
+
+    .faq-typing-dot:nth-child(3) {
+        animation-delay: 0.30s;
+    }
+
+    @keyframes faqTyping {
+        0%, 80%, 100% {
+            opacity: 0.35;
+            transform: translateY(0);
+        }
+
+        40% {
+            opacity: 1;
+            transform: translateY(-3px);
+        }
+    }
+
+    html.dark .faq-suggestion-btn {
+        background: rgba(22, 101, 52, 0.28) !important;
+        color: #41B649 !important;
+        border-color: #243044 !important;
+    }
+
+    html.dark .faq-suggestion-btn:hover {
+        background: rgba(22, 101, 52, 0.42) !important;
+    }
+
 </style>
 
 <div class="faq-page flex min-h-screen w-full overflow-x-hidden">
@@ -266,7 +318,7 @@
                             </h2>
 
                             <p class="faq-muted text-sm mt-1">
-                                Clique em uma pergunta para receber uma resposta automática.
+                                Clique em uma pergunta ou digite sua dúvida como se estivesse conversando.
                             </p>
                         </div>
 
@@ -328,7 +380,7 @@
                                     </h2>
 
                                     <p class="text-sm text-white/80">
-                                        FAQ interativo com respostas automáticas
+                                        Digite sua dúvida ou escolha uma pergunta
                                     </p>
                                 </div>
                             </div>
@@ -347,7 +399,7 @@
                                     </p>
 
                                     <p class="faq-muted text-sm mt-1">
-                                        Sou o assistente virtual da plataforma. Escolha uma pergunta ao lado para que eu possa te orientar.
+                                        Sou o assistente virtual da plataforma. Você pode escolher uma pergunta pronta ou digitar sua dúvida abaixo.
                                     </p>
                                 </div>
                             </div>
@@ -374,19 +426,35 @@
                         </div>
 
                         <div class="faq-card rounded-none border-x-0 border-b-0 p-4 shrink-0">
-                            <div class="flex items-center gap-3">
-                                <div class="faq-footer-input flex-1 px-5 py-3 rounded-2xl font-semibold">
-                                    Selecione uma dúvida na lista para iniciar...
-                                </div>
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                                <input
+                                    id="campoPerguntaLivre"
+                                    type="text"
+                                    onkeydown="enviarPerguntaComEnter(event)"
+                                    class="faq-input flex-1 px-5 py-3 rounded-2xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#004D3A]"
+                                    placeholder="Digite sua dúvida aqui... Ex: como vejo meu certificado?"
+                                >
+
+                                <button
+                                    type="button"
+                                    onclick="responderPerguntaLivre()"
+                                    class="px-5 py-3 rounded-2xl bg-[#004D3A] text-white font-extrabold hover:bg-[#003C2F] transition"
+                                >
+                                    Perguntar
+                                </button>
 
                                 <button
                                     type="button"
                                     onclick="limparChat()"
-                                    class="px-5 py-3 rounded-2xl bg-[#004D3A] text-white font-extrabold hover:bg-[#003C2F] transition"
+                                    class="px-5 py-3 rounded-2xl bg-[#EAF5EF] text-[#004D3A] font-extrabold hover:bg-[#DFF1E5] transition"
                                 >
                                     Limpar
                                 </button>
                             </div>
+
+                            <p class="faq-muted text-xs mt-3">
+                                O assistente procura a melhor resposta dentro das dúvidas cadastradas pela administração.
+                            </p>
                         </div>
 
                     </section>
@@ -413,20 +481,90 @@
             return;
         }
 
-        const chat = document.getElementById('chatMensagens');
+        adicionarMensagemUsuario(duvida.pergunta);
+        responderComDuvida(duvida);
+    }
 
-        const perguntaHtml = `
-            <div class="flex items-start justify-end gap-3">
-                <div class="max-w-3xl bg-[#004D3A] text-white rounded-3xl rounded-tr-md px-5 py-4 shadow-sm">
-                    <p class="font-extrabold">${escapeHtml(duvida.pergunta)}</p>
-                </div>
+    function responderPerguntaLivre() {
+        const campo = document.getElementById('campoPerguntaLivre');
+        const pergunta = (campo?.value || '').trim();
 
-                <div class="w-10 h-10 rounded-full bg-[#41B649] text-white flex items-center justify-center font-bold shrink-0">
-                    ${escapeHtml(inicialUsuario)}
-                </div>
-            </div>
-        `;
+        if (!pergunta) {
+            return;
+        }
 
+        adicionarMensagemUsuario(pergunta);
+
+        if (campo) {
+            campo.value = '';
+        }
+
+        const resultado = encontrarMelhorResposta(pergunta);
+
+        mostrarDigitando();
+
+        setTimeout(() => {
+            removerDigitando();
+
+            if (resultado.melhor && resultado.pontuacao >= 2) {
+                responderComDuvida(resultado.melhor, resultado.pontuacao);
+            } else {
+                responderSemResposta(pergunta, resultado.sugestoes);
+            }
+        }, 650);
+    }
+
+    function enviarPerguntaComEnter(evento) {
+        if (evento.key === 'Enter') {
+            evento.preventDefault();
+            responderPerguntaLivre();
+        }
+    }
+
+    function encontrarMelhorResposta(pergunta) {
+        const perguntaNormalizada = normalizarTexto(pergunta);
+        const palavrasPergunta = obterPalavrasImportantes(perguntaNormalizada);
+
+        const avaliadas = duvidas.map((duvida) => {
+            const textoBase = normalizarTexto(
+                [
+                    duvida.pergunta,
+                    duvida.resposta,
+                    duvida.categoria
+                ].join(' ')
+            );
+
+            const perguntaFaq = normalizarTexto(duvida.pergunta);
+            let pontuacao = 0;
+
+            if (perguntaFaq.includes(perguntaNormalizada) || perguntaNormalizada.includes(perguntaFaq)) {
+                pontuacao += 8;
+            }
+
+            palavrasPergunta.forEach((palavra) => {
+                if (textoBase.includes(palavra)) {
+                    pontuacao += 1;
+                }
+
+                if (perguntaFaq.includes(palavra)) {
+                    pontuacao += 1;
+                }
+            });
+
+            return {
+                ...duvida,
+                pontuacao
+            };
+        }).sort((a, b) => b.pontuacao - a.pontuacao);
+
+        return {
+            melhor: avaliadas[0] || null,
+            pontuacao: avaliadas[0]?.pontuacao || 0,
+            sugestoes: avaliadas.filter(item => item.pontuacao > 0).slice(0, 3)
+        };
+    }
+
+    function responderComDuvida(duvida, pontuacao = null) {
         let botaoHtml = '';
 
         if (duvida.url_botao && duvida.texto_botao) {
@@ -446,33 +584,122 @@
             `
             : '';
 
-        const respostaHtml = `
+        const confiancaHtml = pontuacao !== null
+            ? `<p class="faq-muted text-xs mt-3">Resposta encontrada automaticamente na base de dúvidas.</p>`
+            : '';
+
+        adicionarMensagemAssistente(`
+            ${categoriaHtml}
+
+            <p class="faq-title font-extrabold mb-2">
+                ${escapeHtml(duvida.pergunta)}
+            </p>
+
+            <p class="leading-relaxed whitespace-pre-line">
+                ${escapeHtml(duvida.resposta)}
+            </p>
+
+            ${botaoHtml}
+            ${confiancaHtml}
+        `);
+    }
+
+    function responderSemResposta(pergunta, sugestoes) {
+        let sugestoesHtml = '';
+
+        if (sugestoes && sugestoes.length > 0) {
+            sugestoesHtml = `
+                <p class="faq-title font-bold mt-4 mb-2">
+                    Talvez uma dessas opções ajude:
+                </p>
+
+                <div class="flex flex-wrap gap-2">
+                    ${sugestoes.map(item => `
+                        <button type="button"
+                                onclick="selecionarDuvida(${item.id})"
+                                class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
+                            ${escapeHtml(item.pergunta)}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        adicionarMensagemAssistente(`
+            <p class="faq-title font-extrabold">
+                Ainda não encontrei uma resposta exata.
+            </p>
+
+            <p class="faq-muted text-sm mt-2 leading-relaxed">
+                Tente escrever com outras palavras ou procure uma pergunta na lista ao lado.
+                Se essa dúvida for importante, avise a administração para cadastrar uma nova resposta na Central de Suporte.
+            </p>
+
+            ${sugestoesHtml}
+        `);
+    }
+
+    function adicionarMensagemUsuario(texto) {
+        const chat = document.getElementById('chatMensagens');
+
+        const html = `
+            <div class="flex items-start justify-end gap-3">
+                <div class="max-w-3xl bg-[#004D3A] text-white rounded-3xl rounded-tr-md px-5 py-4 shadow-sm">
+                    <p class="font-extrabold">${escapeHtml(texto)}</p>
+                </div>
+
+                <div class="w-10 h-10 rounded-full bg-[#41B649] text-white flex items-center justify-center font-bold shrink-0">
+                    ${escapeHtml(inicialUsuario)}
+                </div>
+            </div>
+        `;
+
+        chat.insertAdjacentHTML('beforeend', html);
+        rolarChatParaFinal();
+    }
+
+    function adicionarMensagemAssistente(conteudoHtml) {
+        const chat = document.getElementById('chatMensagens');
+
+        const html = `
             <div class="flex items-start gap-3">
                 <div class="w-10 h-10 rounded-full bg-[#004D3A] text-white flex items-center justify-center font-bold shrink-0">
                     IR
                 </div>
 
                 <div class="faq-bubble max-w-3xl rounded-3xl rounded-tl-md px-5 py-4 shadow-sm">
-                    ${categoriaHtml}
-
-                    <p class="leading-relaxed whitespace-pre-line">
-                        ${escapeHtml(duvida.resposta)}
-                    </p>
-
-                    ${botaoHtml}
+                    ${conteudoHtml}
                 </div>
             </div>
         `;
 
-        chat.insertAdjacentHTML('beforeend', perguntaHtml);
-        chat.insertAdjacentHTML('beforeend', respostaHtml);
+        chat.insertAdjacentHTML('beforeend', html);
+        rolarChatParaFinal();
+    }
 
-        setTimeout(() => {
-            chat.scrollTo({
-                top: chat.scrollHeight,
-                behavior: 'smooth'
-            });
-        }, 80);
+    function mostrarDigitando() {
+        const chat = document.getElementById('chatMensagens');
+
+        const html = `
+            <div id="mensagemDigitandoSuporte" class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-full bg-[#004D3A] text-white flex items-center justify-center font-bold shrink-0">
+                    IR
+                </div>
+
+                <div class="faq-bubble rounded-3xl rounded-tl-md px-5 py-4 shadow-sm">
+                    <span class="faq-typing-dot"></span>
+                    <span class="faq-typing-dot"></span>
+                    <span class="faq-typing-dot"></span>
+                </div>
+            </div>
+        `;
+
+        chat.insertAdjacentHTML('beforeend', html);
+        rolarChatParaFinal();
+    }
+
+    function removerDigitando() {
+        document.getElementById('mensagemDigitandoSuporte')?.remove();
     }
 
     function limparChat() {
@@ -490,7 +717,7 @@
                     </p>
 
                     <p class="faq-muted text-sm mt-1">
-                        Sou o assistente virtual da plataforma. Escolha uma pergunta ao lado para que eu possa te orientar.
+                        Sou o assistente virtual da plataforma. Você pode escolher uma pergunta pronta ou digitar sua dúvida abaixo.
                     </p>
                 </div>
             </div>
@@ -523,13 +750,49 @@
             return;
         }
 
-        const termo = campo.value.toLowerCase();
+        const termo = normalizarTexto(campo.value);
         const itens = document.querySelectorAll('.duvida-item');
 
         itens.forEach(item => {
-            const texto = item.getAttribute('data-pergunta') || '';
+            const texto = normalizarTexto(item.getAttribute('data-pergunta') || '');
             item.style.display = texto.includes(termo) ? 'block' : 'none';
         });
+    }
+
+    function obterPalavrasImportantes(texto) {
+        const palavrasIgnoradas = [
+            'como', 'onde', 'qual', 'quais', 'para', 'porque', 'por que',
+            'minha', 'meu', 'meus', 'minhas', 'uma', 'umas', 'uns', 'com',
+            'que', 'tem', 'fazer', 'ver', 'abrir', 'acessar', 'preciso',
+            'sobre', 'esta', 'esse', 'isso', 'de', 'do', 'da', 'dos', 'das',
+            'o', 'a', 'os', 'as', 'e', 'em', 'no', 'na'
+        ];
+
+        return texto
+            .split(/\s+/)
+            .map(palavra => palavra.trim())
+            .filter(palavra => palavra.length >= 3 && !palavrasIgnoradas.includes(palavra));
+    }
+
+    function normalizarTexto(texto) {
+        return String(texto ?? '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^\w\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function rolarChatParaFinal() {
+        const chat = document.getElementById('chatMensagens');
+
+        setTimeout(() => {
+            chat.scrollTo({
+                top: chat.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 80);
     }
 
     function escapeHtml(texto) {
