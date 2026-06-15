@@ -8,17 +8,31 @@
     $timezoneSistema = config('app.timezone', 'America/Sao_Paulo');
     $timezoneBrasil = 'America/Sao_Paulo';
 
-    $totalUsuarios = $usuarios->count();
+    /*
+    |--------------------------------------------------------------------------
+    | USUÁRIOS EXIBIDOS NO CONTROLE
+    |--------------------------------------------------------------------------
+    | Professores são responsáveis pela plataforma, por isso não aparecem
+    | como usuários comuns na tela de controle.
+    |
+    | Exibimos apenas usuários operacionais, como residentes, preceptores,
+    | alunos e administradores.
+    */
+    $usuariosControle = $usuarios->reject(function ($user) {
+        return strtolower($user->tipo ?? '') === 'professor';
+    })->values();
 
-    $usuariosAtivos = $usuarios->where('status', 'aprovado')->count();
-    $usuariosPendentes = $usuarios->where('status', 'pendente')->count();
-    $usuariosInutilizados = $usuarios->where('status', 'inutilizado')->count();
+    $totalUsuarios = $usuariosControle->count();
 
-    $preceptoresAtivos = $usuarios->filter(function ($user) {
+    $usuariosAtivos = $usuariosControle->where('status', 'aprovado')->count();
+    $usuariosPendentes = $usuariosControle->where('status', 'pendente')->count();
+    $usuariosInutilizados = $usuariosControle->where('status', 'inutilizado')->count();
+
+    $preceptoresAtivos = $usuariosControle->filter(function ($user) {
         return strtolower($user->tipo ?? '') === 'preceptor' && $user->status === 'aprovado';
     })->count();
 
-    $residentesAtivos = $usuarios->filter(function ($user) {
+    $residentesAtivos = $usuariosControle->filter(function ($user) {
         return strtolower($user->tipo ?? '') === 'residente' && $user->status === 'aprovado';
     })->count();
 @endphp
@@ -98,7 +112,7 @@
                     </h1>
 
                     <p class="text-base sm:text-lg text-[#60756B] mt-4 max-w-2xl mx-auto leading-relaxed">
-                        Administre acessos, perfis, datas de cadastro, aprovações, inutilizações e permissões da instituição.
+                        Administre acessos de residentes, preceptores, alunos e administradores. Usuários do tipo professor ficam ocultos nesta tela.
                     </p>
 
                     <p class="text-xs sm:text-sm text-[#8A9B92] mt-3">
@@ -341,15 +355,15 @@
                 </h2>
 
                 <p class="text-sm text-[#60756B]">
-                    Mostrando <strong id="contadorUsuariosVisiveis">{{ $usuarios->count() }}</strong> de
-                    <strong>{{ $usuarios->count() }}</strong> usuários registrados
+                    Mostrando <strong id="contadorUsuariosVisiveis">{{ $usuariosControle->count() }}</strong> de
+                    <strong>{{ $usuariosControle->count() }}</strong> usuários registrados
                 </p>
 
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-5 mb-10" id="listaUsuarios">
 
-                @foreach($usuarios as $user)
+                @foreach($usuariosControle as $user)
 
                     @php
                         $nomePartes = preg_split('/\s+/', trim($user->name));
