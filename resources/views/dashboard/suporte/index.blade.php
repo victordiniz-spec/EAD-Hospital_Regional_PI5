@@ -416,43 +416,43 @@
 
                                     <div class="flex flex-wrap gap-2 mt-3">
                         <button type="button"
-                                onclick="mostrarDuvidasCategoria('aulas')"
+                                onclick="mostrarDuvidasCategoria('Aulas')"
                                 class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
                             Aulas
                         </button>
 
                         <button type="button"
-                                onclick="mostrarDuvidasCategoria('pos-testes')"
+                                onclick="mostrarDuvidasCategoria('Pós-testes')"
                                 class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
                             Pós-testes
                         </button>
 
                         <button type="button"
-                                onclick="mostrarDuvidasCategoria('prova final')"
+                                onclick="mostrarDuvidasCategoria('Prova final')"
                                 class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
                             Prova final
                         </button>
 
                         <button type="button"
-                                onclick="mostrarDuvidasCategoria('certificado')"
+                                onclick="mostrarDuvidasCategoria('Certificado')"
                                 class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
                             Certificados
                         </button>
 
                         <button type="button"
-                                onclick="mostrarDuvidasCategoria('avisos')"
+                                onclick="mostrarDuvidasCategoria('Avisos')"
                                 class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
                             Avisos
                         </button>
 
                         <button type="button"
-                                onclick="mostrarDuvidasCategoria('progresso')"
+                                onclick="mostrarDuvidasCategoria('Progresso')"
                                 class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
                             Progresso
                         </button>
 
                         <button type="button"
-                                onclick="mostrarDuvidasCategoria('acesso')"
+                                onclick="mostrarDuvidasCategoria('Acesso')"
                                 class="faq-suggestion-btn px-3 py-2 rounded-full text-xs font-extrabold">
                             Acesso
                         </button>
@@ -515,32 +515,30 @@
     function mostrarDuvidasCategoria(categoriaEscolhida) {
         const categoriaNormalizada = normalizarTexto(categoriaEscolhida);
 
+        /*
+        |--------------------------------------------------------------------------
+        | FILTRO POR CATEGORIA EXATA
+        |--------------------------------------------------------------------------
+        | Quando clicar em Aulas, mostra somente dúvidas cadastradas com
+        | categoria Aulas. Quando clicar em Avisos, mostra somente Avisos.
+        */
         const relacionadas = duvidas
             .filter((duvida) => {
                 const categoria = normalizarTexto(duvida.categoria || '');
-                const texto = normalizarTexto([
-                    duvida.pergunta,
-                    duvida.resposta,
-                    duvida.categoria
-                ].join(' '));
-
-                if (categoria === categoriaNormalizada) {
-                    return true;
-                }
-
-                const palavras = palavrasChaveCategoria(categoriaNormalizada);
-                return palavras.some((palavra) => texto.includes(palavra));
+                return categoria === categoriaNormalizada;
             })
-            .slice(0, 6);
+            .slice(0, 8);
 
         if (relacionadas.length === 0) {
             adicionarMensagemAssistente(`
                 <p class="faq-title font-extrabold">
-                    Ainda não há dúvidas cadastradas sobre ${escapeHtml(categoriaEscolhida)}.
+                    Ainda não há dúvidas cadastradas em ${escapeHtml(categoriaEscolhida)}.
                 </p>
 
                 <p class="faq-muted text-sm mt-2">
-                    A administração pode cadastrar novas perguntas sobre esse assunto na Central de Suporte.
+                    A administração pode cadastrar perguntas com a categoria
+                    <strong>${escapeHtml(categoriaEscolhida)}</strong>
+                    para que elas apareçam aqui.
                 </p>
             `);
             return;
@@ -562,7 +560,7 @@
 
         adicionarMensagemAssistente(`
             <p class="faq-title font-extrabold">
-                Encontrei estas dúvidas sobre ${escapeHtml(categoriaEscolhida)}:
+                Dúvidas sobre ${escapeHtml(categoriaEscolhida)}
             </p>
 
             <p class="faq-muted text-sm mt-2 mb-4">
