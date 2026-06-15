@@ -419,6 +419,10 @@
                                         <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Avaliações</span>
                                         <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Certificados</span>
                                         <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Acesso</span>
+                        <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Avisos</span>
+                        <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Progresso</span>
+                        <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Avisos</span>
+                        <span class="faq-tag px-3 py-2 rounded-full text-xs font-extrabold">Progresso</span>
                                     </div>
                                 </div>
                             </div>
@@ -506,7 +510,7 @@
         setTimeout(() => {
             removerDigitando();
 
-            if (resultado.melhor && resultado.pontuacao >= 2) {
+            if (resultado.melhor && resultado.pontuacao >= 4) {
                 responderComDuvida(resultado.melhor, resultado.pontuacao);
             } else {
                 responderSemResposta(pergunta, resultado.sugestoes);
@@ -524,32 +528,53 @@
     function encontrarMelhorResposta(pergunta) {
         const perguntaNormalizada = normalizarTexto(pergunta);
         const palavrasPergunta = obterPalavrasImportantes(perguntaNormalizada);
+        const intencao = detectarIntencaoSuporte(perguntaNormalizada);
 
         const avaliadas = duvidas.map((duvida) => {
-            const textoBase = normalizarTexto(
-                [
-                    duvida.pergunta,
-                    duvida.resposta,
-                    duvida.categoria
-                ].join(' ')
-            );
+            const categoria = normalizarTexto(duvida.categoria || '');
+            const perguntaFaq = normalizarTexto(duvida.pergunta || '');
+            const respostaFaq = normalizarTexto(duvida.resposta || '');
 
-            const perguntaFaq = normalizarTexto(duvida.pergunta);
+            const textoBase = [
+                perguntaFaq,
+                respostaFaq,
+                categoria,
+                palavrasChaveCategoria(categoria).join(' ')
+            ].join(' ');
+
             let pontuacao = 0;
 
+            // Correspondência forte: pergunta muito parecida.
             if (perguntaFaq.includes(perguntaNormalizada) || perguntaNormalizada.includes(perguntaFaq)) {
+                pontuacao += 10;
+            }
+
+            // Se a pergunta do usuário indica uma categoria, prioriza essa categoria.
+            if (intencao && categoria === intencao) {
                 pontuacao += 8;
             }
 
-            palavrasPergunta.forEach((palavra) => {
-                if (textoBase.includes(palavra)) {
-                    pontuacao += 1;
-                }
+            // Se a pergunta indica uma categoria diferente, penaliza para evitar resposta errada.
+            if (intencao && categoria && categoria !== intencao) {
+                pontuacao -= 5;
+            }
 
+            palavrasPergunta.forEach((palavra) => {
                 if (perguntaFaq.includes(palavra)) {
+                    pontuacao += 3;
+                } else if (textoBase.includes(palavra)) {
                     pontuacao += 1;
                 }
             });
+
+            // Bônus por palavras equivalentes da categoria.
+            if (intencao) {
+                palavrasChaveCategoria(intencao).forEach((palavra) => {
+                    if (perguntaNormalizada.includes(palavra) && categoria === intencao) {
+                        pontuacao += 2;
+                    }
+                });
+            }
 
             return {
                 ...duvida,
@@ -557,11 +582,67 @@
             };
         }).sort((a, b) => b.pontuacao - a.pontuacao);
 
+        const melhor = avaliadas[0] || null;
+        const melhorPontuacao = melhor?.pontuacao || 0;
+
+        /*
+        |--------------------------------------------------------------------------
+        | TRAVA DE SEGURANÇA
+        |--------------------------------------------------------------------------
+        | Se o usuário perguntou sobre "avisos", por exemplo, o sistema não deve
+        | responder com "certificado" só porque encontrou uma palavra solta.
+        */
+        const categoriaMelhor = normalizarTexto(melhor?.categoria || '');
+
+        if (intencao && categoriaMelhor && categoriaMelhor !== intencao && melhorPontuacao < 12) {
+            return {
+                melhor: null,
+                pontuacao: 0,
+                sugestoes: avaliadas
+                    .filter(item => normalizarTexto(item.categoria || '') === intencao)
+                    .slice(0, 3)
+            };
+        }
+
         return {
-            melhor: avaliadas[0] || null,
-            pontuacao: avaliadas[0]?.pontuacao || 0,
+            melhor,
+            pontuacao: melhorPontuacao,
             sugestoes: avaliadas.filter(item => item.pontuacao > 0).slice(0, 3)
         };
+    }
+
+    function detectarIntencaoSuporte(texto) {
+        const categorias = {
+            'avisos': ['aviso', 'avisos', 'notificacao', 'notificacoes', 'comunicado', 'comunicados', 'alerta', 'alertas', 'sino', 'mensagem'],
+            'certificado': ['certificado', 'certificados', 'certificacao', 'emitir', 'emissao', 'liberar certificado', 'meu certificado'],
+            'prova final': ['prova', 'prova final', 'final', 'nota final', 'avaliacao final', 'fazer prova'],
+            'pos-testes': ['pos teste', 'posteste', 'pos-testes', 'teste', 'testes', 'questionario', 'atividade'],
+            'aulas': ['aula', 'aulas', 'videoaula', 'videoaulas', 'video', 'assistir', 'curso', 'modulo'],
+            'progresso': ['progresso', 'pendencia', 'pendente', 'faltando', 'concluir', 'conclusao', 'porcentagem'],
+            'acesso': ['login', 'senha', 'entrar', 'acessar', 'cadastro', 'conta', 'usuario', 'aprovacao']
+        };
+
+        for (const [categoria, palavras] of Object.entries(categorias)) {
+            if (palavras.some(palavra => texto.includes(palavra))) {
+                return categoria;
+            }
+        }
+
+        return null;
+    }
+
+    function palavrasChaveCategoria(categoria) {
+        const mapa = {
+            'avisos': ['aviso', 'avisos', 'notificacao', 'notificacoes', 'comunicado', 'alerta', 'sino', 'mensagem'],
+            'certificado': ['certificado', 'certificacao', 'emissao', 'liberado', 'bloqueado'],
+            'prova final': ['prova', 'final', 'nota', 'aprovacao', 'tentativa'],
+            'pos-testes': ['pos teste', 'posteste', 'teste', 'questionario', 'atividade'],
+            'aulas': ['aula', 'videoaula', 'curso', 'modulo', 'assistir', 'tempo'],
+            'progresso': ['progresso', 'pendente', 'concluir', 'porcentagem', 'requisito'],
+            'acesso': ['login', 'senha', 'cadastro', 'conta', 'aprovacao', 'acesso']
+        };
+
+        return mapa[categoria] || [];
     }
 
     function responderComDuvida(duvida, pontuacao = null) {
