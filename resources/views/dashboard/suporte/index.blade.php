@@ -291,6 +291,19 @@
         background: #15803D !important;
     }
 
+
+    .faq-ai-badge {
+        background: linear-gradient(135deg, rgba(0, 77, 58, 0.12), rgba(34, 197, 94, 0.15));
+        color: #004D3A;
+        border: 1px solid rgba(0, 77, 58, 0.12);
+    }
+
+    html.dark .faq-ai-badge {
+        background: rgba(34, 197, 94, 0.12) !important;
+        color: #BBF7D0 !important;
+        border-color: rgba(34, 197, 94, 0.22) !important;
+    }
+
 </style>
 
 <div class="faq-page flex min-h-screen w-full overflow-x-hidden">
@@ -553,6 +566,8 @@
     const nomeUsuario = @json($nomeUsuario);
     const inicialUsuario = @json($inicialUsuario);
     const whatsappSuporte = @json($whatsappSuporte);
+    const suporteIaUrl = @json(route('suporte.ia'));
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
 
     function mostrarDuvidasCategoria(categoriaEscolhida) {
@@ -627,7 +642,7 @@
         responderComDuvida(duvida);
     }
 
-    function responderPerguntaLivre() {
+    async function responderPerguntaLivre() {
         const campo = document.getElementById('campoPerguntaLivre');
         const pergunta = (campo?.value || '').trim();
 
@@ -641,9 +656,27 @@
             campo.value = '';
         }
 
+        mostrarDigitando('Consultando a IA do Integrar ReSaúde...');
+
+        const respostaIa = await consultarIaGemini(pergunta);
+
+        removerDigitando();
+
+        if (respostaIa) {
+            responderComIa(respostaIa);
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | FALLBACK GRATUITO
+        |--------------------------------------------------------------------------
+        | Se a IA gratuita falhar, acabar limite ou ficar fora, o chat continua
+        | funcionando com as perguntas cadastradas e o botão do WhatsApp.
+        */
         const resultado = encontrarMelhorResposta(pergunta);
 
-        mostrarDigitando();
+        mostrarDigitando('Buscando nas dúvidas cadastradas...');
 
         setTimeout(() => {
             removerDigitando();
@@ -653,7 +686,51 @@
             } else {
                 responderSemResposta(pergunta, resultado.sugestoes);
             }
-        }, 650);
+        }, 500);
+    }
+
+    async function consultarIaGemini(pergunta) {
+        try {
+            const resposta = await fetch(suporteIaUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({ pergunta })
+            });
+
+            if (!resposta.ok) {
+                return null;
+            }
+
+            const dados = await resposta.json();
+
+            if (!dados.ok || !dados.resposta) {
+                return null;
+            }
+
+            return dados.resposta;
+        } catch (erro) {
+            return null;
+        }
+    }
+
+    function responderComIa(resposta) {
+        adicionarMensagemAssistente(`
+            <span class="faq-ai-badge inline-flex mb-3 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wide">
+                Resposta com IA
+            </span>
+
+            <p class="faq-title font-extrabold mb-2">
+                Assistente Integrar ReSaúde
+            </p>
+
+            <p class="faq-muted text-sm leading-relaxed whitespace-pre-line">
+                ${escapeHtml(resposta)}
+            </p>
+        `);
     }
 
     function enviarPerguntaComEnter(evento) {
@@ -941,16 +1018,24 @@
         rolarChatParaFinal();
     }
 
-    function mostrarDigitando() {
-        const chat = document.getElementById('chatMensagens');
+    function mostrarDigitando(texto = 'Digitando...') {
+        const chat = document.getElementById('faqChatMessages');
 
-        const html = `
-            <div id="mensagemDigitandoSuporte" class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-full bg-[#004D3A] text-white flex items-center justify-center font-bold shrink-0">
-                    IR
-                </div>
+        if (!chat || document.getElementById('faqTypingMessage')) {
+            return;
+        }
 
-                <div class="faq-bubble rounded-3xl rounded-tl-md px-5 py-4 shadow-sm">
+        const div = document.createElement('div');
+        div.id = 'faqTypingMessage';
+        div.className = 'flex gap-3 items-start';
+        div.innerHTML = `
+            <div class="faq-avatar-small rounded-full flex items-center justify-center font-black text-sm shrink-0">
+                IR
+            </div>
+
+            <div class="faq-card rounded-3xl px-5 py-4 max-w-[760px]">
+                <div class="flex items-center gap-2">
+                    <span class="faq-muted text-sm font-bold">${escapeHtml(texto)}</span>
                     <span class="faq-typing-dot"></span>
                     <span class="faq-typing-dot"></span>
                     <span class="faq-typing-dot"></span>
@@ -958,7 +1043,7 @@
             </div>
         `;
 
-        chat.insertAdjacentHTML('beforeend', html);
+        chat.appendChild(div);
         rolarChatParaFinal();
     }
 

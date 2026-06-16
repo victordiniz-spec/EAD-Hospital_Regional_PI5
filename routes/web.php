@@ -693,6 +693,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/suporte/admin', [SuporteController::class, 'admin'])
         ->name('suporte.admin');
 
+    // IA GEMINI DO SUPORTE
+    Route::post('/suporte/ia', [SuporteController::class, 'perguntarIa'])
+        ->name('suporte.ia');
+
     Route::post('/suporte/duvidas', [SuporteController::class, 'store'])
         ->name('suporte.store');
 
