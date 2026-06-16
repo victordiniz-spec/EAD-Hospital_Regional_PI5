@@ -567,7 +567,7 @@
     const inicialUsuario = @json($inicialUsuario);
     const whatsappSuporte = @json($whatsappSuporte);
     const suporteIaUrl = @json(route('suporte.ia'));
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const csrfToken = @json(csrf_token());
 
 
     function mostrarDuvidasCategoria(categoriaEscolhida) {
@@ -693,6 +693,7 @@
         try {
             const resposta = await fetch(suporteIaUrl, {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
