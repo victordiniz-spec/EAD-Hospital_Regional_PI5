@@ -853,7 +853,7 @@
 
             <p class="faq-muted text-sm mt-2 leading-relaxed">
                 Tente escrever com outras palavras ou escolha uma pergunta cadastrada.
-                Se ainda precisar, você pode enviar essa dúvida para o suporte pelo WhatsApp.
+                Se ainda precisar, você pode abrir o WhatsApp com uma mensagem bonita e pronta para enviar ao suporte.
             </p>
 
             ${sugestoesHtml}
@@ -862,20 +862,27 @@
                target="_blank"
                rel="noopener"
                class="faq-whatsapp-btn inline-flex items-center justify-center gap-2 mt-5 px-5 py-3 rounded-2xl font-extrabold">
-                Enviar dúvida para o WhatsApp
+                Abrir WhatsApp com mensagem pronta
             </a>
         `);
     }
 
     function gerarLinkWhatsapp(pergunta) {
         const mensagem = [
-            'Olá, preciso de ajuda no Integrar ReSaúde.',
+            '🟢 *Integrar ReSaúde — Solicitação de Suporte*',
             '',
-            'Nome: ' + nomeUsuario,
-            'Usuário: ' + (inicialUsuario || '-'),
+            'Olá! Preciso de ajuda na plataforma. 😊',
             '',
-            'Minha dúvida:',
-            pergunta
+            '👤 *Aluno/Usuário:* ' + nomeUsuario,
+            '🔹 *Identificação:* ' + (inicialUsuario || '-'),
+            '',
+            '💬 *Minha dúvida:*',
+            pergunta,
+            '',
+            '📌 *Observação:*',
+            'Mensagem enviada pelo chat de suporte do Integrar ReSaúde.',
+            '',
+            'Obrigado(a)! 🙏'
         ].join('\n');
 
         return 'https://wa.me/' + whatsappSuporte + '?text=' + encodeURIComponent(mensagem);
