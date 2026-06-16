@@ -28,6 +28,16 @@
 
     $nomeUsuario = $usuario->name ?? 'Usuário';
     $inicialUsuario = strtoupper(substr($nomeUsuario, 0, 1));
+
+    /*
+    |--------------------------------------------------------------------------
+    | WHATSAPP DO SUPORTE
+    |--------------------------------------------------------------------------
+    | Para testar, troque o número abaixo pelo WhatsApp do administrador.
+    | Use sempre com código do Brasil 55 + DDD + número.
+    | Exemplo Patos/Lagoa Formosa: 5534999999999
+    */
+    $whatsappSuporte = preg_replace('/\\D/', '', env('SUPORTE_WHATSAPP', '5534999999999'));
 @endphp
 
 <style>
@@ -257,6 +267,30 @@
         background: rgba(22, 101, 52, 0.42) !important;
     }
 
+
+    .faq-whatsapp-btn {
+        background: #22C55E;
+        color: #FFFFFF;
+        border: 1px solid rgba(34, 197, 94, 0.35);
+        box-shadow: 0 10px 22px rgba(34, 197, 94, 0.22);
+        transition: 0.2s ease;
+    }
+
+    .faq-whatsapp-btn:hover {
+        background: #16A34A;
+        transform: translateY(-1px);
+    }
+
+    html.dark .faq-whatsapp-btn {
+        background: #16A34A !important;
+        color: #FFFFFF !important;
+        border-color: rgba(34, 197, 94, 0.45) !important;
+    }
+
+    html.dark .faq-whatsapp-btn:hover {
+        background: #15803D !important;
+    }
+
 </style>
 
 <div class="faq-page flex min-h-screen w-full overflow-x-hidden">
@@ -482,6 +516,14 @@
 
                                 <button
                                     type="button"
+                                    onclick="enviarPerguntaAtualWhatsapp()"
+                                    class="faq-whatsapp-btn px-5 py-3 rounded-2xl font-extrabold"
+                                >
+                                    WhatsApp
+                                </button>
+
+                                <button
+                                    type="button"
                                     onclick="limparChat()"
                                     class="px-5 py-3 rounded-2xl bg-[#EAF5EF] text-[#004D3A] font-extrabold hover:bg-[#DFF1E5] transition"
                                 >
@@ -510,6 +552,7 @@
     const duvidas = @json($duvidasChat);
     const nomeUsuario = @json($nomeUsuario);
     const inicialUsuario = @json($inicialUsuario);
+    const whatsappSuporte = @json($whatsappSuporte);
 
 
     function mostrarDuvidasCategoria(categoriaEscolhida) {
@@ -801,18 +844,41 @@
             `;
         }
 
+        const linkWhatsapp = gerarLinkWhatsapp(pergunta);
+
         adicionarMensagemAssistente(`
             <p class="faq-title font-extrabold">
                 Ainda não encontrei uma resposta exata.
             </p>
 
             <p class="faq-muted text-sm mt-2 leading-relaxed">
-                Tente escrever com outras palavras ou procure uma pergunta na lista ao lado.
-                Se essa dúvida for importante, avise a administração para cadastrar uma nova resposta na Central de Suporte.
+                Tente escrever com outras palavras ou escolha uma pergunta cadastrada.
+                Se ainda precisar, você pode enviar essa dúvida para o suporte pelo WhatsApp.
             </p>
 
             ${sugestoesHtml}
+
+            <a href="${linkWhatsapp}"
+               target="_blank"
+               rel="noopener"
+               class="faq-whatsapp-btn inline-flex items-center justify-center gap-2 mt-5 px-5 py-3 rounded-2xl font-extrabold">
+                Enviar dúvida para o WhatsApp
+            </a>
         `);
+    }
+
+    function gerarLinkWhatsapp(pergunta) {
+        const mensagem = [
+            'Olá, preciso de ajuda no Integrar ReSaúde.',
+            '',
+            'Nome: ' + nomeUsuario,
+            'Usuário: ' + (inicialUsuario || '-'),
+            '',
+            'Minha dúvida:',
+            pergunta
+        ].join('\n');
+
+        return 'https://wa.me/' + whatsappSuporte + '?text=' + encodeURIComponent(mensagem);
     }
 
     function adicionarMensagemUsuario(texto) {
@@ -876,6 +942,26 @@
 
     function removerDigitando() {
         document.getElementById('mensagemDigitandoSuporte')?.remove();
+    }
+
+    function enviarPerguntaAtualWhatsapp() {
+        const campo = document.getElementById('campoPerguntaLivre');
+        const pergunta = (campo?.value || '').trim();
+
+        if (!pergunta) {
+            adicionarMensagemAssistente(`
+                <p class="faq-title font-extrabold">
+                    Digite sua dúvida primeiro.
+                </p>
+
+                <p class="faq-muted text-sm mt-2">
+                    Depois clique em WhatsApp para abrir a conversa com a mensagem pronta.
+                </p>
+            `);
+            return;
+        }
+
+        window.open(gerarLinkWhatsapp(pergunta), '_blank', 'noopener');
     }
 
     function limparChat() {
