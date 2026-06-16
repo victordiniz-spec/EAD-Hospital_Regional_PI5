@@ -868,21 +868,36 @@
     }
 
     function gerarLinkWhatsapp(pergunta) {
+        /*
+        |--------------------------------------------------------------------------
+        | MENSAGEM DO WHATSAPP
+        |--------------------------------------------------------------------------
+        | Os emojis foram escritos em código Unicode para evitar que apareçam como
+        | pontos de interrogação ou caracteres quebrados no WhatsApp Web.
+        */
+        const emojiVerde = '\u{1F7E2}';
+        const emojiOla = '\u{1F44B}';
+        const emojiPessoa = '\u{1F464}';
+        const emojiIdentificacao = '\u{1F539}';
+        const emojiDuvida = '\u{1F4AC}';
+        const emojiObservacao = '\u{1F4CC}';
+        const emojiObrigado = '\u{1F64F}';
+
         const mensagem = [
-            '🟢 *Integrar ReSaúde — Solicitação de Suporte*',
+            `${emojiVerde} *Integrar ReSaúde — Solicitação de Suporte*`,
             '',
-            'Olá! Preciso de ajuda na plataforma. 😊',
+            `${emojiOla} Olá! Preciso de ajuda na plataforma.`,
             '',
-            '👤 *Aluno/Usuário:* ' + nomeUsuario,
-            '🔹 *Identificação:* ' + (inicialUsuario || '-'),
+            `${emojiPessoa} *Aluno/Usuário:* ${nomeUsuario}`,
+            `${emojiIdentificacao} *Identificação:* ${(inicialUsuario || '-')}`,
             '',
-            '💬 *Minha dúvida:*',
+            `${emojiDuvida} *Minha dúvida:*`,
             pergunta,
             '',
-            '📌 *Observação:*',
+            `${emojiObservacao} *Observação:*`,
             'Mensagem enviada pelo chat de suporte do Integrar ReSaúde.',
             '',
-            'Obrigado(a)! 🙏'
+            `Obrigado(a)! ${emojiObrigado}`
         ].join('\n');
 
         return 'https://wa.me/' + whatsappSuporte + '?text=' + encodeURIComponent(mensagem);
