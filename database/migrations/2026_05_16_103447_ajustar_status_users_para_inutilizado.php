@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -7,29 +8,69 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Mantém o padrão como pendente para novos cadastros
-        DB::statement("ALTER TABLE users ALTER COLUMN status SET DEFAULT 'pendente'");
+        DB::statement(
+            "ALTER TABLE users ALTER COLUMN status SET DEFAULT 'pendente'"
+        );
 
-        // Garante que usuários sem status virem pendentes
         DB::table('users')
             ->whereNull('status')
             ->update(['status' => 'pendente']);
 
-        // Remove uma restrição antiga, caso já exista
-        DB::statement("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_status_check");
+        $driver = DB::getDriverName();
 
-        // Permite somente os status usados pelo sistema
-        DB::statement("
-            ALTER TABLE users
-            ADD CONSTRAINT users_status_check
-            CHECK (status IN ('pendente', 'aprovado', 'inutilizado'))
-        ");
+        if ($driver === 'mysql') {
+            $existe = DB::table('information_schema.TABLE_CONSTRAINTS')
+                ->where('CONSTRAINT_SCHEMA', DB::getDatabaseName())
+                ->where('TABLE_NAME', 'users')
+                ->where('CONSTRAINT_NAME', 'users_status_check')
+                ->where('CONSTRAINT_TYPE', 'CHECK')
+                ->exists();
+
+            if ($existe) {
+                DB::statement(
+                    "ALTER TABLE users DROP CHECK users_status_check"
+                );
+            }
+        } elseif ($driver === 'pgsql') {
+            DB::statement(
+                "ALTER TABLE users DROP CONSTRAINT IF EXISTS users_status_check"
+            );
+        }
+
+        if (in_array($driver, ['mysql', 'pgsql'], true)) {
+            DB::statement("
+                ALTER TABLE users
+                ADD CONSTRAINT users_status_check
+                CHECK (status IN (
+                    'pendente',
+                    'aprovado',
+                    'inutilizado'
+                ))
+            ");
+        }
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_status_check");
+        $driver = DB::getDriverName();
 
-        DB::statement("ALTER TABLE users ALTER COLUMN status SET DEFAULT 'pendente'");
+        if ($driver === 'mysql') {
+            $existe = DB::table('information_schema.TABLE_CONSTRAINTS')
+                ->where('CONSTRAINT_SCHEMA', DB::getDatabaseName())
+                ->where('TABLE_NAME', 'users')
+                ->where('CONSTRAINT_NAME', 'users_status_check')
+                ->where('CONSTRAINT_TYPE', 'CHECK')
+                ->exists();
+
+            if ($existe) {
+                DB::statement(
+                    "ALTER TABLE users DROP CHECK users_status_check"
+                );
+            }
+        } elseif ($driver === 'pgsql') {
+            DB::statement(
+                "ALTER TABLE users DROP CONSTRAINT IF EXISTS users_status_check"
+            );
+        }
     }
 };
