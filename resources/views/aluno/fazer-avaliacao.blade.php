@@ -5,56 +5,61 @@
 @section('content')
 
 @php
-    use Illuminate\Support\Facades\DB;
-    use Illuminate\Support\Facades\Schema;
 
     $usuarioLogado = auth()->user();
     $alunoId = auth()->id();
 
     /*
     |--------------------------------------------------------------------------
-    | CURSO ATUAL DO PERÍODO
+    | ESCOLHA DO CURSO PELO ALUNO
     |--------------------------------------------------------------------------
-    | Regra nova:
-    | - O aluno NÃO escolhe curso.
-    | - O sistema mostra apenas o curso atual/publicado.
-    | - Se houver matrícula do aluno, usa o curso matriculado.
-    | - Se não houver matrícula, usa o curso publicado/ativo mais recente.
+    | Cursos ativos/publicados podem ser escolhidos pelo aluno.
+    | A seleção é compartilhada com a Home através da sessão.
     */
-
+    $cursosDisponiveis = collect();
     $cursoAtual = null;
     $cursoAtualId = null;
 
-    if (Schema::hasTable('matriculas') && Schema::hasTable('cursos')) {
-        $cursoMatriculadoId = DB::table('matriculas')
-            ->where('aluno_id', $alunoId)
-            ->orderBy('id', 'desc')
-            ->value('curso_id');
+    if (\Illuminate\Support\Facades\Schema::hasTable('cursos')) {
+        $cursosQuery = \Illuminate\Support\Facades\DB::table('cursos');
 
-        if ($cursoMatriculadoId) {
-            $cursoAtual = DB::table('cursos')
-                ->where('id', $cursoMatriculadoId)
-                ->first();
-        }
-    }
-
-    if (!$cursoAtual && Schema::hasTable('cursos')) {
-        $queryCurso = DB::table('cursos');
-
-        if (Schema::hasColumn('cursos', 'publicado')) {
-            $queryCurso->where('publicado', true);
-        } elseif (Schema::hasColumn('cursos', 'ativo')) {
-            $queryCurso->where('ativo', true);
-        } elseif (Schema::hasColumn('cursos', 'status')) {
-            $queryCurso->whereIn('status', ['publicado', 'ativo', 'aprovado']);
+        if (\Illuminate\Support\Facades\Schema::hasColumn('cursos', 'publicado')) {
+            $cursosQuery->where('publicado', true);
+        } elseif (\Illuminate\Support\Facades\Schema::hasColumn('cursos', 'ativo')) {
+            $cursosQuery->where('ativo', true);
+        } elseif (\Illuminate\Support\Facades\Schema::hasColumn('cursos', 'status')) {
+            $cursosQuery->whereIn('status', ['publicado', 'ativo', 'aprovado']);
         }
 
-        $cursoAtual = $queryCurso
-            ->orderBy('id', 'desc')
-            ->first();
-    }
+        $cursosDisponiveis = $cursosQuery->orderBy('nome')->orderBy('id')->get();
+        $cursoSolicitadoId = request()->query('curso_id');
+        $cursoSalvoId = session('aluno_curso_selecionado');
+        $cursoMatriculadoId = null;
 
-    $cursoAtualId = $cursoAtual->id ?? null;
+        if (\Illuminate\Support\Facades\Schema::hasTable('matriculas')) {
+            $cursoMatriculadoId = \Illuminate\Support\Facades\DB::table('matriculas')
+                ->where('aluno_id', $alunoId)
+                ->orderByDesc('id')
+                ->value('curso_id');
+        }
+
+        foreach ([$cursoSolicitadoId, $cursoSalvoId, $cursoMatriculadoId] as $idCandidato) {
+            if ($idCandidato !== null && ctype_digit((string) $idCandidato)) {
+                $cursoEncontrado = $cursosDisponiveis->firstWhere('id', (int) $idCandidato);
+                if ($cursoEncontrado) {
+                    $cursoAtual = $cursoEncontrado;
+                    break;
+                }
+            }
+        }
+
+        $cursoAtual = $cursoAtual ?? $cursosDisponiveis->first();
+        $cursoAtualId = $cursoAtual->id ?? null;
+
+        if ($cursoAtualId) {
+            session(['aluno_curso_selecionado' => (int) $cursoAtualId]);
+        }
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -64,19 +69,19 @@
 
     $modulosCurso = collect();
 
-    if ($cursoAtual && Schema::hasTable('modulos')) {
-        $modulosCurso = DB::table('modulos')
+    if ($cursoAtual && \Illuminate\Support\Facades\Schema::hasTable('modulos')) {
+        $modulosCurso = \Illuminate\Support\Facades\DB::table('modulos')
             ->where('curso_id', $cursoAtual->id)
-            ->orderBy(Schema::hasColumn('modulos', 'ordem') ? 'ordem' : 'id')
+            ->orderBy(\Illuminate\Support\Facades\Schema::hasColumn('modulos', 'ordem') ? 'ordem' : 'id')
             ->orderBy('id')
             ->get();
 
         foreach ($modulosCurso as $modulo) {
-            if (Schema::hasTable('aulas')) {
-                $aulasQuery = DB::table('aulas')
+            if (\Illuminate\Support\Facades\Schema::hasTable('aulas')) {
+                $aulasQuery = \Illuminate\Support\Facades\DB::table('aulas')
                     ->where('modulo_id', $modulo->id);
 
-                if (Schema::hasColumn('aulas', 'ordem')) {
+                if (\Illuminate\Support\Facades\Schema::hasColumn('aulas', 'ordem')) {
                     $aulasQuery->orderBy('ordem');
                 }
 
@@ -118,11 +123,11 @@
 
             $avaliacaoId = null;
 
-            if (Schema::hasTable('avaliacoes')) {
-                $avaliacaoQuery = DB::table('avaliacoes')
+            if (\Illuminate\Support\Facades\Schema::hasTable('avaliacoes')) {
+                $avaliacaoQuery = \Illuminate\Support\Facades\DB::table('avaliacoes')
                     ->where('aula_id', $aula->id);
 
-                if (Schema::hasColumn('avaliacoes', 'tipo')) {
+                if (\Illuminate\Support\Facades\Schema::hasColumn('avaliacoes', 'tipo')) {
                     $avaliacaoQuery->where(function ($query) {
                         $query->where('tipo', 'normal')
                               ->orWhere('tipo', 'pos_teste')
@@ -138,12 +143,12 @@
 
             $aulaAssistida = false;
 
-            if (Schema::hasTable('aulas_assistidas')) {
-                $aulasAssistidasQuery = DB::table('aulas_assistidas')
+            if (\Illuminate\Support\Facades\Schema::hasTable('aulas_assistidas')) {
+                $aulasAssistidasQuery = \Illuminate\Support\Facades\DB::table('aulas_assistidas')
                     ->where('aluno_id', $alunoId)
                     ->where('aula_id', $aula->id);
 
-                if (Schema::hasColumn('aulas_assistidas', 'assistido')) {
+                if (\Illuminate\Support\Facades\Schema::hasColumn('aulas_assistidas', 'assistido')) {
                     $aulasAssistidasQuery->where('assistido', true);
                 }
 
@@ -153,8 +158,8 @@
             $posTesteConcluido = false;
             $notaPosTeste = null;
 
-            if ($avaliacaoId && Schema::hasTable('notas')) {
-                $notaRegistro = DB::table('notas')
+            if ($avaliacaoId && \Illuminate\Support\Facades\Schema::hasTable('notas')) {
+                $notaRegistro = \Illuminate\Support\Facades\DB::table('notas')
                     ->where('aluno_id', $alunoId)
                     ->where('avaliacao_id', $avaliacaoId)
                     ->orderBy('id', 'desc')
@@ -234,14 +239,14 @@
     $notaFinalPercentual = null;
     $certificadoLiberado = false;
 
-    if (Schema::hasTable('avaliacoes')) {
-        $avaliacaoFinalQuery = DB::table('avaliacoes');
+    if (\Illuminate\Support\Facades\Schema::hasTable('avaliacoes')) {
+        $avaliacaoFinalQuery = \Illuminate\Support\Facades\DB::table('avaliacoes');
 
-        if (Schema::hasColumn('avaliacoes', 'tipo')) {
+        if (\Illuminate\Support\Facades\Schema::hasColumn('avaliacoes', 'tipo')) {
             $avaliacaoFinalQuery->where('tipo', 'final');
         }
 
-        if ($cursoAtualId && Schema::hasColumn('avaliacoes', 'curso_id')) {
+        if ($cursoAtualId && \Illuminate\Support\Facades\Schema::hasColumn('avaliacoes', 'curso_id')) {
             $avaliacaoFinalQuery->where('curso_id', $cursoAtualId);
         }
 
@@ -250,8 +255,8 @@
             ->first();
     }
 
-    if ($avaliacaoFinal && Schema::hasTable('notas')) {
-        $notaFinalRegistro = DB::table('notas')
+    if ($avaliacaoFinal && \Illuminate\Support\Facades\Schema::hasTable('notas')) {
+        $notaFinalRegistro = \Illuminate\Support\Facades\DB::table('notas')
             ->where('aluno_id', $alunoId)
             ->where('avaliacao_id', $avaliacaoFinal->id)
             ->orderBy('id', 'desc')
@@ -429,7 +434,7 @@
                     </h1>
 
                     <p class="text-sm text-[#60756B] mt-2 max-w-3xl">
-                        Acompanhe o curso atual do período, conclua as aulas, realize os pós-testes e libere sua prova final.
+                        Escolha um curso, acompanhe as aulas, realize os pós-testes e libere sua prova final.
                     </p>
                 </div>
 
@@ -445,6 +450,36 @@
 
             </div>
 
+            <!-- SELEÇÃO DE CURSOS DISPONÍVEIS -->
+            <div class="mb-7 bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-[#003C2F]">Escolha seu curso</h2>
+                        <p class="text-sm text-[#60756B] mt-1">Selecione um curso para visualizar os módulos, as aulas e seu progresso.</p>
+                    </div>
+                    <span class="text-xs font-bold text-[#004D3A]">{{ $cursosDisponiveis->count() }} curso(s) disponível(is)</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @forelse($cursosDisponiveis as $cursoOpcao)
+                        <a href="{{ route('aluno.aulas', ['curso_id' => $cursoOpcao->id]) }}"
+                           class="block rounded-2xl border-2 p-5 transition hover:shadow-md {{ (int) $cursoAtualId === (int) $cursoOpcao->id ? 'border-[#00A63E] bg-[#EAF5EF]' : 'border-[#E3EBE4] hover:border-[#00A63E] bg-[#F8FBF8]' }}">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <h3 class="font-extrabold text-[#003C2F] break-words">{{ $cursoOpcao->nome }}</h3>
+                                    <p class="text-sm text-[#60756B] mt-2 leading-relaxed">{{ $cursoOpcao->descricao ?: 'Conheça os módulos e as aulas deste curso.' }}</p>
+                                </div>
+                                @if((int) $cursoAtualId === (int) $cursoOpcao->id)
+                                    <span class="text-xs font-extrabold text-[#047857] shrink-0">Selecionado</span>
+                                @endif
+                            </div>
+                            <p class="text-sm font-extrabold text-[#005543] mt-4">{{ (int) $cursoAtualId === (int) $cursoOpcao->id ? 'Continuar curso →' : 'Escolher curso →' }}</p>
+                        </a>
+                    @empty
+                        <p class="text-sm text-[#60756B]">Nenhum curso está disponível no momento.</p>
+                    @endforelse
+                </div>
+            </div>
+
             @if($cursoAtual)
 
                 <!-- RESUMO DO CURSO -->
@@ -457,7 +492,7 @@
                             <div class="min-w-0">
 
                                 <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                    Curso do período
+                                    Curso selecionado
                                 </p>
 
                                 <h2 class="text-2xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight mt-1 break-words">
@@ -575,7 +610,7 @@
                         </div>
 
                         @if($provaFinalLiberada)
-                            <a href="{{ route('prova.final') }}"
+                            <a href="{{ route('prova.final', $cursoAtualId ? ['curso_id' => $cursoAtualId] : []) }}"
                                class="mt-5 inline-flex w-full justify-center items-center bg-[#005543] hover:bg-[#004636] text-white px-5 py-3 rounded-2xl font-extrabold transition">
                                 Acessar prova final
                             </a>
@@ -614,7 +649,7 @@
                         </div>
 
                         @if($certificadoLiberado)
-                            <a href="{{ route('certificado.aluno') }}"
+                            <a href="{{ route('certificado.aluno', $cursoAtualId ? ['curso_id' => $cursoAtualId] : []) }}"
                                class="mt-5 inline-flex w-full justify-center items-center bg-[#005543] hover:bg-[#004636] text-white px-5 py-3 rounded-2xl font-extrabold transition">
                                 Acessar certificado
                             </a>
