@@ -9,22 +9,16 @@
     use Illuminate\Support\Facades\Schema;
 
     $alunoId = auth()->id();
-
-    /*
-     * PROVA FINAL GERAL
-     * Mesma regra do AvaliacaoController: todos os pós-testes dos cursos
-     * matriculados têm peso igual; pendentes valem zero; melhor nota por teste.
-     */
+    // A formação é global: não há matrícula por aluno.
     $cursoAtual = null;
     $cursoAtualId = null;
-    $cursosMatriculados = collect();
+    $cursosMatriculados = collect(); // Nome legado mantido para compatibilidade com o layout.
     $totalCursos = 0;
     $totalAulas = 0;
     $totalAulasAssistidas = 0;
     $totalPosTestes = 0;
     $totalPosTestesFeitos = 0;
-    $mediaPontosCurso = 0.0; // Nome preservado para compatibilidade do Blade.
-    $mediaPontosTexto = '0,0%';
+    $mediaPontosCurso = 0.0;
     $provaLiberada = false;
     $aulasOk = false;
     $posTestesOk = false;
@@ -32,57 +26,45 @@
     $cursoTemConteudo = false;
     $mensagemSituacao = '';
 
-    $tabelasNecessarias = ['matriculas', 'cursos', 'modulos', 'aulas', 'avaliacoes', 'notas'];
-    $estruturaDisponivel = collect($tabelasNecessarias)->every(fn ($tabela) => Schema::hasTable($tabela));
+    $estruturaDisponivel = collect(['cursos', 'aulas', 'avaliacoes', 'notas', 'aulas_assistidas'])
+        ->every(fn ($tabela) => Schema::hasTable($tabela));
 
     if ($estruturaDisponivel) {
-        $cursoIds = DB::table('matriculas')
-            ->where('aluno_id', $alunoId)
-            ->distinct()
-            ->pluck('curso_id')
-            ->filter(fn ($id) => is_numeric($id))
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values();
+        $cursosQuery = DB::table('cursos');
+        if (Schema::hasColumn('cursos', 'obrigatorio')) {
+            $cursosQuery->where('obrigatorio', true);
+        }
+        $cursosMatriculados = $cursosQuery->orderBy('nome')->orderBy('id')->get();
+        $totalCursos = $cursosMatriculados->count();
+        $cursoAtual = $cursosMatriculados->first();
+        $cursoAtualId = $cursoAtual->id ?? null;
 
-        if ($cursoIds->isNotEmpty()) {
-            $cursosMatriculados = DB::table('cursos')
-                ->whereIn('id', $cursoIds->all())
-                ->orderBy('nome')
-                ->get();
-            $totalCursos = $cursosMatriculados->count();
-            $cursoAtual = $cursosMatriculados->first();
-            $cursoAtualId = $cursoAtual->id ?? null;
-
-            $aulasIds = DB::table('aulas')
-                ->join('modulos', 'modulos.id', '=', 'aulas.modulo_id')
-                ->whereIn('modulos.curso_id', $cursoIds->all())
-                ->distinct()
-                ->pluck('aulas.id');
-
+        if ($totalCursos > 0) {
+            $cursoIds = $cursosMatriculados->pluck('id')->all();
+            // aulas.curso_id é a referência direta usada também pelo AvaliacaoController.
+            $aulasIds = DB::table('aulas')->whereIn('curso_id', $cursoIds)->pluck('id');
             $totalAulas = $aulasIds->count();
-            if ($totalAulas > 0 && Schema::hasTable('aulas_assistidas')) {
-                $queryAssistidas = DB::table('aulas_assistidas')
+
+            if ($totalAulas > 0) {
+                $assistidasQuery = DB::table('aulas_assistidas')
                     ->where('aluno_id', $alunoId)
                     ->whereIn('aula_id', $aulasIds->all());
                 if (Schema::hasColumn('aulas_assistidas', 'assistido')) {
-                    $queryAssistidas->where('assistido', true);
+                    $assistidasQuery->where('assistido', true);
                 }
-                $totalAulasAssistidas = $queryAssistidas->distinct()->count('aula_id');
+                $totalAulasAssistidas = $assistidasQuery->distinct()->count('aula_id');
             }
 
             $avaliacoesIds = DB::table('avaliacoes')
                 ->join('aulas', 'aulas.id', '=', 'avaliacoes.aula_id')
-                ->join('modulos', 'modulos.id', '=', 'aulas.modulo_id')
-                ->whereIn('modulos.curso_id', $cursoIds->all())
+                ->whereIn('aulas.curso_id', $cursoIds)
                 ->where(function ($query) {
                     $query->where('avaliacoes.tipo', 'normal')
                         ->orWhere('avaliacoes.tipo', 'pos_teste')
                         ->orWhere('avaliacoes.tipo', 'pós-teste')
                         ->orWhereNull('avaliacoes.tipo');
                 })
-                ->distinct()
-                ->pluck('avaliacoes.id');
+                ->distinct()->pluck('avaliacoes.id');
 
             $totalPosTestes = $avaliacoesIds->count();
             if ($totalPosTestes > 0) {
@@ -93,7 +75,7 @@
                     ->groupBy('avaliacao_id')
                     ->pluck('melhor_nota', 'avaliacao_id');
 
-                $totalPosTestesFeitos = $notasPorAvaliacao->count();
+                $totalPosTestesFeitos = $notasPorAvaliacao->filter(fn ($nota) => $nota !== null)->count();
                 $somaNotas = 0.0;
                 foreach ($avaliacoesIds as $avaliacaoId) {
                     $somaNotas += max(0, min(10, (float) ($notasPorAvaliacao->get($avaliacaoId) ?? 0)));
@@ -101,23 +83,23 @@
                 $mediaPontosCurso = round(($somaNotas / ($totalPosTestes * 10)) * 100, 2);
             }
 
-            $cursoTemConteudo = $totalPosTestes > 0;
+            $cursoTemConteudo = $totalAulas > 0 && $totalPosTestes > 0;
             $aulasOk = $totalAulas > 0 && $totalAulasAssistidas >= $totalAulas;
             $posTestesOk = $totalPosTestes > 0 && $totalPosTestesFeitos >= $totalPosTestes;
             $cursoCompletoOk = $aulasOk && $posTestesOk;
-            $provaLiberada = $totalPosTestes > 0 && $mediaPontosCurso >= 70;
-            $mensagemSituacao = $totalPosTestes > 0
-                ? 'A liberação depende da média de todos os pós-testes dos cursos matriculados.'
-                : 'Seus cursos ainda não possuem pós-testes para calcular a média geral.';
+            $provaLiberada = $cursoCompletoOk && $mediaPontosCurso >= 70;
+            $mensagemSituacao = $provaLiberada
+                ? 'Todos os cursos obrigatórios foram concluídos e sua média geral atingiu 70%.'
+                : 'É necessário assistir todas as aulas, realizar todos os pós-testes dos cursos obrigatórios e alcançar média geral de 70%.';
         } else {
-            $mensagemSituacao = 'Você ainda não possui cursos matriculados.';
+            $mensagemSituacao = 'Nenhum curso obrigatório foi encontrado para a formação.';
         }
     } else {
-        $mensagemSituacao = 'Não foi possível consultar todos os dados de matrícula e avaliação.';
+        $mensagemSituacao = 'Não foi possível consultar todos os dados dos cursos e avaliações.';
     }
 
     $mediaPontosTexto = number_format($mediaPontosCurso, 1, ',', '.') . '%';
-    $mediaOk = $provaLiberada;
+    $mediaOk = $mediaPontosCurso >= 70 && $totalPosTestes > 0;
     $totalEtapas = $totalAulas + $totalPosTestes;
     $etapasConcluidas = $totalAulasAssistidas + $totalPosTestesFeitos;
     $porcentagemConclusao = $totalEtapas > 0 ? round(($etapasConcluidas / $totalEtapas) * 100) : 0;
@@ -140,9 +122,7 @@
         $resultadoFinalAluno = DB::table('notas')
             ->where('aluno_id', $alunoId)
             ->where('avaliacao_id', $avaliacao->id)
-            ->orderByDesc('nota')
-            ->orderByDesc('id')
-            ->first();
+            ->orderByDesc('nota')->orderByDesc('id')->first();
 
         if ($resultadoFinalAluno) {
             $provaFinalJaFeita = true;
@@ -163,14 +143,19 @@
 
     $requisitosProva = [
         [
-            'titulo' => 'Possuir cursos matriculados e pós-testes',
-            'ok' => $totalCursos > 0 && $totalPosTestes > 0,
-            'descricao' => $totalCursos . ' curso(s) matriculado(s), ' . $totalPosTestes . ' pós-teste(s) disponível(is).',
+            'titulo' => 'Assistir todas as videoaulas obrigatórias',
+            'ok' => $aulasOk,
+            'descricao' => $totalAulasAssistidas . ' de ' . $totalAulas . ' videoaulas assistidas.',
+        ],
+        [
+            'titulo' => 'Realizar todos os pós-testes obrigatórios',
+            'ok' => $posTestesOk,
+            'descricao' => $totalPosTestesFeitos . ' de ' . $totalPosTestes . ' pós-testes realizados em ' . $totalCursos . ' curso(s) obrigatório(s).',
         ],
         [
             'titulo' => 'Atingir média geral de 70% nos pós-testes',
             'ok' => $mediaOk,
-            'descricao' => 'Média geral: ' . $mediaPontosTexto . '. Faltam ' . number_format($faltamMedia, 1, ',', '.') . ' ponto(s) percentual(is). Pós-testes pendentes valem zero.',
+            'descricao' => 'Média geral: ' . $mediaPontosTexto . '. Faltam ' . number_format($faltamMedia, 1, ',', '.') . ' ponto(s) percentual(is).',
         ],
     ];
     $totalRequisitosProva = count($requisitosProva);
@@ -267,16 +252,16 @@
                     </h1>
 
                     <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
-                        A prova final geral é liberada quando sua média nos pós-testes de todos os cursos matriculados atingir 70%. Pós-testes pendentes contam como zero.
+                        A prova final geral é liberada quando sua média nos pós-testes de todos os cursos obrigatórios atingir 70%. Pós-testes pendentes contam como zero.
                     </p>
 
                     @if($cursoAtual)
                         <p class="text-sm text-[#004D3A] mt-2 font-extrabold">
-                            Cursos matriculados: {{ $totalCursos }}
+                            Cursos obrigatórios: {{ $totalCursos }}
                         </p>
                     @else
                         <p class="text-sm text-red-600 mt-2 font-extrabold">
-                            Nenhum curso matriculado foi encontrado para este aluno.
+                            Nenhum curso obrigatório foi encontrado para a formação.
                         </p>
                     @endif
                 </div>
@@ -381,12 +366,12 @@
 
                             <p class="text-[#60756B] text-sm leading-relaxed max-w-2xl">
                                 Você ainda não atingiu os requisitos mínimos para realizar a prova final. {{ $mensagemSituacao }}
-                                Para liberar, é necessário atingir média geral de 70% nos pós-testes de todos os cursos matriculados.
+                                Para liberar, é necessário atingir média geral de 70% nos pós-testes de todos os cursos obrigatórios.
                             </p>
 
                             @if($cursoAtual)
                                 <p class="text-sm text-[#004D3A] font-extrabold mt-3">
-                                    Cursos matriculados: {{ $totalCursos }}
+                                    Cursos obrigatórios: {{ $totalCursos }}
                                 </p>
                             @endif
 
@@ -530,7 +515,7 @@
 
                             @if($cursoAtual)
                                 <p class="text-sm text-[#004D3A] font-extrabold mt-3">
-                                    Cursos matriculados: {{ $totalCursos }}
+                                    Cursos obrigatórios: {{ $totalCursos }}
                                 </p>
                             @endif
 
@@ -640,12 +625,12 @@
                             <h2 class="text-2xl sm:text-3xl font-extrabold text-[#003C2F] mb-3">Prova final liberada</h2>
 
                             <p class="text-[#60756B] text-sm leading-relaxed max-w-2xl">
-                                Sua média geral nos pós-testes de todos os cursos matriculados atingiu 70% ou mais.
+                                Sua média geral nos pós-testes de todos os cursos obrigatórios atingiu 70% ou mais.
                                 Ao iniciar, a prova será aberta em uma tela limpa, sem menus, para evitar distrações e saídas acidentais.
                             </p>
 
                             @if($cursoAtual)
-                                <p class="text-sm text-[#004D3A] font-extrabold mt-3">Cursos matriculados: {{ $totalCursos }}</p>
+                                <p class="text-sm text-[#004D3A] font-extrabold mt-3">Cursos obrigatórios: {{ $totalCursos }}</p>
                             @endif
 
                             <div class="mt-6 bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5">
@@ -1113,7 +1098,7 @@
             title: 'Deseja iniciar a prova final?',
             html: `
                 <p style="color:#60756B; font-size:14px; line-height:1.6;">
-                    A prova final está liberada porque sua média geral dos pós-testes dos cursos matriculados atingiu pelo menos 70%.
+                    A prova final está liberada porque sua média geral dos pós-testes dos cursos obrigatórios atingiu pelo menos 70%.
                     <br><br>
                     Ao clicar em <strong>Sim, iniciar</strong>, o cronômetro começará imediatamente.
                     <br><br>

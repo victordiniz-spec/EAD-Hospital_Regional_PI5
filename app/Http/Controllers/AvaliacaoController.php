@@ -776,19 +776,38 @@ class AvaliacaoController extends Controller
         }
 
         $percentual = round(($somaNotas / ($totalAvaliacoes * 10)) * 100, 2);
-        $liberada = $percentual >= 70;
+
+        $aulasIds = DB::table('aulas')->whereIn('curso_id', $cursoIds->all())->pluck('id');
+        $totalAulas = $aulasIds->count();
+        $totalAssistidas = 0;
+        if ($totalAulas > 0 && Schema::hasTable('aulas_assistidas')) {
+            $queryAssistidas = DB::table('aulas_assistidas')
+                ->where('aluno_id', $alunoId)
+                ->whereIn('aula_id', $aulasIds->all());
+            if (Schema::hasColumn('aulas_assistidas', 'assistido')) {
+                $queryAssistidas->where('assistido', true);
+            }
+            $totalAssistidas = $queryAssistidas->distinct()->count('aula_id');
+        }
+
+        $aulasOk = $totalAulas > 0 && $totalAssistidas >= $totalAulas;
+        $testesOk = $totalAvaliacoes > 0 && $totalRealizados >= $totalAvaliacoes;
+        $mediaOk = $percentual >= 70;
+        $liberada = $aulasOk && $testesOk && $mediaOk;
 
         return [
             'liberada' => $liberada,
             'percentual' => $percentual,
+            'total_aulas' => $totalAulas,
+            'aulas_assistidas' => $totalAssistidas,
             'total_pos_testes' => $totalAvaliacoes,
             'pos_testes_realizados' => $totalRealizados,
             'pos_testes_pendentes' => $totalAvaliacoes - $totalRealizados,
             'mensagem' => $liberada
                 ? 'Prova final liberada.'
-                : 'Sua média geral nos pós-testes dos cursos obrigatórios é '
-                    . number_format($percentual, 2, ',', '.')
-                    . '%. É necessário atingir pelo menos 70% para acessar a prova final.'
+                : 'Para acessar a prova final, conclua todas as videoaulas (' . $totalAssistidas . '/' . $totalAulas
+                    . '), realize todos os pós-testes obrigatórios (' . $totalRealizados . '/' . $totalAvaliacoes
+                    . ') e alcance média geral de 70%. Média atual: ' . number_format($percentual, 2, ',', '.') . '%.'
         ];
     }
 
