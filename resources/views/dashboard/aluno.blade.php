@@ -20,10 +20,15 @@
     $cursoAtual = null;
     $cursoAtualId = null;
 
+    // Todos os cursos disponibilizados pela professora podem ser acessados,
+    // sem matrícula. O campo obrigatorio define a participação na certificação.
+    // Enquanto a migration não for aplicada, todos são considerados obrigatórios.
+    $existeCampoObrigatorio = \Illuminate\Support\Facades\Schema::hasTable('cursos')
+        && \Illuminate\Support\Facades\Schema::hasColumn('cursos', 'obrigatorio');
+
     if (\Illuminate\Support\Facades\Schema::hasTable('cursos')) {
         $cursosQuery = \Illuminate\Support\Facades\DB::table('cursos');
 
-        // Quando houver controle explícito de publicação, respeita-o.
         if (\Illuminate\Support\Facades\Schema::hasColumn('cursos', 'publicado')) {
             $cursosQuery->where('publicado', true);
         } elseif (\Illuminate\Support\Facades\Schema::hasColumn('cursos', 'ativo')) {
@@ -33,20 +38,10 @@
         }
 
         $cursosDisponiveis = $cursosQuery->orderBy('nome')->orderBy('id')->get();
-
-        // Um ID recebido na URL só vale se pertencer à lista disponível.
         $cursoSolicitadoId = request()->query('curso_id');
         $cursoSalvoId = session('aluno_curso_selecionado');
-        $cursoMatriculadoId = null;
 
-        if (\Illuminate\Support\Facades\Schema::hasTable('matriculas')) {
-            $cursoMatriculadoId = \Illuminate\Support\Facades\DB::table('matriculas')
-                ->where('aluno_id', $alunoId)
-                ->orderByDesc('id')
-                ->value('curso_id');
-        }
-
-        foreach ([$cursoSolicitadoId, $cursoSalvoId, $cursoMatriculadoId] as $idCandidato) {
+        foreach ([$cursoSolicitadoId, $cursoSalvoId, $cursoAtualId ?? null] as $idCandidato) {
             if ($idCandidato !== null && ctype_digit((string) $idCandidato)) {
                 $cursoEncontrado = $cursosDisponiveis->firstWhere('id', (int) $idCandidato);
                 if ($cursoEncontrado) {
@@ -206,9 +201,6 @@
             $queryProvaFinal->where('tipo', 'final');
         }
 
-        if ($cursoAtualId && \Illuminate\Support\Facades\Schema::hasColumn('avaliacoes', 'curso_id')) {
-            $queryProvaFinal->where('curso_id', $cursoAtualId);
-        }
 
         $provaFinalCurso = $queryProvaFinal
             ->orderByDesc('id')
@@ -243,12 +235,8 @@
         }
     }
 
-    // A prova final sempre acrescenta uma etapa ao curso.
-    $totalEtapasCurso++;
-
-    if ($provaFinalAprovada) {
-        $etapasConcluidasCurso++;
-    }
+    // A prova final é GLOBAL; não entra como etapa de cada curso.
+    // Assim, a porcentagem do curso acompanha apenas videoaulas e pós-testes.
 
     $totalModulos = $modulos->count();
     $totalAvisos = isset($avisosRecentes) ? $avisosRecentes->count() : 0;
@@ -269,9 +257,13 @@
         return $nota <= 10 ? $nota * 10 : $nota;
     });
 
-    $mediaGeral = $notasAlunoPercentuais->count() > 0
-        ? round($notasAlunoPercentuais->avg(), 1)
-        : (isset($media) ? $media : 0);
+    // Estes dados são calculados no DashboardController e correspondem à
+    // regra efetivamente validada pelo AvaliacaoController.
+    $mediaGeral = (float) ($mediaGeralPercentual ?? 0);
+    $provaFinalLiberadaGeral = (bool) ($provaFinalLiberadaGeral ?? false);
+    $totalPosTestesGerais = (int) ($totalPosTestesGerais ?? 0);
+    $posTestesConcluidosGerais = (int) ($posTestesConcluidosGerais ?? 0);
+    $posTestesPendentesGerais = max(0, $totalPosTestesGerais - $posTestesConcluidosGerais);
 
     /*
     |--------------------------------------------------------------------------
@@ -474,6 +466,12 @@
         width: 100%;
     }
 
+    html.dark body,
+    html.dark #app {
+        background: #070B14 !important;
+        color: #E5E7EB !important;
+    }
+
     .calendario-aluno-grade {
         display: grid;
         grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -540,6 +538,11 @@
     | CALENDÁRIO NO MODO ESCURO
     |--------------------------------------------------------------------------
     */
+    html.dark .border-green-200.bg-green-50 {
+        background: #10271E !important;
+        border-color: #1F5137 !important;
+    }
+
     html.dark .calendario-aluno-dia-nome {
         color: #CBD5E1 !important;
     }
@@ -646,7 +649,7 @@
                             </p>
                         @else
                             <p class="text-sm text-red-600 mt-2 font-extrabold max-w-2xl">
-                                Nenhum curso publicado ou vinculado ao aluno.
+                                Nenhum curso disponível no momento.
                             </p>
                         @endif
                     </div>
@@ -670,7 +673,7 @@
                             Continuar aulas
                         </a>
 
-                        <a href="{{ route('certificado.aluno', $cursoAtualId ? ['curso_id' => $cursoAtualId] : []) }}"
+                        <a href="{{ route('certificado.aluno') }}"
                            class="bg-white border border-[#DCE7DE] text-[#004D3A] px-5 py-3 rounded-2xl hover:bg-[#F8FBF8] transition flex items-center justify-center gap-2 text-sm font-extrabold shadow-sm">
 
                             <svg xmlns="http://www.w3.org/2000/svg"
@@ -711,7 +714,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                     <div>
                         <h2 class="text-xl font-extrabold text-[#003C2F]">Cursos disponíveis</h2>
-                        <p class="text-sm text-[#60756B] mt-1">Escolha qual curso deseja iniciar ou continuar.</p>
+                        <p class="text-sm text-[#60756B] mt-1">Acesse os cursos definidos pela professora. Os obrigatórios são necessários para a certificação.</p>
                     </div>
                     <span class="text-xs font-bold text-[#004D3A]">{{ $cursosDisponiveis->count() }} curso(s)</span>
                 </div>
@@ -719,7 +722,14 @@
                     @forelse($cursosDisponiveis as $cursoOpcao)
                         <a href="{{ route('aluno.aulas', ['curso_id' => $cursoOpcao->id]) }}"
                            class="block rounded-2xl border-2 p-5 transition hover:border-[#00A63E] hover:shadow-md {{ $cursoAtualId == $cursoOpcao->id ? 'border-[#00A63E] bg-[#EAF5EF]' : 'border-[#E3EBE4] bg-[#F8FBF8]' }}">
-                            <p class="text-[11px] uppercase tracking-widest font-extrabold text-[#60756B]">{{ $cursoAtualId == $cursoOpcao->id ? 'Selecionado' : 'Disponível' }}</p>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="text-[11px] uppercase tracking-widest font-extrabold text-[#60756B]">{{ $cursoAtualId == $cursoOpcao->id ? 'Selecionado' : 'Disponível' }}</p>
+                                @if(!$existeCampoObrigatorio || (bool) ($cursoOpcao->obrigatorio ?? true))
+                                    <span class="text-[10px] font-extrabold rounded-full bg-green-100 text-green-700 px-2.5 py-1">Obrigatório para certificação</span>
+                                @else
+                                    <span class="text-[10px] font-extrabold rounded-full bg-blue-100 text-blue-700 px-2.5 py-1">Complementar</span>
+                                @endif
+                            </div>
                             <h3 class="text-lg font-extrabold text-[#003C2F] mt-2">{{ $cursoOpcao->nome }}</h3>
                             <p class="text-xs text-[#60756B] mt-2 line-clamp-3">{{ $cursoOpcao->descricao ?? 'Conheça as aulas e os módulos deste curso.' }}</p>
                             <p class="text-sm font-extrabold text-[#004D3A] mt-4">Acessar curso →</p>
@@ -756,7 +766,7 @@
                     </div>
 
                     <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                        Progresso geral
+                        Progresso do curso
                     </p>
 
                     <h3 class="text-3xl font-extrabold mt-2 text-[#003C2F]">
@@ -764,7 +774,7 @@
                     </h3>
 
                     <p class="text-xs text-[#60756B] mt-2">
-                        Considera videoaulas, pós-testes e aprovação na prova final.
+                        Considera as videoaulas e os pós-testes do curso selecionado.
                     </p>
 
                     <div class="mt-4 h-2 bg-[#E8EFE9] rounded-full overflow-hidden">
@@ -836,7 +846,7 @@
                     </p>
 
                     <p class="text-[11px] font-bold mt-2 {{ $provaFinalAprovada ? 'text-green-700' : 'text-[#60756B]' }}">
-                        Prova final: {{ $provaFinalAprovada ? 'aprovada' : ($provaFinalFeita ? 'realizada, aguardando aprovação' : 'pendente') }}
+                        Prova final geral: {{ $provaFinalAprovada ? 'aprovada' : ($provaFinalFeita ? 'realizada' : ($provaFinalLiberadaGeral ? 'liberada' : 'bloqueada')) }}
                     </p>
                 </div>
 
@@ -859,20 +869,50 @@
                     </div>
 
                     <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                        Média
+                        Média geral dos pós-testes
                     </p>
 
                     <h3 class="text-3xl font-extrabold mt-2 text-blue-600">
-                        {{ number_format($mediaGeral, 1) }}
+                        {{ number_format($mediaGeral, 1, ',', '.') }}%
                     </h3>
 
                     <p class="text-xs text-[#60756B] mt-2">
-                        Desempenho atual nas avaliações.
+                        {{ $posTestesConcluidosGerais }} de {{ $totalPosTestesGerais }} pós-testes realizados nos cursos obrigatórios. Pendentes contam como zero.
                     </p>
                 </div>
 
             </div>
 
+
+            <!-- REGRA GERAL DE LIBERAÇÃO DA PROVA FINAL -->
+            <div class="mb-8 rounded-3xl border p-5 sm:p-6 shadow-sm {{ $provaFinalLiberadaGeral ? 'bg-green-50 border-green-200' : 'bg-white border-[#E3EBE4]' }}">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-extrabold text-[#003C2F]">
+                            {{ $provaFinalAprovada ? 'Prova final aprovada' : ($provaFinalLiberadaGeral ? 'Prova final liberada' : 'Prova final bloqueada') }}
+                        </h2>
+                        <p class="text-sm text-[#60756B] mt-1">
+                            Sua média nos pós-testes dos cursos obrigatórios é
+                            <strong>{{ number_format($mediaGeral, 1, ',', '.') }}%</strong>.
+                            Você precisa atingir pelo menos <strong>70%</strong> para fazer a prova final.
+                        </p>
+                        <p class="text-xs text-[#60756B] mt-2">
+                            {{ $posTestesConcluidosGerais }} concluído(s) de {{ $totalPosTestesGerais }} pós-testes;
+                            {{ $posTestesPendentesGerais }} pendente(s).
+                        </p>
+                    </div>
+                    @if($provaFinalLiberadaGeral)
+                        <a href="{{ route('prova.final') }}"
+                           class="shrink-0 inline-flex items-center justify-center rounded-2xl bg-[#004D3A] px-5 py-3 font-extrabold text-white hover:bg-[#003C2F] transition">
+                            Acessar prova final
+                        </a>
+                    @else
+                        <span class="shrink-0 rounded-2xl bg-gray-100 px-5 py-3 font-bold text-gray-600" aria-label="Prova final bloqueada">
+                            Acesso bloqueado
+                        </span>
+                    @endif
+                </div>
+            </div>
 
             <!-- CALENDÁRIO E CONTINUIDADE DO CURSO -->
             <div class="grid grid-cols-1 2xl:grid-cols-12 gap-7 mb-8">
@@ -1043,7 +1083,7 @@
                             </h2>
 
                             <p class="text-sm text-white/75 mt-2 leading-relaxed">
-                                Acesse suas aulas e finalize as atividades pendentes para liberar a prova final e o certificado.
+                                Realize os cursos obrigatórios e alcance média geral de 70% nos pós-testes para liberar a prova final. Para o certificado, conclua todos os cursos obrigatórios e seja aprovado na prova final.
                             </p>
 
                             <a href="{{ route('aluno.aulas', $cursoAtualId ? ['curso_id' => $cursoAtualId] : []) }}"
@@ -1148,10 +1188,10 @@
                         </h2>
 
                         <p class="text-sm text-[#60756B] mt-2 leading-relaxed">
-                            Seu certificado será liberado após concluir todos os requisitos do curso.
+                            O certificado geral exige a conclusão de todos os cursos obrigatórios, seus pós-testes e aprovação com pelo menos 70% na prova final.
                         </p>
 
-                        <a href="{{ route('certificado.aluno', $cursoAtualId ? ['curso_id' => $cursoAtualId] : []) }}"
+                        <a href="{{ route('certificado.aluno') }}"
                            class="mt-5 inline-flex w-full items-center justify-center bg-[#004D3A] hover:bg-[#003C2F] text-white px-5 py-3 rounded-2xl font-extrabold transition">
                             Acessar certificado
                         </a>

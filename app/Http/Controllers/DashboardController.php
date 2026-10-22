@@ -173,44 +173,58 @@ class DashboardController extends Controller
         | O super_admin também pode acessar esta tela para testar.
         | Por isso mantemos o cálculo baseado no usuário logado.
         |
-        | A view aluno.blade.php já foi ajustada para buscar o curso atual/publicado
-        | quando não houver matrícula específica.
+        | A seleção do curso é independente de matrículas.
         */
 
         // MÓDULOS COM AULAS
-        $modulos = Modulo::with('aulas')->get();
-
-        /*
-        |--------------------------------------------------------------------------
-        | TOTAL DE AULAS DO ALUNO
-        |--------------------------------------------------------------------------
-        | Usa matrícula se existir. Caso o usuário seja super_admin e não tenha matrícula,
-        | usa o curso publicado/ativo/mais recente como fallback.
-        */
+        // Mantém o escopo da Home no curso selecionado, sem confundir
+        // progresso do curso com a NOTA GERAL de todos os cursos.
         $cursoAtualId = null;
+        $cursosDisponiveisIds = collect();
+        $cursosObrigatoriosIds = collect();
 
-        if (DB::getSchemaBuilder()->hasTable('matriculas')) {
-            $cursoAtualId = DB::table('matriculas')
-                ->where('aluno_id', $alunoId)
-                ->orderByDesc('id')
-                ->value('curso_id');
-        }
-
-        if (!$cursoAtualId && DB::getSchemaBuilder()->hasTable('cursos')) {
-            $queryCurso = DB::table('cursos');
-
+        if (DB::getSchemaBuilder()->hasTable('cursos')) {
+            // Todos os cursos disponibilizados são acessíveis, sem matrículas.
+            $cursosQuery = DB::table('cursos');
             if (DB::getSchemaBuilder()->hasColumn('cursos', 'publicado')) {
-                $queryCurso->where('publicado', true);
+                $cursosQuery->where('publicado', true);
             } elseif (DB::getSchemaBuilder()->hasColumn('cursos', 'ativo')) {
-                $queryCurso->where('ativo', true);
+                $cursosQuery->where('ativo', true);
             } elseif (DB::getSchemaBuilder()->hasColumn('cursos', 'status')) {
-                $queryCurso->whereIn('status', ['publicado', 'ativo', 'aprovado']);
+                $cursosQuery->whereIn('status', ['publicado', 'ativo', 'aprovado']);
             }
 
-            $cursoAtualId = $queryCurso
-                ->orderByDesc('id')
-                ->value('id');
+            $cursosDisponiveis = $cursosQuery->orderBy('id')->get();
+            $cursosDisponiveisIds = $cursosDisponiveis->pluck('id')->map(fn ($id) => (int) $id);
+            $cursosObrigatoriosIds = $cursosDisponiveis
+                ->filter(fn ($curso) => !DB::getSchemaBuilder()->hasColumn('cursos', 'obrigatorio') || (bool) $curso->obrigatorio)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->values();
+
+            foreach ([request()->query('curso_id'), session('aluno_curso_selecionado')] as $candidato) {
+                if ($candidato !== null && ctype_digit((string) $candidato)
+                    && $cursosDisponiveisIds->contains((int) $candidato)) {
+                    $cursoAtualId = (int) $candidato;
+                    break;
+                }
+            }
+
+            $cursoAtualId = $cursoAtualId ?? $cursosDisponiveisIds->first();
         }
+
+        if ($cursoAtualId) {
+            session(['aluno_curso_selecionado' => (int) $cursoAtualId]);
+        } else {
+            session()->forget('aluno_curso_selecionado');
+        }
+
+        // A Home continua recebendo os módulos do curso selecionado.
+        $modulos = Modulo::with('aulas')
+            ->where('curso_id', $cursoAtualId ?? 0)
+            ->orderBy('ordem')
+            ->orderBy('id')
+            ->get();
 
         $modulosCursoIds = collect();
 
@@ -282,10 +296,67 @@ class DashboardController extends Controller
                 ->count()
             : 0;
 
-        // MÉDIA
-        $media = DB::table('notas')
-            ->where('aluno_id', $alunoId)
-            ->avg('nota') ?? 0;
+        // APROVEITAMENTO GERAL DOS PÓS-TESTES DOS CURSOS OBRIGATÓRIOS.
+        // Sem matrículas; cada pós-teste tem peso igual e pendentes contam zero.
+        $totalPosTestesGerais = 0;
+        $posTestesConcluidosGerais = 0;
+        $mediaGeralPercentual = 0.0;
+        $provaFinalLiberadaGeral = false;
+
+        $estruturaCompleta = collect(['cursos', 'modulos', 'aulas', 'avaliacoes', 'notas'])
+            ->every(fn ($tabela) => DB::getSchemaBuilder()->hasTable($tabela));
+
+        if ($estruturaCompleta && $cursosObrigatoriosIds->isNotEmpty()) {
+            // Abrange aulas vinculadas a módulos ou diretamente a cursos.
+            $aulasObrigatoriasQuery = DB::table('aulas')
+                ->leftJoin('modulos', 'modulos.id', '=', 'aulas.modulo_id')
+                ->where(function ($query) use ($cursosObrigatoriosIds) {
+                    $query->whereIn('modulos.curso_id', $cursosObrigatoriosIds->all());
+                    if (DB::getSchemaBuilder()->hasColumn('aulas', 'curso_id')) {
+                        $query->orWhereIn('aulas.curso_id', $cursosObrigatoriosIds->all());
+                    }
+                });
+            $aulasObrigatoriasIds = $aulasObrigatoriasQuery->distinct()->pluck('aulas.id');
+
+            if ($aulasObrigatoriasIds->isNotEmpty()) {
+                $avaliacoesGeraisIds = DB::table('avaliacoes')
+                    ->whereIn('aula_id', $aulasObrigatoriasIds->all())
+                    ->where(function ($query) {
+                        $query->whereIn('tipo', ['normal', 'pos_teste', 'pós-teste'])
+                            ->orWhereNull('tipo');
+                    })
+                    ->distinct()
+                    ->pluck('id');
+
+                $totalPosTestesGerais = $avaliacoesGeraisIds->count();
+
+                if ($totalPosTestesGerais > 0) {
+                    $notasGerais = DB::table('notas')
+                        ->where('aluno_id', $alunoId)
+                        ->whereIn('avaliacao_id', $avaliacoesGeraisIds->all())
+                        ->whereNotNull('nota')
+                        ->select('avaliacao_id', DB::raw('MAX(nota) as melhor_nota'))
+                        ->groupBy('avaliacao_id')
+                        ->pluck('melhor_nota', 'avaliacao_id');
+
+                    $somaNotas = 0.0;
+                    foreach ($avaliacoesGeraisIds as $avaliacaoGeralId) {
+                        if ($notasGerais->has($avaliacaoGeralId)) {
+                            $posTestesConcluidosGerais++;
+                        }
+                        $notaGeral = (float) ($notasGerais->get($avaliacaoGeralId) ?? 0);
+                        $somaNotas += max(0, min(10, $notaGeral));
+                    }
+
+                    $mediaGeralPercentual = round(($somaNotas / ($totalPosTestesGerais * 10)) * 100, 2);
+                    $provaFinalLiberadaGeral = $mediaGeralPercentual >= 70;
+                }
+            }
+        }
+
+        // Compatibilidade: a variável $media já é usada pela view antiga
+        // como nota em escala 0..10. A média agora reflete TODOS os cursos.
+        $media = round($mediaGeralPercentual / 10, 2);
 
         // PRÓXIMAS AULAS DO CURSO ATUAL
         $proximasAulas = $aulasCursoIds->count() > 0
@@ -365,7 +436,14 @@ class DashboardController extends Controller
             'proximasAulas',
             'aulasAssistidasLista',
             'listaTestes',
-            'avisosRecentes'
+            'avisosRecentes',
+            'cursoAtualId',
+            'cursosDisponiveisIds',
+            'cursosObrigatoriosIds',
+            'totalPosTestesGerais',
+            'posTestesConcluidosGerais',
+            'mediaGeralPercentual',
+            'provaFinalLiberadaGeral'
         ));
     }
 

@@ -355,24 +355,15 @@ class AulaController extends Controller
     {
         $alunoId = auth()->id();
 
-        $cursoId = null;
-
-        if (Schema::hasTable('matriculas')) {
-            $cursoId = DB::table('matriculas')
-                ->where('aluno_id', $alunoId)
-                ->value('curso_id');
-        }
-
-        if (!$cursoId) {
-            $cursoId = Curso::orderBy('id')->value('id');
-        }
+        // Permite navegar entre os cursos matriculados, preservando a seleção
+        // feita na Home ou na tela de videoaulas. Não altera a nota geral:
+        // o cálculo e a liberação da prova final ficam no AvaliacaoController.
+        $cursoId = $this->selecionarCursoAluno($alunoId);
 
         $modulos = Modulo::with(['aulas' => function ($q) {
             $q->orderBy('id');
         }])
-            ->when($cursoId, function ($query) use ($cursoId) {
-                $query->where('curso_id', $cursoId);
-            })
+            ->where('curso_id', $cursoId ?? 0)
             ->orderBy('ordem')
             ->orderBy('id')
             ->get();
@@ -404,24 +395,15 @@ class AulaController extends Controller
     {
         $alunoId = auth()->id();
 
-        $cursoId = null;
-
-        if (Schema::hasTable('matriculas')) {
-            $cursoId = DB::table('matriculas')
-                ->where('aluno_id', $alunoId)
-                ->value('curso_id');
-        }
-
-        if (!$cursoId) {
-            $cursoId = Curso::orderBy('id')->value('id');
-        }
+        // Permite navegar entre os cursos matriculados, preservando a seleção
+        // feita na Home ou na tela de videoaulas. Não altera a nota geral:
+        // o cálculo e a liberação da prova final ficam no AvaliacaoController.
+        $cursoId = $this->selecionarCursoAluno($alunoId);
 
         $modulos = Modulo::with(['aulas' => function ($q) {
             $q->orderBy('id');
         }])
-            ->when($cursoId, function ($query) use ($cursoId) {
-                $query->where('curso_id', $cursoId);
-            })
+            ->where('curso_id', $cursoId ?? 0)
             ->orderBy('ordem')
             ->orderBy('id')
             ->get();
@@ -443,9 +425,7 @@ class AulaController extends Controller
                 : 0;
         }
 
-        $proximasAulas = Aula::when($cursoId, function ($query) use ($cursoId) {
-                $query->where('curso_id', $cursoId);
-            })
+        $proximasAulas = Aula::where('curso_id', $cursoId ?? 0)
             ->orderBy('id')
             ->get();
 
@@ -454,9 +434,7 @@ class AulaController extends Controller
                 ->where('aulas_assistidas.aluno_id', $alunoId);
         })
             ->join('aulas', 'avaliacoes.aula_id', '=', 'aulas.id')
-            ->when($cursoId, function ($query) use ($cursoId) {
-                $query->where('aulas.curso_id', $cursoId);
-            })
+            ->where('aulas.curso_id', $cursoId ?? 0)
             ->select(
                 'avaliacoes.*',
                 DB::raw('CASE WHEN aulas_assistidas.assistido = true THEN true ELSE false END as assistido')
@@ -469,6 +447,55 @@ class AulaController extends Controller
             'proximasAulas',
             'listaTestes'
         ));
+    }
+
+    // =========================
+    // 🎓 CURSO SELECIONADO PELO ALUNO
+    // =========================
+    private function selecionarCursoAluno($alunoId)
+    {
+        $cursoIdsMatriculados = collect();
+
+        if (Schema::hasTable('matriculas')) {
+            $cursoIdsMatriculados = DB::table('matriculas')
+                ->where('aluno_id', $alunoId)
+                ->whereNotNull('curso_id')
+                ->distinct()
+                ->pluck('curso_id')
+                ->map(fn ($id) => (int) $id)
+                ->filter(fn ($id) => $id > 0)
+                ->values();
+        }
+
+        // Cursos matriculados são a prioridade. Mantém o comportamento antigo
+        // de abrir o primeiro curso se não houver matrícula cadastrada.
+        // A prova final NÃO é liberada por esse fallback.
+        $cursosPermitidos = $cursoIdsMatriculados->isNotEmpty()
+            ? Curso::whereIn('id', $cursoIdsMatriculados->all())->orderBy('id')->get()
+            : Curso::orderBy('id')->limit(1)->get();
+
+        if ($cursosPermitidos->isEmpty()) {
+            session()->forget('aluno_curso_selecionado');
+            return null;
+        }
+
+        $cursoSolicitado = request()->query('curso_id');
+        $cursoSessao = session('aluno_curso_selecionado');
+
+        foreach ([$cursoSolicitado, $cursoSessao] as $id) {
+            if ($id !== null && ctype_digit((string) $id)) {
+                $curso = $cursosPermitidos->firstWhere('id', (int) $id);
+                if ($curso) {
+                    session(['aluno_curso_selecionado' => (int) $curso->id]);
+                    return (int) $curso->id;
+                }
+            }
+        }
+
+        $cursoId = (int) $cursosPermitidos->first()->id;
+        session(['aluno_curso_selecionado' => $cursoId]);
+
+        return $cursoId;
     }
 
     // =========================

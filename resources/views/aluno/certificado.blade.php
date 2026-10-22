@@ -6,330 +6,58 @@
 
 @php
     use Illuminate\Support\Facades\DB;
+    use Illuminate\Support\Facades\Schema;
 
     $aluno = auth()->user();
     $alunoId = auth()->id();
 
-    /*
-    |--------------------------------------------------------------------------
-    | FUNÇÕES AUXILIARES
-    |--------------------------------------------------------------------------
-    | Corrigem:
-    | - nota 10 sendo exibida como 10%;
-    | - contagem geral de aulas/pós-testes fora do curso atual;
-    | - liberação incorreta do certificado.
-    */
-    $tabelaExiste = function (string $tabela): bool {
-        return DB::getSchemaBuilder()->hasTable($tabela);
-    };
+    // Uma única fonte para autorização: a verificação do CertificadoController.
+    // Não cadastrar emissão em uma view (GET não deve gravar certificados).
+    $situacaoCertificado = \App\Http\Controllers\CertificadoController::verificarRequisitos($alunoId);
+    $requisitos = $situacaoCertificado['requisitos'];
+    $certificadoLiberado = (bool) $situacaoCertificado['liberado'];
+    $totalCursos = (int) $situacaoCertificado['total_cursos'];
+    $cursosConcluidos = (int) $situacaoCertificado['cursos_concluidos'];
+    $totalAulas = (int) $situacaoCertificado['total_aulas'];
+    $totalAulasAssistidas = (int) $situacaoCertificado['aulas_assistidas'];
+    $totalPosTestes = (int) $situacaoCertificado['total_pos_testes'];
+    $totalPosTestesFeitos = (int) $situacaoCertificado['pos_testes_feitos'];
+    $mediaGeralPosTestes = (float) $situacaoCertificado['media_pos_testes'];
+    $provaFinalFeita = (bool) $situacaoCertificado['prova_final_feita'];
+    $notaFinal = $situacaoCertificado['nota_final'];
+    $aprovadoNaFinal = (bool) $requisitos['aprovacao_final'];
+    $aulasOk = (bool) $requisitos['aulas'];
+    $postestesOk = (bool) $requisitos['pos_testes'];
+    $cursosOk = (bool) $requisitos['cursos'];
+    $formatarPercentual = fn ($valor) => number_format((float) ($valor ?? 0), 2, ',', '.') . '%';
+    $notaFinalParaExibir = $notaFinal !== null ? $formatarPercentual($notaFinal) : 'Não realizada';
 
-    $colunaExiste = function (string $tabela, string $coluna) use ($tabelaExiste): bool {
-        return $tabelaExiste($tabela) && DB::getSchemaBuilder()->hasColumn($tabela, $coluna);
-    };
+    $totalRequisitos = count($requisitos);
+    $requisitosConcluidos = collect($requisitos)->filter()->count();
+    $progresso = $totalRequisitos > 0
+        ? (int) round($requisitosConcluidos / $totalRequisitos * 100) : 0;
 
-    $normalizarNotaPercentual = function ($nota): ?float {
-        if ($nota === null || $nota === '') {
-            return null;
-        }
-
-        $nota = (float) $nota;
-
-        /*
-        |--------------------------------------------------------------------------
-        | CORREÇÃO PRINCIPAL
-        |--------------------------------------------------------------------------
-        | Se a nota estiver em escala 0 a 10:
-        | 10 vira 100%
-        | 7 vira 70%
-        | 6.5 vira 65%
-        |
-        | Se já estiver em porcentagem:
-        | 70 continua 70%
-        | 100 continua 100%
-        */
-        if ($nota <= 10) {
-            return round($nota * 10, 2);
-        }
-
-        return round($nota, 2);
-    };
-
-    $formatarPercentual = function ($valor) {
-        if ($valor === null || $valor === '') {
-            return '0,00%';
-        }
-
-        return number_format((float) $valor, 2, ',', '.') . '%';
-    };
-
-    $primeiraColunaNota = function () use ($colunaExiste): ?string {
-        foreach (['porcentagem', 'nota', 'pontuacao', 'valor', 'media', 'resultado'] as $coluna) {
-            if ($colunaExiste('notas', $coluna)) {
-                return $coluna;
-            }
-        }
-
-        return null;
-    };
-
-    $notaRegistroPercentual = function ($registroNota) use ($normalizarNotaPercentual) {
-        if (!$registroNota) {
-            return null;
-        }
-
-        foreach (['porcentagem', 'nota', 'pontuacao', 'valor', 'media', 'resultado'] as $coluna) {
-            if (isset($registroNota->{$coluna}) && $registroNota->{$coluna} !== null) {
-                return $normalizarNotaPercentual($registroNota->{$coluna});
-            }
-        }
-
-        return null;
-    };
-
-    /*
-    |--------------------------------------------------------------------------
-    | CURSO ATUAL DO ALUNO
-    |--------------------------------------------------------------------------
-    | Primeiro tenta matrícula. Se não houver matrícula, usa curso publicado/ativo
-    | ou o curso mais recente como fallback.
-    */
-    $cursoAtualId = null;
-
-    if ($tabelaExiste('matriculas')) {
-        $cursoAtualId = DB::table('matriculas')
-            ->where('aluno_id', $alunoId)
-            ->orderByDesc('id')
-            ->value('curso_id');
-    }
-
-    if (!$cursoAtualId && $tabelaExiste('cursos')) {
-        $queryCurso = DB::table('cursos');
-
-        if ($colunaExiste('cursos', 'publicado')) {
-            $queryCurso->where('publicado', true);
-        } elseif ($colunaExiste('cursos', 'ativo')) {
-            $queryCurso->where('ativo', true);
-        } elseif ($colunaExiste('cursos', 'status')) {
-            $queryCurso->whereIn('status', ['publicado', 'ativo', 'aprovado']);
-        }
-
-        $cursoAtualId = $queryCurso
-            ->orderByDesc('id')
-            ->value('id');
-    }
-
-    $cursoAtual = null;
-
-    if ($cursoAtualId && $tabelaExiste('cursos')) {
-        $cursoAtual = DB::table('cursos')
-            ->where('id', $cursoAtualId)
-            ->first();
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | AULAS DO CURSO ATUAL
-    |--------------------------------------------------------------------------
-    */
-    $aulasCursoIds = collect();
-
-    if ($cursoAtualId && $tabelaExiste('aulas')) {
-        if ($tabelaExiste('modulos')) {
-            $modulosCursoIds = DB::table('modulos')
-                ->where('curso_id', $cursoAtualId)
-                ->pluck('id');
-
-            if ($modulosCursoIds->count() > 0) {
-                $aulasCursoIds = DB::table('aulas')
-                    ->whereIn('modulo_id', $modulosCursoIds)
-                    ->pluck('id');
-            }
-        }
-
-        if ($colunaExiste('aulas', 'curso_id')) {
-            $aulasDiretasIds = DB::table('aulas')
-                ->where('curso_id', $cursoAtualId)
-                ->pluck('id');
-
-            $aulasCursoIds = $aulasCursoIds
-                ->merge($aulasDiretasIds)
-                ->unique()
-                ->values();
-        }
-    }
-
-    $totalAulas = $aulasCursoIds->count();
-
-    $totalAulasAssistidas = 0;
-
-    if ($totalAulas > 0 && $tabelaExiste('aulas_assistidas')) {
-        $totalAulasAssistidas = DB::table('aulas_assistidas')
-            ->where('aluno_id', $alunoId)
-            ->whereIn('aula_id', $aulasCursoIds)
-            ->where('assistido', true)
-            ->distinct('aula_id')
-            ->count('aula_id');
-    }
-
-    $aulasOk = $totalAulas > 0 && $totalAulasAssistidas >= $totalAulas;
-
-    /*
-    |--------------------------------------------------------------------------
-    | PÓS-TESTES DO CURSO ATUAL
-    |--------------------------------------------------------------------------
-    */
-    $posTestesIds = collect();
-
-    if ($aulasCursoIds->count() > 0 && $tabelaExiste('avaliacoes')) {
-        $queryPosTestes = DB::table('avaliacoes')
-            ->whereIn('aula_id', $aulasCursoIds);
-
-        if ($colunaExiste('avaliacoes', 'tipo')) {
-            $queryPosTestes->where(function ($query) {
-                $query->where('tipo', 'normal')
-                    ->orWhere('tipo', 'pos_teste')
-                    ->orWhere('tipo', 'pós-teste')
-                    ->orWhereNull('tipo');
-            });
-        }
-
-        $posTestesIds = $queryPosTestes->pluck('id');
-    }
-
-    $totalPosTestes = $posTestesIds->count();
-
-    $totalPosTestesFeitos = 0;
-
-    if ($totalPosTestes > 0 && $tabelaExiste('notas')) {
-        $totalPosTestesFeitos = DB::table('notas')
-            ->where('aluno_id', $alunoId)
-            ->whereIn('avaliacao_id', $posTestesIds)
-            ->distinct('avaliacao_id')
-            ->count('avaliacao_id');
-    }
-
-    $postestesOk = $totalPosTestesFeitos >= $totalPosTestes;
-
-    /*
-    |--------------------------------------------------------------------------
-    | PROVA FINAL
-    |--------------------------------------------------------------------------
-    */
-    $provaFinal = null;
-
-    if ($tabelaExiste('avaliacoes')) {
-        $queryProvaFinal = DB::table('avaliacoes')
-            ->where('tipo', 'final');
-
-        if ($cursoAtualId && $colunaExiste('avaliacoes', 'curso_id')) {
-            $queryProvaFinal->where('curso_id', $cursoAtualId);
-        }
-
-        $provaFinal = $queryProvaFinal
-            ->orderByDesc('id')
-            ->first();
-    }
-
-    $notaFinal = null;
-    $provaFinalFeita = false;
-    $aprovadoNaFinal = false;
-
-    if ($provaFinal && $tabelaExiste('notas')) {
-        $resultadoFinal = DB::table('notas')
-            ->where('aluno_id', $alunoId)
-            ->where('avaliacao_id', $provaFinal->id)
-            ->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->first();
-
-        if ($resultadoFinal) {
-            $provaFinalFeita = true;
-            $notaFinal = $notaRegistroPercentual($resultadoFinal);
-            $aprovadoNaFinal = $notaFinal !== null && $notaFinal >= 70;
-        }
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | LIBERAÇÃO DO CERTIFICADO
-    |--------------------------------------------------------------------------
-    */
-    $certificadoLiberado = $aulasOk && $postestesOk && $provaFinalFeita && $aprovadoNaFinal;
-
-    $totalRequisitos = 4;
-    $requisitosConcluidos = 0;
-
-    if ($aulasOk) $requisitosConcluidos++;
-    if ($postestesOk) $requisitosConcluidos++;
-    if ($provaFinalFeita) $requisitosConcluidos++;
-    if ($aprovadoNaFinal) $requisitosConcluidos++;
-
-    $progresso = round(($requisitosConcluidos / $totalRequisitos) * 100);
-
-    /*
-    |--------------------------------------------------------------------------
-    | MODELO DO CERTIFICADO
-    |--------------------------------------------------------------------------
-    */
-    $modeloCertificado = $tabelaExiste('certificados')
-        ? DB::table('certificados')->orderByDesc('created_at')->first()
+    $modeloCertificado = Schema::hasTable('certificados')
+        ? DB::table('certificados')->orderByDesc('created_at')->orderByDesc('id')->first()
         : null;
-
-    $nomeCurso = $modeloCertificado->curso
-        ?? $cursoAtual->nome
-        ?? $cursoAtual->titulo
-        ?? 'Integrar ReSaúde';
-
+    $nomeCurso = $modeloCertificado->curso ?? 'Formação Integrar ReSaúde';
     $cargaHoraria = $modeloCertificado->carga_horaria ?? 40;
     $responsavel = $modeloCertificado->responsavel ?? 'Responsável pelo Curso';
     $cargo = $modeloCertificado->cargo ?? 'Coordenação do Curso';
     $assinatura = $modeloCertificado->assinatura ?? null;
 
-    $notaFinalParaExibir = $formatarPercentual($notaFinal ?? 0);
-
-    /*
-    |--------------------------------------------------------------------------
-    | REGISTRO DE CERTIFICADO EMITIDO
-    |--------------------------------------------------------------------------
-    */
     $certificadoEmitido = null;
     $codigoValidacaoCertificado = null;
     $dataEmissaoCertificado = now();
-
-    if ($certificadoLiberado && $modeloCertificado && $tabelaExiste('certificados_emitidos')) {
+    if ($certificadoLiberado && $modeloCertificado && Schema::hasTable('certificados_emitidos')
+        && Schema::hasColumn('certificados_emitidos', 'certificado_modelo_id')) {
         $certificadoEmitido = DB::table('certificados_emitidos')
             ->where('aluno_id', $alunoId)
-            ->where('certificado_modelo_id', $modeloCertificado->id)
-            ->first();
-
-        if (!$certificadoEmitido) {
-            $codigoValidacaoCertificado = strtoupper(uniqid('CERT-'));
-
-            DB::table('certificados_emitidos')->insert([
-                'aluno_id' => $alunoId,
-                'certificado_modelo_id' => $modeloCertificado->id,
-                'aluno_nome' => $aluno->name,
-                'email' => $aluno->email,
-                'cpf' => $aluno->cpf,
-                'curso' => $nomeCurso,
-                'carga_horaria' => $cargaHoraria,
-                'nota_final' => $notaFinal ?? 0,
-                'codigo_validacao' => $codigoValidacaoCertificado,
-                'data_emissao' => $dataEmissaoCertificado,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            $certificadoEmitido = DB::table('certificados_emitidos')
-                ->where('codigo_validacao', $codigoValidacaoCertificado)
-                ->first();
-        }
-
+            ->where('certificado_modelo_id', $modeloCertificado->id)->first();
         if ($certificadoEmitido) {
-            $codigoValidacaoCertificado = $certificadoEmitido->codigo_validacao;
-            $dataEmissaoCertificado = $certificadoEmitido->data_emissao
-                ? \Carbon\Carbon::parse($certificadoEmitido->data_emissao)
-                : now();
+            $codigoValidacaoCertificado = $certificadoEmitido->codigo_validacao ?? $certificadoEmitido->codigo ?? null;
+            $dataEmissaoCertificado = !empty($certificadoEmitido->data_emissao)
+                ? \Carbon\Carbon::parse($certificadoEmitido->data_emissao) : now();
         }
     }
 @endphp
@@ -581,6 +309,10 @@
             margin-top: 1mm !important;
         }
     }
+    /* Interface escura; o papel do certificado permanece branco inclusive no dark mode. */
+    html.dark body, html.dark #app { background: #0B1220 !important; }
+    html.dark #areaCertificado, html.dark #areaCertificado * { color-scheme: light; }
+    html.dark #areaCertificado { background: #fff !important; }
 </style>
 
 <div class="flex min-h-screen w-full bg-[#F3F7F3] text-[#003C2F] overflow-x-hidden">
@@ -603,7 +335,7 @@
                     </h1>
 
                     <p class="text-sm text-[#60756B] mt-2 max-w-2xl">
-                        O certificado será liberado após concluir todas as aulas, pós-testes e obter pelo menos 70% na prova final.
+                        O certificado exige a conclusão de todos os cursos obrigatórios, incluindo aulas e pós-testes, média geral mínima de 70% nos pós-testes e aprovação com pelo menos 70% na prova final.
                     </p>
                 </div>
 
@@ -644,14 +376,14 @@
                             </h2>
 
                             <p class="text-[#60756B] text-sm leading-relaxed max-w-2xl">
-                                Você ainda não concluiu todos os requisitos necessários para liberar seu certificado.
+                                Para receber o certificado, conclua todos os cursos obrigatórios, assista a todas as aulas, realize todos os pós-testes e seja aprovado na prova final. A média geral dos pós-testes também deve alcançar 70%.
                             </p>
 
                             <div class="mt-6 bg-[#F8FBF8] border border-[#E3EBE4] rounded-3xl p-5">
 
                                 <div class="flex items-center justify-between mb-3">
                                     <p class="text-sm font-extrabold text-[#003C2F]">
-                                        Progresso do certificado
+                                        Progresso dos cinco requisitos do certificado
                                     </p>
 
                                     <p class="text-sm font-extrabold text-[#004D3A]">
@@ -669,21 +401,30 @@
 
                                     <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4">
                                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                            Aulas assistidas
+                                            Aulas assistidas (cursos obrigatórios)
                                         </p>
 
-                                        <p class="text-2xl font-extrabold mt-1 {{ $aulasOk ? 'text-green-600' : 'text-red-600' }}">
+                                        <p class="text-2xl font-extrabold mt-1 text-[#004D3A]">
                                             {{ $totalAulasAssistidas }} / {{ $totalAulas }}
                                         </p>
                                     </div>
 
                                     <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4">
                                         <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                            Pós-testes feitos
+                                            Pós-testes feitos (cursos obrigatórios)
                                         </p>
 
-                                        <p class="text-2xl font-extrabold mt-1 {{ $postestesOk ? 'text-green-600' : 'text-red-600' }}">
+                                        <p class="text-2xl font-extrabold mt-1 text-[#004D3A]">
                                             {{ $totalPosTestesFeitos }} / {{ $totalPosTestes }}
+                                        </p>
+                                    </div>
+
+                                    <div class="bg-white rounded-2xl border border-[#E3EBE4] p-4">
+                                        <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
+                                            Cursos obrigatórios concluídos
+                                        </p>
+                                        <p class="text-2xl font-extrabold mt-1 {{ $cursosOk ? 'text-green-600' : 'text-red-600' }}">
+                                            {{ $cursosConcluidos }} / {{ $totalCursos }}
                                         </p>
                                     </div>
 
@@ -736,32 +477,39 @@
                             <div class="space-y-4">
 
                                 <div class="flex items-start gap-3">
-                                    <div class="w-9 h-9 rounded-xl {{ $aulasOk ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0 font-bold">
-                                        {{ $aulasOk ? '✓' : '!' }}
+                                    <div class="w-9 h-9 rounded-xl {{ $requisitos['aulas'] ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0 font-bold">
+                                        {{ $requisitos['aulas'] ? '✓' : '!' }}
                                     </div>
-
                                     <div>
                                         <p class="font-bold text-[#003C2F]">Assistir todas as aulas</p>
-                                        <p class="text-sm text-[#60756B]">{{ $totalAulasAssistidas }} de {{ $totalAulas }} concluídas.</p>
+                                        <p class="text-sm text-[#60756B]">{{ $totalAulasAssistidas }} de {{ $totalAulas }} aulas assistidas.</p>
                                     </div>
                                 </div>
 
                                 <div class="flex items-start gap-3">
-                                    <div class="w-9 h-9 rounded-xl {{ $postestesOk ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0 font-bold">
-                                        {{ $postestesOk ? '✓' : '!' }}
+                                    <div class="w-9 h-9 rounded-xl {{ $requisitos['pos_testes'] ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0 font-bold">
+                                        {{ $requisitos['pos_testes'] ? '✓' : '!' }}
                                     </div>
-
                                     <div>
-                                        <p class="font-bold text-[#003C2F]">Concluir pós-testes</p>
-                                        <p class="text-sm text-[#60756B]">{{ $totalPosTestesFeitos }} de {{ $totalPosTestes }} concluídos.</p>
+                                        <p class="font-bold text-[#003C2F]">Concluir todos os pós-testes</p>
+                                        <p class="text-sm text-[#60756B]">{{ $totalPosTestesFeitos }} de {{ $totalPosTestes }} pós-testes realizados.</p>
                                     </div>
                                 </div>
 
                                 <div class="flex items-start gap-3">
-                                    <div class="w-9 h-9 rounded-xl {{ $provaFinalFeita ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0 font-bold">
-                                        {{ $provaFinalFeita ? '✓' : '!' }}
+                                    <div class="w-9 h-9 rounded-xl {{ $requisitos['cursos'] ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0 font-bold">
+                                        {{ $requisitos['cursos'] ? '✓' : '!' }}
                                     </div>
+                                    <div>
+                                        <p class="font-bold text-[#003C2F]">Concluir todos os cursos obrigatórios</p>
+                                        <p class="text-sm text-[#60756B]">{{ $cursosConcluidos }} de {{ $totalCursos }} cursos concluídos.</p>
+                                    </div>
+                                </div>
 
+                                <div class="flex items-start gap-3">
+                                    <div class="w-9 h-9 rounded-xl {{ $requisitos['prova_final'] ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0 font-bold">
+                                        {{ $requisitos['prova_final'] ? '✓' : '!' }}
+                                    </div>
                                     <div>
                                         <p class="font-bold text-[#003C2F]">Fazer prova final</p>
                                         <p class="text-sm text-[#60756B]">{{ $provaFinalFeita ? 'Prova realizada.' : 'Ainda não realizada.' }}</p>
@@ -769,16 +517,16 @@
                                 </div>
 
                                 <div class="flex items-start gap-3">
-                                    <div class="w-9 h-9 rounded-xl {{ $aprovadoNaFinal ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0 font-bold">
-                                        {{ $aprovadoNaFinal ? '✓' : '!' }}
+                                    <div class="w-9 h-9 rounded-xl {{ $requisitos['aprovacao_final'] ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-600' }} flex items-center justify-center shrink-0 font-bold">
+                                        {{ $requisitos['aprovacao_final'] ? '✓' : '!' }}
                                     </div>
-
                                     <div>
                                         <p class="font-bold text-[#003C2F]">Atingir 70% na prova final</p>
                                         <p class="text-sm text-[#60756B]">Nota atual: {{ $notaFinalParaExibir }}.</p>
                                     </div>
                                 </div>
 
+                                <p class="text-xs text-[#60756B]">Média geral dos pós-testes obrigatórios: <strong>{{ $formatarPercentual($mediaGeralPosTestes) }}</strong> (mínimo de 70% para acessar a prova final).</p>
                             </div>
 
                         </div>
@@ -820,14 +568,14 @@
                                 </div>
 
                                 <p class="certificado-texto mt-8 text-sm text-[#4B5563] leading-relaxed max-w-2xl mx-auto">
-                                    concluiu com aproveitamento o curso
+                                    concluiu com aproveitamento a formação
                                     <strong>{{ $nomeCurso }}</strong>,
                                     com carga horária total de
                                     <strong>{{ $cargaHoraria }} horas</strong>.
                                 </p>
 
                                 <p class="certificado-texto-menor mt-3 text-sm text-[#4B5563] leading-relaxed max-w-2xl mx-auto">
-                                    O aluno cumpriu todos os requisitos obrigatórios e obteve aproveitamento mínimo de 70% na prova final.
+                                    O aluno concluiu todos os cursos obrigatórios e obteve aproveitamento mínimo de 70% na prova final geral desta formação.
                                 </p>
 
                                 <div class="certificado-rodape grid grid-cols-2 gap-14 mt-16 items-end">
@@ -876,7 +624,7 @@
                                                 </p>
 
                                                 <p class="certificado-data text-xs font-bold text-[#374151] mt-1">
-                                                    {{ $dataEmissaoCertificado ? \Carbon\Carbon::parse($dataEmissaoCertificado)->format('d/m/Y') : now()->format('d/m/Y') }}
+                                                    {{ $certificadoEmitido ? \Carbon\Carbon::parse($dataEmissaoCertificado)->format('d/m/Y') : 'Ainda não registrado' }}
                                                 </p>
                                             </div>
 

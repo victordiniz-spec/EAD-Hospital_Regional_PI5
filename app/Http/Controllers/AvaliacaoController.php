@@ -535,6 +535,16 @@ class AvaliacaoController extends Controller
             return redirect()->route('login');
         }
 
+        // Regra geral: média de todos os pós-testes dos cursos obrigatórios.
+        // Pós-testes ainda não realizados entram no cálculo com nota zero.
+        $situacaoGeral = $this->calcularAproveitamentoGeralPosTestes($alunoId);
+
+        if (!$situacaoGeral['liberada']) {
+            return redirect()
+                ->route('dashboard.aluno')
+                ->with('error', $situacaoGeral['mensagem']);
+        }
+
         $avaliacao = DB::table('avaliacoes')
             ->where('tipo', 'final')
             ->orderBy('updated_at', 'desc')
@@ -592,6 +602,15 @@ class AvaliacaoController extends Controller
 
         if (!$alunoId) {
             return redirect()->route('login');
+        }
+
+        // Revalida no servidor, inclusive em envios feitos diretamente à rota POST.
+        $situacaoGeral = $this->calcularAproveitamentoGeralPosTestes($alunoId);
+
+        if (!$situacaoGeral['liberada']) {
+            return redirect()
+                ->route('dashboard.aluno')
+                ->with('error', $situacaoGeral['mensagem']);
         }
 
         $avaliacaoId = $request->avaliacao_id;
@@ -677,6 +696,100 @@ class AvaliacaoController extends Controller
         return redirect()
             ->route('dashboard.aluno')
             ->with('error', 'Reprovado. Nota: ' . number_format($nota, 1));
+    }
+
+    // =========================
+    // FUNÇÃO AUXILIAR: APROVEITAMENTO GERAL DOS CURSOS OBRIGATÓRIOS
+    // =========================
+    // Todos os alunos realizam os cursos obrigatórios; não há exigência de matrícula.
+    // Cada pós-teste vale o mesmo peso, usando a melhor nota em escala de 0 a 10.
+    // Um pós-teste sem nota conta como zero na média geral.
+    private function calcularAproveitamentoGeralPosTestes($alunoId): array
+    {
+        foreach (['cursos', 'aulas', 'avaliacoes', 'notas'] as $tabela) {
+            if (!Schema::hasTable($tabela)) {
+                return [
+                    'liberada' => false,
+                    'percentual' => 0,
+                    'mensagem' => 'Não foi possível verificar os pós-testes obrigatórios. Entre em contato com o suporte.'
+                ];
+            }
+        }
+
+        // Até a migration ser aplicada, considera todos os cursos obrigatórios.
+        // Após sua aplicação, apenas obrigatorio = true entra na certificação.
+        $cursosQuery = DB::table('cursos');
+        if (Schema::hasColumn('cursos', 'obrigatorio')) {
+            $cursosQuery->where('obrigatorio', true);
+        }
+
+        $cursoIds = $cursosQuery->pluck('id');
+
+        if ($cursoIds->isEmpty()) {
+            return [
+                'liberada' => false,
+                'percentual' => 0,
+                'mensagem' => 'Nenhum curso obrigatório foi encontrado para a certificação.'
+            ];
+        }
+
+        // Vinculação principal: aulas.curso_id, conforme a migration existente.
+        // O tipo final fica sempre de fora, inclusive quando tiver aula_id.
+        $avaliacaoIds = DB::table('avaliacoes')
+            ->join('aulas', 'aulas.id', '=', 'avaliacoes.aula_id')
+            ->whereIn('aulas.curso_id', $cursoIds->all())
+            ->where(function ($query) {
+                $query->where('avaliacoes.tipo', 'normal')
+                    ->orWhere('avaliacoes.tipo', 'pos_teste')
+                    ->orWhere('avaliacoes.tipo', 'pós-teste')
+                    ->orWhereNull('avaliacoes.tipo');
+            })
+            ->distinct()
+            ->pluck('avaliacoes.id');
+
+        $totalAvaliacoes = $avaliacaoIds->count();
+
+        if ($totalAvaliacoes === 0) {
+            return [
+                'liberada' => false,
+                'percentual' => 0,
+                'mensagem' => 'Os cursos obrigatórios ainda não possuem pós-testes para calcular a média geral.'
+            ];
+        }
+
+        $notasPorAvaliacao = DB::table('notas')
+            ->where('aluno_id', $alunoId)
+            ->whereIn('avaliacao_id', $avaliacaoIds->all())
+            ->select('avaliacao_id', DB::raw('MAX(nota) as melhor_nota'))
+            ->groupBy('avaliacao_id')
+            ->pluck('melhor_nota', 'avaliacao_id');
+
+        $somaNotas = 0.0;
+        $totalRealizados = 0;
+        foreach ($avaliacaoIds as $avaliacaoId) {
+            $notaRegistrada = $notasPorAvaliacao->get($avaliacaoId);
+            if ($notaRegistrada !== null) {
+                $totalRealizados++;
+            }
+            $nota = (float) ($notaRegistrada ?? 0);
+            $somaNotas += max(0, min(10, $nota));
+        }
+
+        $percentual = round(($somaNotas / ($totalAvaliacoes * 10)) * 100, 2);
+        $liberada = $percentual >= 70;
+
+        return [
+            'liberada' => $liberada,
+            'percentual' => $percentual,
+            'total_pos_testes' => $totalAvaliacoes,
+            'pos_testes_realizados' => $totalRealizados,
+            'pos_testes_pendentes' => $totalAvaliacoes - $totalRealizados,
+            'mensagem' => $liberada
+                ? 'Prova final liberada.'
+                : 'Sua média geral nos pós-testes dos cursos obrigatórios é '
+                    . number_format($percentual, 2, ',', '.')
+                    . '%. É necessário atingir pelo menos 70% para acessar a prova final.'
+        ];
     }
 
     // =========================
