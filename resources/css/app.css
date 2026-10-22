@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* Tailwind CSS 4: habilita as classes dark:* pelo seletor html.dark. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/layout/app.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';

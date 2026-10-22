@@ -103,21 +103,28 @@
             background-color: rgba(16, 24, 39, 0.94) !important;
         }
 
-        html.dark aside {
+        html.dark #sidebarAluno,
+        html.dark #sidebarProfessor {
             background: #0B1220 !important;
             color: #E5E7EB !important;
             border-color: #243044 !important;
         }
 
-        html.dark aside * {
+        html.dark #sidebarAluno *,
+        html.dark #sidebarProfessor * {
             border-color: #243044 !important;
         }
 
-        html.dark aside h1,
-        html.dark aside h2,
-        html.dark aside h3,
-        html.dark aside p,
-        html.dark aside span {
+        html.dark #sidebarAluno h1,
+        html.dark #sidebarProfessor h1,
+        html.dark #sidebarAluno h2,
+        html.dark #sidebarProfessor h2,
+        html.dark #sidebarAluno h3,
+        html.dark #sidebarProfessor h3,
+        html.dark #sidebarAluno p,
+        html.dark #sidebarProfessor p,
+        html.dark #sidebarAluno span,
+        html.dark #sidebarProfessor span {
             color: #E5E7EB !important;
             letter-spacing: -0.025em;
         }
@@ -196,20 +203,27 @@
             pointer-events: none;
         }
 
-        html.dark aside a {
+        html.dark #sidebarAluno a,
+        html.dark #sidebarProfessor a {
             color: #CBD5E1 !important;
         }
 
-        html.dark aside a:hover {
+        html.dark #sidebarAluno a:hover,
+        html.dark #sidebarProfessor a:hover {
             background: #111C2E !important;
             color: #FFFFFF !important;
         }
 
-        html.dark aside a.bg-green-600,
-        html.dark aside .bg-green-600,
-        html.dark aside a[class*="bg-green"],
-        html.dark aside .bg-\[\#004D3A\],
-        html.dark aside .bg-\[\#00A63E\] {
+        html.dark #sidebarAluno a.bg-green-600,
+        html.dark #sidebarProfessor a.bg-green-600,
+        html.dark #sidebarAluno .bg-green-600,
+        html.dark #sidebarProfessor .bg-green-600,
+        html.dark #sidebarAluno a[class*="bg-green"],
+        html.dark #sidebarProfessor a[class*="bg-green"],
+        html.dark #sidebarAluno .bg-\[\#004D3A\],
+        html.dark #sidebarProfessor .bg-\[\#004D3A\],
+        html.dark #sidebarAluno .bg-\[\#00A63E\],
+        html.dark #sidebarProfessor .bg-\[\#00A63E\] {
             background: #00A63E !important;
             color: #FFFFFF !important;
         }
@@ -459,6 +473,192 @@
         html.dark #btnVoltarTopo:hover {
             background: #008A35 !important;
         }
+
+
+
+        /* ================================================================
+           RESAUDE: AJUSTES DE CONTRASTE DO TEMA ESCURO (GLOBAL)
+           Mantém layout, componentes e regras de negócio existentes.
+           ================================================================ */
+        html.dark { color-scheme: dark; }
+        html:not(.dark) { color-scheme: light; }
+
+        /* Superfícies: dark mode com três níveis de profundidade. */
+        html.dark .bg-white,
+        html.dark .bg-white\/90,
+        html.dark .bg-\[\#FFFFFF\],
+        html.dark [class*="bg-[#F8FBF8]"],
+        html.dark [class*="bg-[#F3F7F3]"] {
+            border-color: #29384b !important;
+        }
+
+        /* Evita que regras globais forcem TODAS as barras laterais e os seus
+           elementos internos a terem a mesma cor (inclusive badges e ações). */
+        html.dark #sidebarAluno .sidebar-item.bg-\[\#004D3A\],
+        html.dark #sidebarProfessor .sidebar-item.bg-\[\#004D3A\],
+        html.dark #sidebarAluno .sidebar-item[class*="bg-[#004D3A]"],
+        html.dark #sidebarProfessor .sidebar-item[class*="bg-[#004D3A]"] {
+            background-color: #065f46 !important;
+            color: #ffffff !important;
+        }
+        html.dark #sidebarAluno .sidebar-item[class*="bg-[#004D3A]"] *,
+        html.dark #sidebarProfessor .sidebar-item[class*="bg-[#004D3A]"] * {
+            color: #ffffff !important;
+        }
+        html.dark #sidebarAluno .sidebar-item:not([class*="bg-[#004D3A]"]):hover,
+        html.dark #sidebarProfessor .sidebar-item:not([class*="bg-[#004D3A]"]):hover {
+            background-color: #17283a !important;
+            color: #f8fafc !important;
+        }
+        html.dark #sidebarAluno .sidebar-item:not([class*="bg-[#004D3A]"]):hover *,
+        html.dark #sidebarProfessor .sidebar-item:not([class*="bg-[#004D3A]"]):hover * {
+            color: #f8fafc !important;
+        }
+
+        /* Dropdowns de notificações da navbar. */
+        html.dark #dropdownPendentesNavbar,
+        html.dark #dropdownAlertasProfessorNavbar,
+        html.dark #dropdownAvisosNavbar {
+            background-color: #101827 !important;
+            border-color: #29384b !important;
+            color: #f8fafc !important;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, .58) !important;
+        }
+        html.dark #dropdownPendentesNavbar h3,
+        html.dark #dropdownAlertasProfessorNavbar h3,
+        html.dark #dropdownAvisosNavbar h3 {
+            color: #f8fafc !important;
+        }
+        html.dark #dropdownPendentesNavbar .text-\[\#60756B\],
+        html.dark #dropdownAlertasProfessorNavbar .text-\[\#60756B\],
+        html.dark #dropdownAvisosNavbar .text-\[\#60756B\] {
+            color: #b9c7d6 !important;
+        }
+
+        /* Texto sobre botões de ação deve continuar claro. */
+        html.dark button.bg-\[\#004D3A\],
+        html.dark a.bg-\[\#004D3A\],
+        html.dark button.bg-\[\#005543\],
+        html.dark a.bg-\[\#005543\],
+        html.dark button.bg-green-600,
+        html.dark a.bg-green-600 {
+            color: #ffffff !important;
+        }
+        html.dark button.bg-\[\#004D3A\] *,
+        html.dark a.bg-\[\#004D3A\] *,
+        html.dark button.bg-\[\#005543\] *,
+        html.dark a.bg-\[\#005543\] * {
+            color: #ffffff !important;
+        }
+        html.dark button:disabled,
+        html.dark button[disabled] {
+            opacity: .65;
+            cursor: not-allowed;
+        }
+
+        /* Mensagens informativas e badges claros no tema escuro. */
+        html.dark .text-green-700,
+        html.dark .text-green-800 { color: #86efac !important; }
+        html.dark .text-red-600,
+        html.dark .text-red-700,
+        html.dark .text-red-800 { color: #fca5a5 !important; }
+        html.dark .text-yellow-700,
+        html.dark .text-yellow-800 { color: #fde68a !important; }
+        html.dark .text-blue-700,
+        html.dark .text-blue-800 { color: #93c5fd !important; }
+        html.dark .text-gray-900,
+        html.dark .text-slate-900 { color: #f8fafc !important; }
+        html.dark .text-gray-400,
+        html.dark .text-slate-500 { color: #acbacb !important; }
+
+        /* Campos e menus de seleção: legíveis sem perder indicação de foco. */
+        html.dark input:not([type="checkbox"]):not([type="radio"]),
+        html.dark textarea,
+        html.dark select {
+            background-color: #0e1828 !important;
+            color: #f8fafc !important;
+            border-color: #34465c !important;
+            color-scheme: dark;
+        }
+        html.dark select option {
+            background: #101827;
+            color: #f8fafc;
+        }
+        html.dark input:focus,
+        html.dark select:focus,
+        html.dark textarea:focus {
+            border-color: #34d399 !important;
+            outline-color: #34d399;
+        }
+        html.dark input:disabled,
+        html.dark select:disabled,
+        html.dark textarea:disabled { opacity: .65; }
+
+        /* SweetAlert2: aplica-se aos popups criados dinamicamente no body.
+           !important é necessário porque alguns popups têm style inline.
+           Não altera z-index dos modais de videoaula já existentes. */
+        html.dark .swal2-popup,
+        html.dark .swal2-toast {
+            background: #142033 !important;
+            color: #f8fafc !important;
+            border: 1px solid #34465c !important;
+            box-shadow: 0 24px 70px rgba(0,0,0,.6) !important;
+        }
+        html.dark .swal2-title,
+        html.dark .swal2-html-container,
+        html.dark .swal2-content,
+        html.dark .swal2-html-container p,
+        html.dark .swal2-html-container strong,
+        html.dark .swal2-validation-message,
+        html.dark .swal2-footer,
+        html.dark .swal2-close {
+            color: #f8fafc !important;
+        }
+        html.dark .swal2-html-container .text-slate-600,
+        html.dark .swal2-html-container .text-gray-600,
+        html.dark .swal2-html-container .text-gray-500 {
+            color: #cbd5e1 !important;
+        }
+        html.dark .swal2-input,
+        html.dark .swal2-textarea,
+        html.dark .swal2-select,
+        html.dark .swal2-file {
+            background: #0b1220 !important;
+            color: #f8fafc !important;
+            border-color: #475569 !important;
+        }
+        html.dark .swal2-input::placeholder,
+        html.dark .swal2-textarea::placeholder { color: #aab7c4 !important; }
+        html.dark .swal2-actions .swal2-confirm,
+        html.dark .swal2-actions .swal2-deny,
+        html.dark .swal2-actions .swal2-cancel {
+            color: #ffffff !important;
+            border: 1px solid rgba(255,255,255,.18) !important;
+        }
+        html.dark .swal2-actions .swal2-cancel {
+            background: #334155 !important;
+        }
+        html.dark .swal2-icon.swal2-success { border-color: #4ade80 !important; }
+        html.dark .swal2-icon.swal2-warning { border-color: #fbbf24 !important; }
+        html.dark .swal2-loader { border-color: #4ade80 transparent #4ade80 transparent !important; }
+        html.dark .swal2-timer-progress-bar { background: #34d399 !important; }
+        html.dark .swal2-container { color-scheme: dark; }
+
+        /* Corrige mensagens toast sem eliminar seus ícones e barras coloridos. */
+        html.dark .toast-global p:first-child { color: #f8fafc !important; }
+        html.dark .toast-global p:not(:first-child) { color: #cbd5e1 !important; }
+        html.dark .toast-global button { color: #cbd5e1 !important; }
+        html.dark .toast-global button:hover { background: #243044 !important; color: #fff !important; }
+
+        /* Modal HTML <dialog> e elementos sem cor própria. */
+        html.dark dialog,
+        html.dark [role="dialog"]:not(.swal2-popup) {
+            background-color: #142033;
+            color: #f8fafc;
+            border-color: #34465c;
+        }
+        html.dark dialog::backdrop { background: rgba(0,0,0,.76); }
+        html.dark ::selection { background: #166534; color: #ffffff; }
 
     </style>
 </head>
