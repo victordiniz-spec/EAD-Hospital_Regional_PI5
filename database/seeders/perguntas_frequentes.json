@@ -1,0 +1,257 @@
+[
+  {
+    "categoria": "Aulas",
+    "pergunta": "Como encontro minhas videoaulas?",
+    "resposta": "Entre na área do aluno e abra Minhas Videoaulas. Selecione o curso desejado e, em seguida, escolha o módulo e a aula."
+  },
+  {
+    "categoria": "Aulas",
+    "pergunta": "Posso escolher qual curso estudar primeiro?",
+    "resposta": "Sim. Na área de cursos disponíveis ou em Minhas Videoaulas, selecione o curso que deseja iniciar. Cada curso possui seus próprios módulos e aulas."
+  },
+  {
+    "categoria": "Aulas",
+    "pergunta": "Por que não encontro uma aula?",
+    "resposta": "Confirme se selecionou o curso correto e abra o módulo correspondente. Se a aula continuar indisponível, entre em contato com o suporte informando o nome do curso e do módulo."
+  },
+  {
+    "categoria": "Aulas",
+    "pergunta": "O vídeo não abre. O que faço?",
+    "resposta": "Verifique sua conexão, atualize a página e tente outro navegador. Se persistir, informe ao suporte o nome da aula e a mensagem apresentada."
+  },
+  {
+    "categoria": "Aulas",
+    "pergunta": "O vídeo fica travando. Como resolver?",
+    "resposta": "Verifique a estabilidade da internet, feche outras abas que usem vídeo e tente novamente. Se o problema continuar, informe ao suporte o curso, a aula e o dispositivo utilizado."
+  },
+  {
+    "categoria": "Aulas",
+    "pergunta": "Posso assistir à mesma aula novamente?",
+    "resposta": "Em geral, você pode voltar às aulas disponíveis para revisar o conteúdo. A conclusão já registrada não deve ser perdida."
+  },
+  {
+    "categoria": "Aulas",
+    "pergunta": "Como uma aula é marcada como assistida?",
+    "resposta": "Assista ao vídeo e siga as instruções de conclusão mostradas na página. Algumas aulas podem exigir um tempo mínimo de visualização."
+  },
+  {
+    "categoria": "Aulas",
+    "pergunta": "Assisti à aula, mas ela continua pendente.",
+    "resposta": "Atualize a página e verifique se cumpriu o tempo mínimo da videoaula. Persistindo o problema, envie ao suporte o nome da aula e o horário aproximado."
+  },
+  {
+    "categoria": "Aulas",
+    "pergunta": "Posso estudar pelo celular?",
+    "resposta": "A plataforma pode ser acessada pelo navegador do celular. Se encontrar problemas de visualização, experimente atualizar o navegador e informe o modelo do aparelho ao suporte."
+  },
+  {
+    "categoria": "Aulas",
+    "pergunta": "Como volto para outra aula ou módulo?",
+    "resposta": "Na página Minhas Videoaulas, selecione o módulo e escolha a aula que deseja revisar."
+  },
+  {
+    "categoria": "Pós-teste",
+    "pergunta": "O que é o pós-teste?",
+    "resposta": "É uma atividade de avaliação relacionada ao conteúdo de uma videoaula, utilizada para verificar a compreensão do assunto."
+  },
+  {
+    "categoria": "Pós-teste",
+    "pergunta": "Quando posso fazer o pós-teste?",
+    "resposta": "Abra a aula correspondente e siga as instruções da plataforma. Quando houver um pós-teste disponível, a opção aparecerá na área da aula."
+  },
+  {
+    "categoria": "Pós-teste",
+    "pergunta": "Onde encontro o pós-teste de uma aula?",
+    "resposta": "Acesse Minhas Videoaulas, selecione o curso, o módulo e a aula. Procure a opção de pós-teste associada a essa aula."
+  },
+  {
+    "categoria": "Pós-teste",
+    "pergunta": "Concluí a aula, mas o pós-teste não aparece.",
+    "resposta": "Confirme se a aula possui avaliação cadastrada e atualize a página. Caso não apareça, informe ao suporte o nome da aula."
+  },
+  {
+    "categoria": "Pós-teste",
+    "pergunta": "Minha nota do pós-teste não apareceu.",
+    "resposta": "Atualize a página após finalizar o envio. Se continuar sem nota, contate o suporte com o curso, a aula e o horário do teste."
+  },
+  {
+    "categoria": "Pós-teste",
+    "pergunta": "O pós-teste conta para o progresso?",
+    "resposta": "Sim. Quando uma aula possui pós-teste, a conclusão da avaliação é contabilizada como etapa do progresso exibido no curso."
+  },
+  {
+    "categoria": "Pós-teste",
+    "pergunta": "Posso refazer um pós-teste?",
+    "resposta": "A possibilidade de refazer depende das regras configuradas para a avaliação. Consulte as instruções exibidas na página antes de iniciar."
+  },
+  {
+    "categoria": "Pós-teste",
+    "pergunta": "A página fechou durante o pós-teste. O que faço?",
+    "resposta": "Volte à mesma aula e verifique se existe tentativa disponível. Se a avaliação não abrir, envie os detalhes ao suporte."
+  },
+  {
+    "categoria": "Prova final",
+    "pergunta": "Quando a prova final é liberada?",
+    "resposta": "A plataforma informa a liberação quando o aluno conclui pelo menos 70% das etapas do curso, conforme a regra de progresso apresentada nas videoaulas."
+  },
+  {
+    "categoria": "Prova final",
+    "pergunta": "Onde acesso a prova final?",
+    "resposta": "Na área de Minhas Videoaulas, selecione o curso e procure o cartão Prova final. Quando estiver liberada, utilize o botão de acesso."
+  },
+  {
+    "categoria": "Prova final",
+    "pergunta": "Por que minha prova final está bloqueada?",
+    "resposta": "Confira o percentual de progresso do curso selecionado e verifique se há aulas ou pós-testes pendentes."
+  },
+  {
+    "categoria": "Prova final",
+    "pergunta": "A prova final tem tempo limite?",
+    "resposta": "Verifique as instruções apresentadas antes de começar a prova. O tempo disponível, quando configurado, aparece na própria avaliação."
+  },
+  {
+    "categoria": "Prova final",
+    "pergunta": "Preciso de senha para iniciar a prova final?",
+    "resposta": "Algumas provas podem exigir uma senha de liberação. Se a página solicitar senha, obtenha a informação com o responsável pelo curso; não compartilhe suas credenciais pessoais."
+  },
+  {
+    "categoria": "Prova final",
+    "pergunta": "A prova final travou ou foi interrompida.",
+    "resposta": "Não reinicie repetidamente sem verificar a situação da tentativa. Informe ao suporte o curso, o horário e a mensagem apresentada."
+  },
+  {
+    "categoria": "Prova final",
+    "pergunta": "Qual é a nota mínima para aprovação na prova final?",
+    "resposta": "A regra apresentada na plataforma é de aproveitamento mínimo de 70% na prova final para liberação do certificado."
+  },
+  {
+    "categoria": "Prova final",
+    "pergunta": "Posso refazer a prova final?",
+    "resposta": "Isso depende das regras de tentativas configuradas para a prova. Consulte a tela de instruções ou procure o responsável pelo curso."
+  },
+  {
+    "categoria": "Certificado",
+    "pergunta": "Quando meu certificado será liberado?",
+    "resposta": "Após cumprir os requisitos do curso e alcançar pelo menos 70% de aproveitamento na prova final, conforme as regras apresentadas pela plataforma."
+  },
+  {
+    "categoria": "Certificado",
+    "pergunta": "Onde encontro meu certificado?",
+    "resposta": "Acesse a opção Meu certificado na área do aluno ou o cartão Certificado na página do curso, quando estiver disponível."
+  },
+  {
+    "categoria": "Certificado",
+    "pergunta": "Não consigo emitir meu certificado.",
+    "resposta": "Confira a conclusão das etapas e a nota da prova final do curso correto. Se o problema persistir, encaminhe uma captura da mensagem ao suporte."
+  },
+  {
+    "categoria": "Certificado",
+    "pergunta": "Os dados do certificado estão incorretos.",
+    "resposta": "Não edite o documento manualmente. Solicite ao suporte a verificação dos dados do seu cadastro antes de emitir novamente."
+  },
+  {
+    "categoria": "Certificado",
+    "pergunta": "Como verifico a autenticidade do certificado?",
+    "resposta": "Se o certificado apresentar QR Code ou código de verificação, utilize o mecanismo indicado no próprio documento."
+  },
+  {
+    "categoria": "Certificado",
+    "pergunta": "Posso emitir certificados de cursos diferentes?",
+    "resposta": "Cada curso deve ter seus próprios requisitos de conclusão e avaliação. Consulte a situação do certificado do curso selecionado."
+  },
+  {
+    "categoria": "Certificado",
+    "pergunta": "O PDF do certificado não abre.",
+    "resposta": "Tente abrir em outro leitor de PDF ou navegador. Se o arquivo continuar inválido, solicite uma verificação ao suporte."
+  },
+  {
+    "categoria": "Avisos",
+    "pergunta": "Onde vejo os avisos da plataforma?",
+    "resposta": "Abra a área do aluno e localize a seção de avisos ou comunicados na página inicial."
+  },
+  {
+    "categoria": "Avisos",
+    "pergunta": "Como sei se existe um aviso urgente?",
+    "resposta": "Os avisos classificados como urgentes podem ser destacados na página do aluno. Leia o conteúdo completo antes de fechar o comunicado."
+  },
+  {
+    "categoria": "Avisos",
+    "pergunta": "Um aviso desapareceu. Como posso consultá-lo?",
+    "resposta": "Procure o histórico ou a seção de avisos disponíveis na plataforma. Se não encontrar, solicite ajuda ao suporte."
+  },
+  {
+    "categoria": "Avisos",
+    "pergunta": "Por que não recebi uma notificação?",
+    "resposta": "Confira os avisos diretamente na plataforma. O recebimento de e-mails ou outras notificações depende das configurações e dos canais habilitados."
+  },
+  {
+    "categoria": "Progresso",
+    "pergunta": "Como funciona o cálculo do progresso?",
+    "resposta": "O progresso considera as etapas do curso selecionado, como aulas assistidas e pós-testes concluídos. Na área do aluno, acompanhe a porcentagem exibida."
+  },
+  {
+    "categoria": "Progresso",
+    "pergunta": "Por que meu progresso não chegou a 100%?",
+    "resposta": "Confira se ainda há aulas, pós-testes ou outras etapas pendentes no curso. A Home pode incluir a aprovação na prova final no progresso total."
+  },
+  {
+    "categoria": "Progresso",
+    "pergunta": "O progresso de um curso é separado do outro?",
+    "resposta": "Na seleção de cursos, consulte o progresso correspondente ao curso escolhido. Se perceber dados misturados, avise o suporte indicando os dois cursos."
+  },
+  {
+    "categoria": "Progresso",
+    "pergunta": "Concluí uma atividade e o progresso não atualizou.",
+    "resposta": "Atualize a página, confirme o curso selecionado e verifique se a atividade consta como concluída. Caso contrário, informe o nome da atividade ao suporte."
+  },
+  {
+    "categoria": "Progresso",
+    "pergunta": "Preciso concluir os módulos na ordem?",
+    "resposta": "Siga a organização exibida na plataforma e as orientações do responsável pelo curso. Restrições de sequência, quando existentes, aparecerão durante o acesso."
+  },
+  {
+    "categoria": "Acesso",
+    "pergunta": "Como faço login na plataforma?",
+    "resposta": "Acesse o endereço oficial do ReSaúde e entre com os dados de acesso informados no seu cadastro."
+  },
+  {
+    "categoria": "Acesso",
+    "pergunta": "Esqueci minha senha. Como recuperar?",
+    "resposta": "Utilize a opção de recuperação de senha, se disponível na tela de login, e siga as instruções. Se não conseguir, procure o suporte."
+  },
+  {
+    "categoria": "Acesso",
+    "pergunta": "O sistema informa que meus dados estão incorretos.",
+    "resposta": "Confira os dados digitados e evite várias tentativas seguidas. Se não conseguir entrar, solicite ajuda ao suporte sem enviar sua senha."
+  },
+  {
+    "categoria": "Acesso",
+    "pergunta": "Não recebi o código de verificação por e-mail.",
+    "resposta": "Confira a caixa de entrada e a pasta de spam, confirme seu endereço cadastrado e aguarde alguns instantes antes de solicitar um novo código."
+  },
+  {
+    "categoria": "Acesso",
+    "pergunta": "O site mostra erro 500. O que faço?",
+    "resposta": "Anote a página e o horário da ocorrência e encaminhe a informação ao suporte. Esse erro costuma exigir análise técnica do sistema."
+  },
+  {
+    "categoria": "Acesso",
+    "pergunta": "Minha sessão expirou e fui desconectado.",
+    "resposta": "Entre novamente na plataforma. Se o problema ocorrer frequentemente, relate ao suporte o navegador, o dispositivo e o horário."
+  },
+  {
+    "categoria": "Acesso",
+    "pergunta": "Posso acessar em outro computador?",
+    "resposta": "Sim, pela página oficial, usando suas próprias credenciais. Em computadores compartilhados, encerre a sessão ao finalizar."
+  },
+  {
+    "categoria": "Acesso",
+    "pergunta": "Como atualizo meus dados cadastrais?",
+    "resposta": "Procure a área de perfil ou cadastro da plataforma. Caso não exista opção para editar determinada informação, solicite a alteração ao suporte."
+  },
+  {
+    "categoria": "Acesso",
+    "pergunta": "Como entro em contato com o suporte?",
+    "resposta": "Acesse a tela Suporte e descreva a dificuldade, incluindo curso, módulo, aula e mensagem de erro quando aplicável. Nunca informe sua senha."
+  }
+]
