@@ -183,44 +183,79 @@ class CertificadoController extends Controller
     // =========================
     public static function registrarEmissao($aluno, $certificado, $notaFinal = null)
     {
-        if (!$aluno || !$certificado) {
+        if (!$aluno || !$certificado || !Schema::hasTable('certificados_emitidos')) {
             return null;
         }
 
-        // Confere a situação novamente, mesmo quando chamado por outra parte do sistema.
+        // Impede emissão mesmo por chamadas diretas, sem satisfazer os 5 requisitos.
         $situacao = self::verificarRequisitos($aluno->id);
         if (!$situacao['liberado']) {
             return null;
         }
-        $notaFinal = $situacao['nota_final'];
 
-        $certificadoJaEmitido = DB::table('certificados_emitidos')
-            ->where('aluno_id', $aluno->id)
-            ->where('certificado_modelo_id', $certificado->id)
-            ->first();
+        // Compatível com a migration original (modelo_id, nome_aluno, codigo),
+        // e com instalações que usam os nomes alternativos.
+        $tabela = 'certificados_emitidos';
+        $colunaModelo = Schema::hasColumn($tabela, 'certificado_modelo_id')
+            ? 'certificado_modelo_id'
+            : (Schema::hasColumn($tabela, 'modelo_id') ? 'modelo_id' : null);
+        $colunaCodigo = Schema::hasColumn($tabela, 'codigo_validacao')
+            ? 'codigo_validacao'
+            : (Schema::hasColumn($tabela, 'codigo') ? 'codigo' : null);
 
-        if ($certificadoJaEmitido) {
-            return $certificadoJaEmitido;
+        if (!$colunaModelo || !$colunaCodigo) {
+            throw new \RuntimeException('Estrutura de certificados_emitidos incompatível: faltam campos de modelo ou código.');
         }
 
-        $codigo = strtoupper(uniqid('CERT-'));
-        DB::table('certificados_emitidos')->insert([
+        $existente = DB::table($tabela)
+            ->where('aluno_id', $aluno->id)
+            ->where($colunaModelo, $certificado->id)
+            ->first();
+
+        if ($existente) {
+            return $existente;
+        }
+
+        $codigo = 'CERT-' . strtoupper(bin2hex(random_bytes(10)));
+        $dados = [
             'aluno_id' => $aluno->id,
+            $colunaModelo => $certificado->id,
+            $colunaCodigo => $codigo,
+        ];
+
+        $camposOpcionais = [
+            'nome_aluno' => $aluno->name,
             'aluno_nome' => $aluno->name,
             'email' => $aluno->email,
-            'cpf' => $aluno->cpf,
-            'certificado_modelo_id' => $certificado->id,
-            'curso' => $certificado->curso,
-            'carga_horaria' => $certificado->carga_horaria,
-            'nota_final' => $notaFinal,
-            'codigo_validacao' => $codigo,
+            'cpf' => $aluno->cpf ?? null,
+            'curso' => $certificado->curso ?? null,
+            'carga_horaria' => $certificado->carga_horaria ?? null,
+            'nota_final' => $situacao['nota_final'],
+            'data_conclusao' => now()->toDateString(),
             'data_emissao' => now(),
             'created_at' => now(),
             'updated_at' => now(),
-        ]);
+        ];
 
-        return DB::table('certificados_emitidos')
-            ->where('codigo_validacao', $codigo)->first();
+        foreach ($camposOpcionais as $coluna => $valor) {
+            if (Schema::hasColumn($tabela, $coluna)) {
+                $dados[$coluna] = $valor;
+            }
+        }
+
+        // Transação e nova conferência evitam regravações em acessos simultâneos.
+        return DB::transaction(function () use ($tabela, $colunaModelo, $colunaCodigo, $aluno, $certificado, $dados, $codigo) {
+            $existente = DB::table($tabela)
+                ->where('aluno_id', $aluno->id)
+                ->where($colunaModelo, $certificado->id)
+                ->lockForUpdate()
+                ->first();
+            if ($existente) {
+                return $existente;
+            }
+            DB::table($tabela)->insert($dados);
+            return DB::table($tabela)->where($colunaCodigo, $codigo)->first();
+        });
     }
 
     // =========================
@@ -258,8 +293,12 @@ class CertificadoController extends Controller
             abort(403, 'Não foi possível validar a emissão deste certificado.');
         }
 
-        $dataConclusao = now()->format('d/m/Y');
-        $codigo = $certificadoEmitido->codigo_validacao;
+        $dataConclusao = !empty($certificadoEmitido->data_conclusao)
+            ? \Carbon\Carbon::parse($certificadoEmitido->data_conclusao)->format('d/m/Y')
+            : (!empty($certificadoEmitido->data_emissao)
+                ? \Carbon\Carbon::parse($certificadoEmitido->data_emissao)->format('d/m/Y')
+                : now()->format('d/m/Y'));
+        $codigo = $certificadoEmitido->codigo_validacao ?? $certificadoEmitido->codigo ?? null;
         $dados = [
             'nome_aluno'     => $aluno->name,
             'curso'          => $certificado->curso,

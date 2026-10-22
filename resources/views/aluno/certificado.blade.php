@@ -49,17 +49,29 @@
     $certificadoEmitido = null;
     $codigoValidacaoCertificado = null;
     $dataEmissaoCertificado = now();
-    if ($certificadoLiberado && $modeloCertificado && Schema::hasTable('certificados_emitidos')
-        && Schema::hasColumn('certificados_emitidos', 'certificado_modelo_id')) {
-        $certificadoEmitido = DB::table('certificados_emitidos')
-            ->where('aluno_id', $alunoId)
-            ->where('certificado_modelo_id', $modeloCertificado->id)->first();
-        if ($certificadoEmitido) {
-            $codigoValidacaoCertificado = $certificadoEmitido->codigo_validacao ?? $certificadoEmitido->codigo ?? null;
-            $dataEmissaoCertificado = !empty($certificadoEmitido->data_emissao)
-                ? \Carbon\Carbon::parse($certificadoEmitido->data_emissao) : now();
+    if ($certificadoLiberado && $modeloCertificado && Schema::hasTable('certificados_emitidos')) {
+        $colunaModelo = Schema::hasColumn('certificados_emitidos', 'certificado_modelo_id')
+            ? 'certificado_modelo_id'
+            : (Schema::hasColumn('certificados_emitidos', 'modelo_id') ? 'modelo_id' : null);
+
+        if ($colunaModelo) {
+            $certificadoEmitido = DB::table('certificados_emitidos')
+                ->where('aluno_id', $alunoId)
+                ->where($colunaModelo, $modeloCertificado->id)
+                ->first();
+
+            if ($certificadoEmitido) {
+                $codigoValidacaoCertificado = $certificadoEmitido->codigo_validacao
+                    ?? $certificadoEmitido->codigo ?? null;
+                $dataEmissaoCertificado = !empty($certificadoEmitido->data_emissao)
+                    ? \Carbon\Carbon::parse($certificadoEmitido->data_emissao)
+                    : (!empty($certificadoEmitido->data_conclusao)
+                        ? \Carbon\Carbon::parse($certificadoEmitido->data_conclusao)
+                        : now());
+            }
         }
     }
+
 @endphp
 
 <style>
