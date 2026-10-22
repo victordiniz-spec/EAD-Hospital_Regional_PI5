@@ -396,6 +396,12 @@
             border-radius: 1.25rem !important;
         }
     }
+    /* Seções recolhíveis: respeitam o visual verde das demais telas. */
+    .videoaulas-detalhe > summary::-webkit-details-marker { display: none; }
+    .videoaulas-detalhe > summary { list-style: none; }
+    .videoaulas-detalhe .videoaulas-seta { transition: transform .2s ease; display: inline-block; }
+    .videoaulas-detalhe[open] > summary .videoaulas-seta { transform: rotate(180deg); }
+
 </style>
 
 <div class="flex min-h-screen w-full bg-[#F3F7F3] text-[#003C2F] overflow-x-hidden">
@@ -421,7 +427,7 @@
             @endif
 
             <!-- CABEÇALHO -->
-            <div class="mb-7 flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
+            <div class="mb-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
 
                 <div class="min-w-0">
                     <div class="inline-flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest text-[#00A63E] mb-2">
@@ -438,12 +444,12 @@
                     </p>
                 </div>
 
-                <div class="bg-white border border-[#E3EBE4] rounded-3xl px-5 py-4 shadow-sm">
+                <div class="bg-white border border-[#E3EBE4] rounded-2xl px-4 py-3 shadow-sm">
                     <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
                         Curso atual
                     </p>
 
-                    <p class="text-xl font-extrabold text-[#004D3A] mt-1 break-words max-w-[260px]">
+                    <p class="text-base font-extrabold text-[#004D3A] mt-1 break-words max-w-[320px]">
                         {{ $cursoAtual->nome ?? 'Nenhum curso publicado' }}
                     </p>
                 </div>
@@ -451,7 +457,15 @@
             </div>
 
             <!-- SELEÇÃO DE CURSOS DISPONÍVEIS -->
-            <div class="mb-7 bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6">
+            <details class="videoaulas-detalhe mb-5 bg-white border border-[#E3EBE4] rounded-2xl shadow-sm p-4 sm:p-5" {{ !$cursoAtual ? 'open' : '' }}>
+                <summary class="flex items-center justify-between gap-4 cursor-pointer list-none select-none">
+                    <span class="flex flex-col min-w-0">
+                        <span class="text-sm font-extrabold text-[#003C2F]">Trocar de curso</span>
+                        <span class="text-xs text-[#60756B] mt-1">{{ $cursosDisponiveis->count() }} curso(s) disponível(is) • {{ $cursoAtual->nome ?? 'Escolha um curso' }}</span>
+                    </span>
+                    <span class="videoaulas-seta text-[#004D3A] text-lg font-extrabold shrink-0">⌄</span>
+                </summary>
+                <div class="mt-5 pt-4 border-t border-[#E3EBE4]">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
                     <div>
                         <h2 class="text-xl font-extrabold text-[#003C2F]">Escolha seu curso</h2>
@@ -478,112 +492,54 @@
                         <p class="text-sm text-[#60756B]">Nenhum curso está disponível no momento.</p>
                     @endforelse
                 </div>
-            </div>
+                </div>
+            </details>
 
             @if($cursoAtual)
 
-                <!-- RESUMO DO CURSO -->
-                <div class="mb-7 grid grid-cols-1 xl:grid-cols-12 gap-5">
-
-                    <div class="xl:col-span-8 bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6">
-
-                        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
-
-                            <div class="min-w-0">
-
-                                <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                    Curso selecionado
-                                </p>
-
-                                <h2 class="text-2xl sm:text-4xl font-extrabold text-[#003C2F] tracking-tight mt-1 break-words">
-                                    {{ $cursoAtual->nome }}
-                                </h2>
-
-                                <p class="text-sm text-[#60756B] mt-3 max-w-3xl leading-relaxed break-words">
-                                    {{ $cursoAtual->descricao ?? 'Acompanhe suas aulas, módulos, pós-testes e atividades disponíveis.' }}
-                                </p>
-
-                            </div>
-
-                            <div class="bg-[#EAF5EF] border border-[#DCE7DE] rounded-3xl px-5 py-4 shrink-0">
-                                <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                    Progresso do curso
-                                </p>
-
-                                <p class="text-4xl font-extrabold text-[#004D3A] mt-1">
-                                    {{ $progressoCurso }}%
-                                </p>
-                            </div>
-
+                <!-- RESUMO COMPACTO: o aluno vê o essencial sem esconder funcionalidades -->
+                <div class="mb-5 bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div class="min-w-0">
+                            <p class="text-[11px] uppercase tracking-widest font-extrabold text-[#60756B]">Seu progresso neste curso</p>
+                            <h2 class="mt-1 text-lg sm:text-xl font-extrabold text-[#003C2F] break-words">{{ $cursoAtual->nome }}</h2>
+                            <p class="mt-1 text-xs text-[#60756B]">{{ $etapasConcluidasCurso }} de {{ $totalEtapasCurso }} etapas concluídas</p>
                         </div>
-
-                        <div class="mt-6">
-                            <div class="flex items-center justify-between text-xs font-bold text-[#004D3A] mb-2">
-                                <span>{{ $etapasConcluidasCurso }} de {{ $totalEtapasCurso }} etapas concluídas</span>
-                                <span>{{ $progressoCurso }}%</span>
-                            </div>
-
-                            <div class="h-3 bg-[#E7EEE9] rounded-full overflow-hidden">
-                                <div class="h-full bg-[#005543] rounded-full transition-all duration-500"
-                                     style="width: {{ $progressoCurso }}%;">
-                                </div>
-                            </div>
-
-                            <p class="text-xs text-[#60756B] mt-3">
-                                A prova final será liberada quando você concluir pelo menos <strong>70% do curso completo</strong>.
-                            </p>
-                        </div>
-
+                        <p class="text-3xl font-extrabold text-[#004D3A]">{{ $progressoCurso }}%</p>
                     </div>
-
-                    <div class="xl:col-span-4 grid grid-cols-2 gap-4">
-
-                        <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5">
-                            <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                Módulos
-                            </p>
-
-                            <p class="text-3xl font-extrabold text-[#004D3A] mt-2">
-                                {{ $totalModulos }}
-                            </p>
-                        </div>
-
-                        <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5">
-                            <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                Aulas
-                            </p>
-
-                            <p class="text-3xl font-extrabold text-[#004D3A] mt-2">
-                                {{ $totalAulas }}
-                            </p>
-                        </div>
-
-                        <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5">
-                            <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                Assistidas
-                            </p>
-
-                            <p class="text-3xl font-extrabold text-[#004D3A] mt-2">
-                                {{ $totalAulasAssistidas }}
-                            </p>
-                        </div>
-
-                        <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5">
-                            <p class="text-[11px] uppercase tracking-widest text-[#60756B] font-extrabold">
-                                Pós-testes
-                            </p>
-
-                            <p class="text-3xl font-extrabold text-[#004D3A] mt-2">
-                                {{ $totalTestesConcluidos }}
-                            </p>
-                        </div>
-
+                    <div class="mt-4 h-2.5 bg-[#E7EEE9] rounded-full overflow-hidden">
+                        <div class="h-full bg-[#005543] rounded-full transition-all duration-500" style="width: {{ $progressoCurso }}%;"></div>
                     </div>
-
+                    <details class="videoaulas-detalhe mt-4">
+                        <summary class="cursor-pointer text-xs font-extrabold text-[#005543] flex items-center justify-between gap-2">
+                            <span>Detalhes e informações do curso</span><span class="videoaulas-seta">⌄</span>
+                        </summary>
+                        <div class="pt-4 space-y-4">
+                            <p class="text-sm leading-relaxed text-[#60756B]">{{ $cursoAtual->descricao ?? 'Acompanhe suas aulas, módulos, pós-testes e atividades disponíveis.' }}</p>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                @foreach([['Módulos', $totalModulos], ['Aulas', $totalAulas], ['Assistidas', $totalAulasAssistidas], ['Pós-testes', $totalTestesConcluidos]] as $indicador)
+                                    <div class="rounded-2xl border border-[#E3EBE4] bg-[#F8FBF8] p-4">
+                                        <p class="text-[11px] text-[#60756B] font-bold">{{ $indicador[0] }}</p>
+                                        <p class="text-xl font-extrabold text-[#004D3A] mt-1">{{ $indicador[1] }}</p>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <p class="text-xs text-[#60756B]">A prova final é liberada após concluir pelo menos <strong>70% das etapas</strong> deste curso.</p>
+                        </div>
+                    </details>
                 </div>
 
+                <!-- AVALIAÇÕES: acessíveis em seção recolhível -->
+                <details class="videoaulas-detalhe mb-6 bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-4 sm:p-5">
+                    <summary class="cursor-pointer flex flex-wrap items-center justify-between gap-3 list-none">
+                        <span class="min-w-0">
+                            <span class="block text-sm font-extrabold text-[#003C2F]">Prova final e certificado</span>
+                            <span class="block text-xs text-[#60756B] mt-1">Consulte sua liberação e seus resultados quando precisar.</span>
+                        </span>
+                        <span class="videoaulas-seta text-[#005543] font-extrabold">⌄</span>
+                    </summary>
                 <!-- PROVA FINAL / CERTIFICADO -->
-                <div class="mb-7 grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
 
                     <div class="bg-white border border-[#E3EBE4] rounded-3xl shadow-sm p-5 sm:p-6">
 
@@ -664,6 +620,8 @@
                     </div>
 
                 </div>
+
+                </details>
 
                 @if($aulaAtual)
 
@@ -929,7 +887,7 @@
                                                         $itemAtivo = $itemAula->id === $aulaAtual->id;
                                                     @endphp
 
-                                                    <a href="{{ url()->current() }}?aula_id={{ $itemAula->id }}"
+                                                    <a href="{{ route('aluno.aulas', ['curso_id' => $cursoAtualId, 'aula_id' => $itemAula->id]) }}"
                                                        class="w-full flex items-center gap-3 p-3 rounded-2xl text-left transition {{ $itemAtivo ? 'bg-white border border-[#DCE7DE]' : 'hover:bg-white' }}">
 
                                                         <div class="w-14 h-14 rounded-2xl bg-[#D7DFD9] shrink-0 overflow-hidden relative">
